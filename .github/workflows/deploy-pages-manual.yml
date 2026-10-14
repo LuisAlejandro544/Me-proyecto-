@@ -1,0 +1,48 @@
+# Despliegue MANUAL a GitHub Pages (solo cuando tú decidas).
+# NO se ejecuta con cada push/commit: solo con workflow_dispatch
+# (botón "Run workflow" en la pestaña Actions).
+name: Deploy manual a Pages
+
+on:
+  workflow_dispatch: # <- esto lo hace 100% manual
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          # Configura estos 3 secrets en Settings > Secrets > Actions.
+          # Si no existen, la app compila en modo demo local.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_POSTS_API_URL: ${{ secrets.VITE_POSTS_API_URL }}
+          VITE_BASE_PATH: /Me-proyecto-/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

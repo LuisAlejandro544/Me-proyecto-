@@ -1,0 +1,16 @@
+// wrangler.toml — ejemplo para el Worker de posts (Cloudflare D1).
+// 1) wrangler d1 create me-proyecte-db -> pega el database_id abajo
+// 2) wrangler d1 execute me-proyecte-db --file=workers/schema.sql
+// 3) wrangler deploy (estando en /workers)
+
+name = "me-proyecte-api"
+main = "api.js"
+compatibility_date = "2024-09-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "me-proyecte-db"
+database_id = "PEGA-AQUI-TU-DATABASE-ID"
+
+[vars]
+SUPABASE_URL = "https://tu-proyecto.supabase.co"

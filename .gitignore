@@ -24,6 +24,12 @@ captures/
 .cxx/
 *.hprof
 
-# Sistema
-.DS_Store
-Thumbs.db
+# Web Vite
+node_modules/
+dist/
+.env.local
+.env.*.local
+
+# Cloudflare
+.dev.vars
+.wrangler/
