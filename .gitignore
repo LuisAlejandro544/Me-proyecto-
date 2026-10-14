@@ -1,0 +1,29 @@
+# OpenCode - no subir capturas ni adjuntos al repo
+.opencode/attachments/
+.opencode/attachments/*
+.opencode/share/
+
+# Capturas de pantalla de OpenCode en raiz o docs (evitar que se cuelen)
+opencode-*.png
+opencode-*.jpg
+screenshot-opencode-*
+*-opencode-screenshot*
+
+# Android / Kotlin
+*.apk
+*.aab
+*.ap_
+*.dex
+build/
+.gradle/
+local.properties
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+*.hprof
+
+# Sistema
+.DS_Store
+Thumbs.db
