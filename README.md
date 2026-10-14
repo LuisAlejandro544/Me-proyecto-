@@ -29,7 +29,7 @@ workers/
   schema.sql            tablas posts + proyectadas (D1/SQLite)
   wrangler.toml.example config ejemplo
 supabase/schema.sql     tabla profiles + RLS (auth)
-.github/workflows/deploy-pages-manual.yml  deploy MANUAL a Pages
+.github/workflows/deploy-cloudflare-pages.yml  deploy auto a Cloudflare Pages
 ```
 
 ## 1) Configurar Supabase (login)
@@ -56,22 +56,33 @@ npm install
 npm run dev   # http://localhost:5173
 ```
 
-## 4) Publicar en GitHub Pages CUANDO TÚ DECIDAS (no en cada commit)
-El workflow `deploy-pages-manual.yml` usa **solo `workflow_dispatch`**: ningún `push` lo dispara.
+## 4) Publicar en Cloudflare Pages (automático en cada push a main)
 
-**Activarlo una vez (5 min):**
-1. GitHub → tu repo → **Settings → Pages** → *Build and deployment* → **Source: GitHub Actions**.
-2. **Settings → Secrets → Actions → New secret**: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_POSTS_API_URL`.
-3. Ve a **Actions → "Deploy manual a Pages" → Run workflow → Run workflow** cuando quieras publicar.
-4. Tu web quedará en `https://tu-usuario.github.io/Me-proyecto-/`.
+**Opción A — con GitHub Actions (recomendado, ya configurado):**
 
-**¿Por qué no se actualiza con cada commit?** Porque el YAML no tiene `on: push`. Solo el botón manual lo lanza. Si algún día quieres auto-deploy, añade:
-```yaml
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-```
+1. En Cloudflare Dashboard → **Workers & Pages → Create → Pages** → conecta tu repo una vez
+   (o crea el proyecto `me-proyecte` vacío). Copia el **Account ID**.
+2. Crea un API Token: **My Profile → API Tokens → Create Token → Edit Cloudflare Workers**
+   (permiso `Cloudflare Pages:Edit` + `Workers Scripts:Edit`). Cópialo.
+3. GitHub → tu repo → **Settings → Secrets → Actions** → crea:
+   * `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_POSTS_API_URL`
+   * `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
+4. Haz push a `main` o **Actions → Deploy a Cloudflare Pages → Run workflow**.
+   Compila con `VITE_BASE_PATH=/` y sube `dist/` con
+   `wrangler pages deploy dist --project-name=me-proyecte`.
+   Tu web queda en `https://me-proyecte.pages.dev`.
+
+**Opción B — solo con el dashboard de Cloudflare (sin secrets):**
+
+1. **Workers & Pages → Create → Pages → Connect to Git** → elige tu repo.
+2. Build settings: **Framework: Vite**, **Build command: `npm run build`**,
+   **Output: `dist`**, **Node 20**.
+3. Environment variables (Production): `VITE_SUPABASE_URL`,
+   `VITE_SUPABASE_ANON_KEY`, `VITE_POSTS_API_URL`, `VITE_BASE_PATH=/`.
+4. **Save and Deploy**. Cada push a `main` redespliega solo.
+
+> SPA: `public/_redirects` ya tiene `/* /index.html 200` para que
+> `/login` y `/registro` funcionen al recargar.
 
 ## Notas Expo / móvil
 La web es el MVP. Para móvil con Expo: `npx create-expo-app`, reutiliza `AuthContext`, `postsApi.ts` y los tokens de `index.css` vía NativeWind. El backend (Supabase + Worker D1) ya sirve a ambas.

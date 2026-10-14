@@ -1,15 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// GitHub Pages: si el repo es https://usuario.github.io/Me-proyecto-/
-// hay que servir desde /Me-proyecto-/. Para dominio custom o
-// Cloudflare Pages deja base en './'.
-// Se lee de env VITE_BASE_PATH, por defecto '/Me-proyecto-/' para Pages.
-const base = process.env.VITE_BASE_PATH ?? '/Me-proyecto-/';
+// Cloudflare Pages: se sirve desde la raíz '/', así que base debe ser '/'.
+// Se puede overridear con VITE_BASE_PATH (ej: '/Me-proyecto-/' para GitHub Pages
+// o './' para dominio custom con rutas relativas). Por defecto '/' para Cloudflare.
+const rawBase = process.env.VITE_BASE_PATH ?? '/';
+const base = rawBase === 'custom' ? './' : rawBase;
 
 export default defineConfig({
   plugins: [react()],
-  base: base === 'custom' ? './' : base,
+  base,
   build: {
     outDir: 'dist',
   },
