@@ -1,7 +1,7 @@
-// wrangler.toml — ejemplo para el Worker de posts (Cloudflare D1).
-// 1) wrangler d1 create me-proyecte-db -> pega el database_id abajo
-// 2) wrangler d1 execute me-proyecte-db --file=workers/schema.sql
-// 3) wrangler deploy (estando en /workers)
+# wrangler.toml — ejemplo para el Worker de posts (Cloudflare D1).
+# 1) wrangler d1 create me-proyecte-db -> pega el database_id abajo
+# 2) wrangler d1 execute me-proyecte-db --file=workers/schema.sql --remote
+# 3) npx wrangler deploy --cwd workers  (SOLO para el Worker, NUNCA como comando de Pages)
 
 name = "me-proyecte-api"
 main = "api.js"

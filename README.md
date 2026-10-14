@@ -32,11 +32,53 @@ supabase/schema.sql     tabla profiles + RLS (auth)
 .github/workflows/deploy-cloudflare-pages.yml  deploy auto a Cloudflare Pages
 ```
 
+## 0) Arreglo del error `wrangler deploy` en Cloudflare Pages ⚠️
+
+Si ves este log:
+```
+Executing user deploy command: npx wrangler deploy
+✘ [ERROR] Could not detect a directory containing static files
+```
+es porque en el dashboard de Pages pusiste `npx wrangler deploy` como
+comando de despliegue. Ese comando es **solo para Workers**, no para Pages,
+y por eso falla: busca un Worker y no encuentra HTML/CSS/JS.
+
+**Arreglo exacto (2 min, desde el celular también se puede):**
+1. Cloudflare Dashboard → **Workers & Pages** → tu proyecto → **Settings → Builds**:
+   * **Framework preset:** `Vite`
+   * **Build command:** `npm run build` (borra `npx wrangler deploy`)
+   * **Build output directory:** `dist`
+   * **Root directory:** `/` (vacío / raíz del repo, NO `/workers`)
+   * **Node version:** `20`
+2. En **Settings → Environment variables (Production)** pon:
+   `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_POSTS_API_URL`, `VITE_BASE_PATH=/`
+3. **Save → Retry deployment** (o haz un push nuevo).
+
+No necesitas ningún "Deploy command" extra: Pages sube `dist/` solo.
+El `npm run build` ya está verificado: genera `dist/index.html + dist/assets/* + dist/_redirects`.
+
+> Si usas el Action `.github/workflows/deploy-cloudflare-pages.yml`,
+> ese sí usa `wrangler pages deploy dist` (con `pages` en medio).
+> Elige UNO: dashboard automático (Opción B, más fácil) O Actions (Opción A),
+> no los dos a la vez.
+
 ## 1) Configurar Supabase (login)
 1. Crea proyecto en [supabase.com](https://supabase.com) → copia `Project URL` y `anon public key`.
 2. En Supabase → SQL Editor → pega `supabase/schema.sql` → Run.
+   (El archivo `supabase/migrations/20261014000000_profiles.sql` es la misma
+   migración en formato que entiende la integración GitHub).
 3. Auth → Providers → activa **Email** y **Google** (para Google: pon Client ID/Secret de Google Cloud).
 4. Crea `.env.local` desde `.env.example` y rellena `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.
+
+### Conexión Supabase ↔ GitHub (tu captura) ¿sirve de algo?
+Sí, pero **solo para la base de datos, no conecta el login al frontend**.
+Lo que hace: si cambias archivos en `supabase/migrations/` y haces push,
+Supabase aplica ese SQL solo a tu DB ("agent-first workflows").
+Sin esa carpeta no hacía nada — por eso se agregó
+`supabase/migrations/20261014000000_profiles.sql` en este PR.
+Puedes dejar la conexión puesta, no estorba. El login de la web
+seguirá funcionando solo con `VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY`,
+con o sin esa integración.
 
 ## 2) Configurar Cloudflare D1 (textos)
 ```bash
