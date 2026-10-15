@@ -84,6 +84,9 @@
       overflow: visible;
       overflow-wrap: break-word;
       word-break: break-word;
+      /* Capa propia: el blur del fondo se cachea y los fades hijos
+         (toolbar, puertos) componen sin re-dibujarlo = sin parpadeo. */
+      transform: translateZ(0);
     }
     .vn-node > .vn-node-toolbar + div,
     .vn-node-pad-ports {
@@ -196,6 +199,7 @@
       opacity: 0;
       transition: opacity 0.12s ease;
       pointer-events: none;
+      will-change: opacity;
     }
     .vn-wire-group:hover .vn-wire-hi,
     .vn-wire-group.wire-selected .vn-wire-hi {
@@ -281,6 +285,7 @@
       transform: translateY(2px);
       transition: opacity 0.15s ease, transform 0.15s ease;
       pointer-events: none;
+      will-change: opacity, transform;
     }
     .vn-node:hover .vn-node-toolbar,
     .vn-node.selected .vn-node-toolbar {
