@@ -50,4 +50,30 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('dialogue -'), findsWidgets);
   });
+
+  testWidgets('deberia_arrastrar_nodo_con_sus_conexiones', (tester) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(const MyNovelApp());
+    await tester.pumpAndSettle();
+    final before = tester.getTopLeft(find.text('Start'));
+    final dlgBefore = tester.getTopLeft(find.textContaining('Dialogue - 01'));
+    await tester.timedDrag(
+      find.text('Start'),
+      const Offset(120, 80),
+      const Duration(milliseconds: 300),
+    );
+    await tester.pumpAndSettle();
+    final after = tester.getTopLeft(find.text('Start'));
+    final dlgAfter = tester.getTopLeft(find.textContaining('Dialogue - 01'));
+    // El canvas no debe moverse al arrastrar un nodo.
+    expect((dlgAfter - dlgBefore).distance, lessThan(1));
+    // El nodo sigue al dedo (menos el slop inicial del gesto).
+    expect((after - before).dx, greaterThan(60));
+    expect((after - before).dy, greaterThan(40));
+  });
 }
