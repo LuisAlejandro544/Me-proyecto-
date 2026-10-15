@@ -52,8 +52,21 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
+      # En runners frescos es no-op; si algún día se restaura una caché
+      # corrupta (como pasó en local), esto la sanea antes de compilar.
+      - name: Sanear caché Gradle (anti-corrupción)
+        run: |
+          ./android/gradlew --stop || true
+          rm -rf ~/.gradle/caches/*/transforms
       - name: Build APK por ABI (32 + 64 bits)
-        run: flutter build apk --release --split-per-abi
+        # Si Gradle falla por caché corrupta, se limpia y reintenta 1 vez solo.
+        run: |
+          flutter build apk --release --split-per-abi || {
+            echo "Fallo Gradle: limpiando caché y reintentando..."
+            ./android/gradlew --stop || true
+            rm -rf ~/.gradle/caches/*/transforms
+            flutter build apk --release --split-per-abi
+          }
       - name: Build Web (.html preview)
         run: flutter build web --release
       - uses: actions/upload-artifact@v4
