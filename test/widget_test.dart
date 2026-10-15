@@ -2,12 +2,11 @@
 // Sin integraciones externas: corren offline en CI y en local.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:me_proyecto/app/app.dart';
 import 'package:me_proyecto/features/graph/editor/editor_screen.dart';
 import 'package:me_proyecto/features/graph/export/html_exporter.dart';
 import 'package:me_proyecto/features/graph/models/vn_models.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   setUp(() {

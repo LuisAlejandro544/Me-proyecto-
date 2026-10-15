@@ -1,7 +1,8 @@
 // Hoja inferior para elegir slot: abrir, crear o borrar proyectos.
 // Separada del home para mantener cada archivo pequeño y legible.
-import 'package:flutter/material.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:me_proyecto/core/theme/app_theme.dart';
 import 'package:me_proyecto/features/projects/models/saved_slot.dart';
 
@@ -144,7 +145,8 @@ class _SlotPickerBodyState extends State<_SlotPickerBody> {
             ),
             const SizedBox(height: 4),
             const Text(
-              '3 slots en este dispositivo. Toca un slot para abrirlo o crear uno nuevo.',
+              '3 slots en este dispositivo. '
+              'Toca un slot para abrirlo o crear uno nuevo.',
               style: TextStyle(color: Colors.white54, fontSize: 13),
             ),
             const SizedBox(height: 16),
@@ -229,7 +231,8 @@ class _SlotCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${saved!.project.nodes.length} nodos · ${_fmtDate(saved!.updatedAt)}',
+                        '${saved!.project.nodes.length} '
+                        'nodos · ${_fmtDate(saved!.updatedAt)}',
                         style: const TextStyle(
                           color: Colors.white54,
                           fontSize: 12,
@@ -286,32 +289,37 @@ class _SlotCard extends StatelessWidget {
   }
 
   void _confirmDelete(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text(
-          'Borrar proyecto',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: Text(
-          '¿Borrar el proyecto "${saved?.project.title}" del slot ${index + 1}?',
-          style: const TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.surface,
+          title: const Text(
+            'Borrar proyecto',
+            style: TextStyle(color: Colors.white),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              onDelete();
-            },
-            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-            child: const Text('Borrar'),
+          content: Text(
+            '¿Borrar el proyecto '
+            '"${saved?.project.title}" del slot ${index + 1}?',
+            style: const TextStyle(color: Colors.white70),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                onDelete();
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.danger,
+              ),
+              child: const Text('Borrar'),
+            ),
+          ],
+        ),
       ),
     );
   }

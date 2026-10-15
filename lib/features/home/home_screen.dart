@@ -137,7 +137,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: Icons.play_arrow,
                         title: 'Continuar',
                         subtitle: canContinue
-                            ? '"${_lastSaved!.project.title}" · Slot ${_lastSaved!.slotIndex + 1}'
+                            ? '"${_lastSaved!.project.title}"'
+                                ' · Slot ${_lastSaved!.slotIndex + 1}'
                             : 'Aún no hay proyecto en curso',
                         accent: AppColors.ok,
                         enabled: canContinue,
@@ -147,8 +148,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       HomeMenuButton(
                         icon: Icons.folder_open_outlined,
                         title: 'Abrir proyecto',
-                        subtitle: '$used de ${ProjectStorage.slotCount} slots en uso',
-                        accent: AppColors.cyan,
+                        subtitle:
+                            '$used de ${ProjectStorage.slotCount}'
+                            ' slots en uso',
                         onTap: _openSlots,
                         trailing: _SlotDots(slots: _slots),
                       ),
@@ -159,7 +161,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         subtitle: 'Bloqueado por ahora',
                         accent: Colors.white54,
                         locked: true,
-                        enabled: true,
                         onTap: () => showOptionsSheet(context),
                       ),
                     ],
@@ -200,7 +201,7 @@ class _Header extends StatelessWidget {
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: AppColors.cyan.withOpacity(0.35),
+                color: AppColors.cyan.withValues(alpha: 0.35),
                 blurRadius: 32,
                 spreadRadius: 2,
               ),
@@ -235,7 +236,10 @@ class _Header extends StatelessWidget {
         Text(
           usedSlots == 0
               ? 'Crea tu primera historia visual'
-              : 'Tienes $usedSlots ${usedSlots == 1 ? 'proyecto guardado' : 'proyectos guardados'}',
+              : 'Tienes $usedSlots '
+                  '${usedSlots == 1
+                      ? 'proyecto guardado'
+                      : 'proyectos guardados'}',
           style: const TextStyle(color: Colors.white54, fontSize: 13),
         ),
       ],

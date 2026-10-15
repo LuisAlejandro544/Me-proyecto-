@@ -58,7 +58,7 @@ class HomeMenuButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: accent.withOpacity(0.45)),
+              border: Border.all(color: accent.withValues(alpha: 0.45)),
             ),
             child: Row(
               children: [
@@ -66,10 +66,10 @@ class HomeMenuButton extends StatelessWidget {
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: accent.withOpacity(0.15),
+                    color: accent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: accent.withOpacity(0.5),
+                      color: accent.withValues(alpha: 0.5),
                     ),
                   ),
                   child: Icon(
@@ -105,7 +105,7 @@ class HomeMenuButton extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: Colors.white10,
                                 borderRadius: BorderRadius.circular(20),
-                                border: const BorderSide(
+                                border: Border.all(
                                   color: AppColors.line,
                                 ),
                               ),

@@ -1,11 +1,10 @@
 // Tests de persistencia local: slots, JSON y último proyecto.
 // Usan SharedPreferences mock: corren offline en CI y en local.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:me_proyecto/features/graph/models/vn_models.dart';
 import 'package:me_proyecto/features/graph/state/graph_controller.dart';
 import 'package:me_proyecto/features/projects/data/project_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('VnProject JSON', () {

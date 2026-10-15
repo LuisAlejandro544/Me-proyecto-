@@ -84,7 +84,7 @@ class _EditorScreenState extends State<EditorScreen>
         _saving = false;
       });
       _snack('Guardado en Slot ${slot + 1} ✓');
-    } catch (_) {
+    } on Object catch (_) {
       if (!mounted) return;
       setState(() => _saving = false);
       _snack('No se pudo guardar');
@@ -244,7 +244,7 @@ class _EditorScreenState extends State<EditorScreen>
                         ? Colors.white10
                         : AppColors.cyanSoft,
                     borderRadius: BorderRadius.circular(20),
-                    border: BorderSide(
+                    border: Border.all(
                       color: _slot == null
                           ? AppColors.line
                           : AppColors.cyan,

@@ -41,7 +41,7 @@ class SavedSlot {
             : DateTime.tryParse(rawDate) ??
                   DateTime.fromMillisecondsSinceEpoch(0),
       );
-    } catch (_) {
+    } on Object catch (_) {
       return null;
     }
   }

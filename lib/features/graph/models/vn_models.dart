@@ -27,6 +27,13 @@ class VnOption {
   /// Crea una opción de diálogo.
   const new({required this.label, required this.nextId, this.isDanger = false});
 
+  /// Reconstruye desde JSON. Tolera mapas parciales.
+  factory fromJson(Map<String, dynamic> json) => VnOption(
+    label: json['label'] as String? ?? '',
+    nextId: json['nextId'] as String? ?? '',
+    isDanger: json['isDanger'] as bool? ?? false,
+  );
+
   /// Texto del botón, ej. '1: Believe her'.
   final String label;
 
@@ -42,13 +49,6 @@ class VnOption {
     'nextId': nextId,
     'isDanger': isDanger,
   };
-
-  /// Reconstruye desde JSON. Tolera mapas parciales.
-  factory VnOption.fromJson(Map<String, dynamic> json) => VnOption(
-    label: json['label'] as String? ?? '',
-    nextId: json['nextId'] as String? ?? '',
-    isDanger: json['isDanger'] as bool? ?? false,
-  );
 
   @override
   bool operator ==(Object other) =>
@@ -77,6 +77,31 @@ class VnNode {
     this.enterFrom = 'Enter Left',
     this.options = const [],
   });
+
+  /// Reconstruye desde JSON. Tolera campos ausentes.
+  factory fromJson(Map<String, dynamic> json) {
+    final typeName = json['type'] as String? ?? 'dialogue';
+    final type = VnNodeType.values.firstWhere(
+      (t) => t.name == typeName,
+      orElse: () => VnNodeType.dialogue,
+    );
+    final rawOptions = json['options'] as List? ?? const [];
+    return VnNode(
+      id: json['id'] as String? ?? 'node',
+      type: type,
+      title: json['title'] as String? ?? '',
+      x: (json['x'] as num?)?.toDouble() ?? 0,
+      y: (json['y'] as num?)?.toDouble() ?? 0,
+      speaker: json['speaker'] as String? ?? '',
+      text: json['text'] as String? ?? '',
+      pose: json['pose'] as String? ?? 'Happy',
+      enterFrom: json['enterFrom'] as String? ?? 'Enter Left',
+      options: rawOptions
+          .whereType<Map<String, dynamic>>()
+          .map(VnOption.fromJson)
+          .toList(),
+    );
+  }
 
   /// Identificador único estable (clave de widgets e índice).
   final String id;
@@ -149,31 +174,6 @@ class VnNode {
     'options': options.map((o) => o.toJson()).toList(),
   };
 
-  /// Reconstruye desde JSON. Tolera campos ausentes.
-  factory VnNode.fromJson(Map<String, dynamic> json) {
-    final typeName = json['type'] as String? ?? 'dialogue';
-    final type = VnNodeType.values.firstWhere(
-      (t) => t.name == typeName,
-      orElse: () => VnNodeType.dialogue,
-    );
-    final rawOptions = json['options'] as List? ?? const [];
-    return VnNode(
-      id: json['id'] as String? ?? 'node',
-      type: type,
-      title: json['title'] as String? ?? '',
-      x: (json['x'] as num?)?.toDouble() ?? 0,
-      y: (json['y'] as num?)?.toDouble() ?? 0,
-      speaker: json['speaker'] as String? ?? '',
-      text: json['text'] as String? ?? '',
-      pose: json['pose'] as String? ?? 'Happy',
-      enterFrom: json['enterFrom'] as String? ?? 'Enter Left',
-      options: rawOptions
-          .whereType<Map<String, dynamic>>()
-          .map(VnOption.fromJson)
-          .toList(),
-    );
-  }
-
   @override
   bool operator ==(Object other) =>
       other is VnNode &&
@@ -214,6 +214,14 @@ class VnEdge {
     this.isDanger = false,
   });
 
+  /// Reconstruye desde JSON.
+  factory fromJson(Map<String, dynamic> json) => VnEdge(
+    fromId: json['fromId'] as String? ?? '',
+    fromOption: json['fromOption'] as String?,
+    toId: json['toId'] as String? ?? '',
+    isDanger: json['isDanger'] as bool? ?? false,
+  );
+
   /// Id del nodo origen.
   final String fromId;
 
@@ -233,14 +241,6 @@ class VnEdge {
     'toId': toId,
     'isDanger': isDanger,
   };
-
-  /// Reconstruye desde JSON.
-  factory VnEdge.fromJson(Map<String, dynamic> json) => VnEdge(
-    fromId: json['fromId'] as String? ?? '',
-    fromOption: json['fromOption'] as String?,
-    toId: json['toId'] as String? ?? '',
-    isDanger: json['isDanger'] as bool? ?? false,
-  );
 
   @override
   bool operator ==(Object other) =>
@@ -359,13 +359,36 @@ class VnProject {
   }
 
   /// Proyecto nuevo vacío: solo el nodo Start.
-  factory VnProject.blank({String title = 'Nuevo proyecto'}) {
+  factory blank({String title = 'Nuevo proyecto'}) {
     return VnProject(
       title: title,
       nodes: const [
-        VnNode(id: 'start', type: VnNodeType.start, title: 'Start', x: 40, y: 260),
+        VnNode(
+          id: 'start',
+          type: VnNodeType.start,
+          title: 'Start',
+          x: 40,
+          y: 260,
+        ),
       ],
       edges: const [],
+    );
+  }
+
+  /// Reconstruye desde JSON. Tolera listas ausentes.
+  factory fromJson(Map<String, dynamic> json) {
+    final rawNodes = json['nodes'] as List? ?? const [];
+    final rawEdges = json['edges'] as List? ?? const [];
+    return VnProject(
+      title: json['title'] as String? ?? 'Sin título',
+      nodes: rawNodes
+          .whereType<Map<String, dynamic>>()
+          .map(VnNode.fromJson)
+          .toList(),
+      edges: rawEdges
+          .whereType<Map<String, dynamic>>()
+          .map(VnEdge.fromJson)
+          .toList(),
     );
   }
 
@@ -384,23 +407,6 @@ class VnProject {
     'nodes': nodes.map((n) => n.toJson()).toList(),
     'edges': edges.map((e) => e.toJson()).toList(),
   };
-
-  /// Reconstruye desde JSON. Tolera listas ausentes.
-  factory VnProject.fromJson(Map<String, dynamic> json) {
-    final rawNodes = json['nodes'] as List? ?? const [];
-    final rawEdges = json['edges'] as List? ?? const [];
-    return VnProject(
-      title: json['title'] as String? ?? 'Sin título',
-      nodes: rawNodes
-          .whereType<Map<String, dynamic>>()
-          .map(VnNode.fromJson)
-          .toList(),
-      edges: rawEdges
-          .whereType<Map<String, dynamic>>()
-          .map(VnEdge.fromJson)
-          .toList(),
-    );
-  }
 
   /// Copia con los campos indicados reemplazados.
   VnProject copyWith({

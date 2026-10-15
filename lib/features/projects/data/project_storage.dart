@@ -2,10 +2,9 @@
 // Claves versionadas: si el formato cambia, se bumpéa _kVersion.
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:me_proyecto/features/graph/models/vn_models.dart';
 import 'package:me_proyecto/features/projects/models/saved_slot.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Guarda/carga hasta 3 proyectos en el almacenamiento local.
 ///
@@ -38,7 +37,7 @@ class ProjectStorage {
     try {
       final json = jsonDecode(raw) as Map<String, dynamic>;
       return SavedSlot.tryFromJson(slot, json);
-    } catch (_) {
+    } on Object catch (_) {
       return null;
     }
   }
@@ -87,7 +86,7 @@ class ProjectStorage {
   Future<SavedSlot?> loadLast() async {
     final last = await lastSlot();
     if (last == null) return null;
-    return loadSlot(last);
+    return await loadSlot(last);
   }
 
   void _checkRange(int slot) {
