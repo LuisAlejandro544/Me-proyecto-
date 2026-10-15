@@ -18,6 +18,11 @@ lib/
     editor/painters.dart        # GridPainter + EdgePainter versionado
     player/player_screen.dart   # preview jugable
     export/html_exporter.dart   # HTML autocontenido (CSS propio, no tokens)
+  features/assets/
+    assets.dart            # barrel del apartado Assets
+    models/asset_models.dart   # UserAsset + AssetTag, puro Dart
+    state/asset_controller.dart # CRUD + filtro + export/import JSON
+    assets_screen.dart         # administrador (etiquetas, exportar)
 ```
 
 ## Presupuesto de rendimiento (tostadora: 60fps con 500 nodos)
