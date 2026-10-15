@@ -13,6 +13,9 @@
 **Decisión:** `android/` commiteado; workflow `apk-debug.yml` manual publica en el tag rodante `android-debug`.
 **Consecuencia:** Luis instala desde el celular sin PC; el release se sobrescribe en cada ejecución.
 
-## ADR-004 — Sin lockfiles en git
-**Decisión:** `package-lock.json` y `Cargo.lock` ignorados; CI resuelve en cada run.
+## ADR-004 — Sin lockfiles en git**Decisión:** `package-lock.json` y `Cargo.lock` ignorados; CI resuelve en cada run.
 **Consecuencia:** diffs limpios a cambio de resolución no pinnada (aceptable en este tamaño).
+
+## ADR-005 — Modularización por dominios (sin rewrite)
+**Decisión:** partir `studio.ts` (1650 líneas) en `lib/studio/{data,domain,ui}/` + `context.ts` como único estado mutable, con extracción mecánica verificada (build + check + captura headless idéntica).
+**Consecuencia:** cada módulo tiene una sola razón de cambio; `context.ts` es el seam para migrar a stores Svelte por slices (Fase 2: componentes por tipo de nodo).

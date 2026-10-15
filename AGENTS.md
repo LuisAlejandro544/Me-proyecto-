@@ -11,8 +11,9 @@ Idioma del repo: español en respuestas al usuario.
 - `npx cap sync` tras `npm run build` (móvil)
 
 ## Estructura
-- `src/App.svelte` — markup portado del HTML legacy (ids intactos, NO renombrar ids)
-- `src/lib/studio.ts` — lógica legacy (`// @ts-nocheck`); expone `initStudio()` / `getStudioState()`
+- `src/App.svelte` — shell mínimo, monta `components/StudioShell.svelte`
+- `src/components/StudioShell.svelte` — chrome portado (ids intactos, NO renombrar ids)
+- `src/lib/studio/` — módulos por dominio (`data/`, `domain/`, `ui/`); barrel `index.ts`; estado en `context.ts`
 - `src/lib/types.ts` — tipos `VNNode`, `VNWire`, `VNState` (usar en código nuevo)
 - `src/lib/platform.ts` — export nativo (Tauri `dialog`/`fs`, Capacitor `Filesystem`/`Share`)
 - `my_novel_visual_novel_node_studio.html` — referencia legacy, no borrar

@@ -7,9 +7,24 @@
 ```
 
 - Una sola base web (`src/`) alimenta desktop y móvil.
-- `src/App.svelte` monta el markup (ids intactos, los usa `studio.ts`).
-- `src/lib/studio.ts` = lógica del editor; `initStudio()` se llama en `onMount` (nunca wiring DOM a top-level del módulo).
+- `src/App.svelte` es solo el shell: monta `components/StudioShell.svelte` (chrome: header, canvas, footer, modales).
+- `src/lib/studio/` — lógica del editor partida por dominios (ver mapa abajo). Barrel: `index.ts` (`initStudio()`, `getStudioState()`).
 - `src/lib/platform.ts` = puente de export nativo (Tauri dialog/fs, Capacitor Filesystem/Share).
-- Estado canónico del grafo: ver tipos en `src/lib/types.ts`.
+- Estado canónico del grafo: tipos en `src/lib/types.ts`; estado mutable legacy centralizado en `studio/context.ts`.
+
+```
+src/lib/studio/
+├── index.ts        # orquesta: initStudio(), getStudioState(), wiring top-bar
+├── context.ts      # ÚNICO estado mutable legacy (ctx.*)
+├── data/           # assets.ts (sprites), presets.ts (Sora/Aoi)
+├── domain/         # audio.ts, history.ts, geometry.ts (puros + DOM queries)
+└── ui/             # render-nodes, render-wires, interactions, viewport,
+                    # transform, minimap, editors, playtest, workspace,
+                    # exporter, load-preset, toast
+src/components/
+└── StudioShell.svelte  # chrome estático + onMount(initStudio)
+```
+
+**Fase 2 (pendiente):** migrar cada tipo de nodo a componente Svelte (`NodeCard/*`) y el estado a stores (`lib/stores/project.svelte.ts`); `context.ts` es el seam para hacerlo por slices.
 
 Ver también: `docs/DECISIONS.md` (por qué este stack), `docs/RELEASING.md` (cómo publicar).
