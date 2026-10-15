@@ -48,6 +48,12 @@ y nada en pan/pinch/zoom); el minimapa va con `scheduleMinimap()`.
 el invitado entra por `checkSharedPlayModeOnBoot()` → `enterSharedPlayMode()`
 (progreso `#shareLoading`, `body.shared-play-mode`, `renderPlaytestStep`).
 
+**Auto-update:**
+`ui/updater.ts → checkForUpdates()` (compara `tag_name` de `releases/latest`
+con `__APP_VERSION__`) → `UpdateModal.svelte` (`#updateModal`). No toques los
+disparadores del workflow: solo `release: published` + `workflow_dispatch`
+(nunca push/PR).
+
 ## Qué no hacer
 
 - No toques `my_novel_visual_novel_node_studio.html` salvo para consultar.

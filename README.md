@@ -94,6 +94,18 @@ Formato: `https://tu-dominio-publico/#nivel=<base64url>` con `{ v, permiso, proy
 - Límite práctico: ~8 KB de URL; con vídeos se supera rápido y el modal avisa
   y recomienda el `.html`.
 
+## Actualizaciones automáticas
+
+- La app revisa `releases/latest` en GitHub al arrancar (1 vez/24h) y con el
+  botón **Buscar actualizaciones** (`#btnCheckUpdates` en la cabecera).
+- Si hay versión nueva muestra la pantalla **«Nueva actualización disponible»**
+  (`#updateModal`): Descargar .zip / Recargar app / Ver release / Omitir /
+  Recordar mañana. El repo a vigilar se cambia en Ajustes o con `VITE_UPDATE_REPO`.
+- El canal lo alimenta el workflow **`Auto-update`**: SOLO corre al publicar un
+  release o manual (nunca por commits/PRs) y adjunta al release el `.zip` web
+  de toda la app + `.zip` del código + `update.json`. Detalle en
+  `docs/RELEASING.md`.
+
 ## Estructura resumida
 
 ```text
@@ -105,6 +117,8 @@ src/lib/studio/ui/render-nodes.ts  tarjetas + puertos + toolbar ✏️/🗑
 src/lib/studio/ui/node-editor.ts   editor completo + eliminar/duplicar
 src/lib/studio/ui/share.ts         URL para jugar + carga + fullscreen
 src/lib/studio/ui/render-wires.ts  cables SVG + popover
+src/lib/studio/ui/updater.ts      chequeo de releases/latest + pantalla #updateModal
+src/components/UpdateModal.svelte pantalla «Nueva actualización disponible»
 src/lib/platform.ts             Tauri dialog/fs + Capacitor Filesystem/Share
 my_novel_visual_novel_node_studio.html  referencia legacy (no borrar)
 ```

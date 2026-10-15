@@ -54,6 +54,11 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
   `#vnVideoPlayer`/`#vnAudioPlayer` + `#btnVnFullscreen`/`closePlaytest()`;
   assets con vídeo: `lib/assets.ts` (`imagen|video|audio`).
 - Plataforma: `lib/platform.ts`; assets: `lib/assets.ts` + `studio/data/assets.ts`.
+- Auto-update: `ui/updater.ts` (`fetchLatestRelease`/`checkForUpdates` contra
+  `releases/latest`, respeta omitir/recordar-mañana en `localStorage`) +
+  `components/UpdateModal.svelte` (`#updateModal`) + botón `#btnCheckUpdates`
+  (`#updateDot`); el workflow `auto-update.yml` SOLO corre en release
+  publicado o manual (nunca push/PR; ver `docs/RELEASING.md`).
 
 ## Patrones de edición
 

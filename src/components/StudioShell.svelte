@@ -18,6 +18,7 @@
   import ShareLoading from './ShareLoading.svelte';
   import ToastBanner from './ToastBanner.svelte';
   import TopBar from './TopBar.svelte';
+  import UpdateModal from './UpdateModal.svelte';
 </script><!-- Ported body markup (ids preserved so lib/studio.ts keeps working) -->
 <!-- Original <body> classes restored: flex column fills viewport, main flex-1 gets height -->
 <div class="flex flex-col h-screen w-screen overflow-hidden select-none">
@@ -28,4 +29,5 @@
   <PlaytestModal />
   <ShareLoading />
   <ToastBanner />
+  <UpdateModal />
 </div>

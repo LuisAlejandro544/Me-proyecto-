@@ -16,7 +16,8 @@ Me-proyecto-/
 │   │       │                 #projectDropdownMenu .preset-option
 │   │       │                 #btnShareLevel #btnPlayPreviewTop #btnUndo #btnRedo
 │   │       │                 #btnZoomResetTop #topZoomLabel #btnExportExe
-│   │       │                 #btnExportHtml #btnTopSettings
+│   │       │                 #btnExportHtml #btnTopSettings #btnCheckUpdates #updateDot
+│   │       │                 (+ #updateModal #updateVersionBadge #btnDownloadUpdate)
 │   │       ├── main#canvasViewport  lienzo
 │   │       │   ├── #pillPresetSora #pillPresetAoi
 │   │       │   ├── #panLayer > #canvasWorld > svg#wiresSvg > g#wiresLayer
@@ -34,7 +35,7 @@ Me-proyecto-/
 │   │       │                 #vnExpressionTag #vnDialogueText #vnVariablesReadout #btnVnNext
 │   │       │                 (drawer comparte #shareBase #shareHtml)
 │   │       ├── #shareLoading #shareLoadingMsg #shareLoadingBar #shareLoadingGame
-│   │       └── #toastBanner #toastMessage (+ toast Svelte)
+│   │       │   └── #updateModal (pantalla auto-update) + #toastBanner #toastMessage
 │   └── lib/
 │       ├── types.ts          VNNode (+video/audio/sound) VNWire VNState GraphSnapshot DragState SfxKind
 │       ├── platform.ts       isTauri/isCapacitor + saveHtmlExport (dialog/fs, Filesystem/Share)
@@ -70,13 +71,15 @@ Me-proyecto-/
 │               ├── workspace.ts     openWorkspaceTab + addNewNodeOfType + assets/timeline/chars
 │               ├── share.ts         getShareBaseUrl/isLocalOrPrivateHost/buildShareUrl/
 │               │                         parseShareHash/openShareModal (base editable + .html)/
-│               │                         downloadPlayableHtml/enterSharedPlayMode/checkSharedPlayModeOnBoot
+│               │               downloadPlayableHtml/enterSharedPlayMode/checkSharedPlayModeOnBoot
+│               ├── updater.ts       check GitHub releases/latest + pantalla #updateModal
+│               │                     + descarga .zip (Tauri save/fs, Capacitor Share)
 │               └── toast.ts         showToast
 ├── src-tauri/  tauri.conf.json (frontendDist ../dist) + main.rs + plugin-fs/dialog
 ├── android/    proyecto Capacitor (generado, no editar a mano; `npx cap sync`)
 ├── capacitor.config.ts
 ├── scripts/    bootstrap, check, build-all, package-web, release
-├── .github/workflows/  web-check, release-web, tauri-linux, apk-debug
+├── .github/workflows/  web-check (push/PR), release-web (manual), auto-update (SOLO release publicado + manual, nunca push/PR), tauri-linux (manual), apk-debug (manual)
 ├── my_novel_visual_novel_node_studio.html  referencia legacy (NO borrar)
 └── icon.svg    fuente de iconos
 ```
@@ -93,6 +96,7 @@ Me-proyecto-/
 | Cambiar compartir/jugar | `ui/share.ts` + `StudioShell.svelte` (`#btnShareLevel`, `#shareLoading`, `#playtestModal`) + `app.css` (`shared-play-mode`) |
 | Añadir pestaña inferior | `StudioShell.svelte` (footer) + `ui/workspace.ts` (`openWorkspaceTab`) |
 | Cambiar export nativo | `lib/platform.ts` + `ui/exporter.ts` |
+| Cambiar auto-update | `ui/updater.ts` + `components/UpdateModal.svelte` (`#updateModal`) + workflow `auto-update.yml` (solo `release: published` + `workflow_dispatch`; ver `docs/RELEASING.md`) |
 | Añadir personaje base | `studio/data/assets.ts` + `lib/assets.ts` |
 
 ## Reglas de ids y wiring

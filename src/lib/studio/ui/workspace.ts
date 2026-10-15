@@ -8,6 +8,7 @@ import { pushHistory } from '../domain/history';
 import { startPlaytest } from './playtest';
 import { renderNodes } from './render-nodes';
 import { showToast } from './toast';
+import { getCurrentVersion, getUpdateRepo, setUpdateRepo, checkForUpdates } from './updater';
 import {
   assetSizeLabel,
   getCustomAssets,
@@ -475,6 +476,29 @@ export function openWorkspaceTab(tabName) {
     titleEl.textContent = 'Ajustes globales y sintetizador de audio';
     bodyEl.innerHTML = `
       <div class="space-y-4">
+        <div class="vn-anim-card p-3.5 rounded-xl bg-[#101528] border border-emerald-500/30">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <div class="font-semibold text-white text-sm">🔄 Actualizaciones automáticas</div>
+              <div class="text-xs text-slate-400">La app revisa el último GitHub Release y te avisa con pantalla</div>
+            </div>
+            <span id="settingsAppVersion" class="text-[11px] font-mono px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 shrink-0">v…</span>
+          </div>
+          <label class="block mt-3">
+            <span class="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Repo de releases (propietario/repo)</span>
+            <input id="updateRepoInput" spellcheck="false"
+              class="w-full rounded-xl bg-[#0f1428] border border-slate-600 px-3 py-2.5 text-xs text-white font-mono outline-none focus:border-emerald-400 min-h-[44px]" />
+          </label>
+          <div class="flex flex-wrap gap-2 mt-3">
+            <button id="btnSettingsCheckUpdates" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-xs font-bold text-slate-950 min-h-[44px]">
+              🔍 Buscar actualizaciones
+            </button>
+            <button id="btnSettingsSaveRepo" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-slate-200 min-h-[44px]">
+              Guardar repo
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-2">Canal: workflow «Auto-update» (solo al publicar un release o manual, nunca por commits/PRs) adjunta al release el .zip de toda la app. En web descarga el .zip; en Tauri/Capacitor también lo guarda con diálogo nativo.</p>
+        </div>
         <div class="vn-anim-card flex items-center justify-between p-3.5 rounded-xl bg-[#101528] border border-slate-700">
           <div>
             <div class="font-semibold text-white text-sm">Efectos de sonido de la interfaz y la novela</div>
@@ -509,6 +533,28 @@ export function openWorkspaceTab(tabName) {
       a.click();
       showToast('«mi_novela_proyecto.json» descargado');
     };
+    // Auto-actualizaciones: versión visible + repo editable + chequeo manual.
+    try {
+      const vEl = document.getElementById('settingsAppVersion');
+      if (vEl) vEl.textContent = `v${getCurrentVersion()}`;
+      const repoInput = document.getElementById('updateRepoInput') as HTMLInputElement | null;
+      if (repoInput) repoInput.value = getUpdateRepo();
+      const btnCheck = document.getElementById('btnSettingsCheckUpdates');
+      if (btnCheck) {
+        (btnCheck as HTMLElement).onclick = async () => {
+          (btnCheck as HTMLButtonElement).textContent = 'Buscando… 🔍';
+          await checkForUpdates({ silent: false, manual: true });
+          (btnCheck as HTMLButtonElement).textContent = '🔍 Buscar actualizaciones';
+        };
+      }
+      const btnRepo = document.getElementById('btnSettingsSaveRepo');
+      if (btnRepo) {
+        (btnRepo as HTMLElement).onclick = () => {
+          setUpdateRepo(repoInput?.value ?? '');
+          showToast('Repo de actualizaciones guardado 🔄');
+        };
+      }
+    } catch {}
   }
 }
 export function addNewNodeOfType(type) {

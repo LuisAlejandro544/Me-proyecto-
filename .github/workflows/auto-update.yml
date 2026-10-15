@@ -1,0 +1,115 @@
+name: Auto-update (releases con zip)
+
+# Canal de auto-actualización de la app:
+# - Al PUBLICAR un release en GitHub (Releases > Draft new release > Publish)
+#   empaqueta TODA la app web en un .zip y lo sube a ese mismo release
+#   junto a un manifiesto `update.json`.
+# - La app escanea `GET /repos/{owner}/{repo}/releases/latest`, compara
+#   `tag_name` con su versión y muestra la pantalla "Nueva actualización".
+# - También se puede lanzar a mano desde Actions > Run workflow.
+#
+# Disparadores: SOLO `release` publicado y `workflow_dispatch` (manual).
+# NUNCA por push/commits, pull_request, ni ningún otro evento.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag del release (ej. v0.2.0). Vacío = v<package.json>'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  auto-update-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install --no-audit --no-fund
+
+      - name: Resolver tag
+        id: tag
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ github.event.release.tag_name }}" ]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=v$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+          fi
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Empaquetar web (.zip de toda la app)
+        run: bash scripts/package-web.sh release
+
+      - name: Empaquetar código fuente (.zip completo)
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          mkdir -p release
+          git archive --format=zip --prefix="me-proyecto-studio-${TAG}/" HEAD \
+            -o "release/me-proyecto-studio-source-${TAG}.zip"
+          ls -lh release/
+
+      - name: Generar manifiesto update.json
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          VERSION="${{ steps.tag.outputs.version }}"
+          WEBZIP=$(ls release/my-novel-studio-web-*.zip | head -n 1 | xargs basename)
+          SRCZIP="me-proyecto-studio-source-${TAG}.zip"
+          REPO="${{ github.repository }}"
+          node -e "
+            const fs = require('fs');
+            const m = {
+              app: 'me-proyecto-studio',
+              version: '${VERSION}',
+              tag: '${TAG}',
+              published_at: new Date().toISOString(),
+              notes: 'Actualización ${TAG}: descarga el .zip web y reinstala/recarga.',
+              repo: '${REPO}',
+              assets: {
+                web_zip: '${WEBZIP}',
+                web_url: 'https://github.com/${REPO}/releases/download/${TAG}/${WEBZIP}',
+                source_zip: '${SRCZIP}',
+                source_url: 'https://github.com/${REPO}/releases/download/${TAG}/${SRCZIP}'
+              },
+              // La app web/Tauri NO se auto-sobreescribe en caliente: descarga el
+              // .zip y guía al usuario (web: recargar Pages; desktop: instalar
+              // el nuevo build). El updater nativo real (Tauri Updater) llegará
+              // con firma de binarios en el roadmap.
+              install_hint: 'Descarga el .zip web o espera al instalador de tu plataforma.'
+            };
+            fs.writeFileSync('release/update.json', JSON.stringify(m, null, 2));
+            console.log(fs.readFileSync('release/update.json', 'utf8'));
+          "
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: auto-update-${{ steps.tag.outputs.tag }}
+          path: release/*
+
+      - name: Publicar / adjuntar assets al Release (zip web + zip fuente + update.json)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          gh release create "$TAG" release/* \
+            --title "My Novel Studio $TAG (auto-update)" \
+            --notes "Auto-actualización $TAG.
+
+          La app detecta este release al arrancar y muestra la pantalla «Nueva actualización disponible».
+
+          - \`my-novel-studio-web-*.zip\`: app web completa (\`dist/\` + html legacy) — la app lo descarga desde el botón Actualizar.
+          - \`me-proyecto-studio-source-*.zip\`: código completo de la app.
+          - \`update.json\`: manifiesto (versión, tag, URLs) para el chequeo automático." \
+          || gh release upload "$TAG" release/* --clobber

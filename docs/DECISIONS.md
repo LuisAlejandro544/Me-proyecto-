@@ -32,3 +32,13 @@ táctil → `transform: scale` (60fps). Pan siempre en `#panLayer`; la matemáti
 con menos funciones y más mantenimiento. Stack único: TypeScript (Svelte → Tauri + Capacitor).
 **Nota técnica rescatada:** `file://` es origen `null` y bloquea CSS/JS por CORS;
 por eso el shell servía `dist/` por HTTP local. Tauri/Capacitor usan esquemas propios y no les afecta.
+
+## ADR-008 — Auto-update solo en release publicado o manual
+**Contexto:** el canal de auto-actualización empaqueta y publica binarios en
+Releases; dispararlo por push/commits/PRs genera releases basura y ruido en CI.
+**Decisión:** `auto-update.yml` escucha SOLO `release: published` +
+`workflow_dispatch` (manual). Crear el tag `v*` sin publicar el release NO lo
+dispara; `web-check.yml` sigue siendo el único que corre en push/PR.
+**Consecuencia:** publicar = GitHub → Releases → Draft new release → Publish
+(o Actions → Run); la app detecta el `releases/latest` y muestra `#updateModal`.
+El updater nativo en caliente (Tauri Updater firmado) queda para roadmap.
