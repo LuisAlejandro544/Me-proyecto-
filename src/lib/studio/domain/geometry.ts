@@ -1,9 +1,9 @@
-// @ts-nocheck
-// Studio module — see src/lib/studio/index.ts barrel and docs/ARCHITECTURE.md.
+// Pure canvas geometry (+ DOM-measured port positions). Fully typed.
 import { ctx } from '../context';
+import type { Point } from '../../types';
 
-export function getPortPosition(nodeId, portId) {
-  const node = ctx.state.nodes.find(n => n.id === nodeId);
+export function getPortPosition(nodeId: string, portId: string): Point {
+  const node = ctx.state.nodes.find((n) => n.id === nodeId);
   if (!node) return { x: 0, y: 0 };
 
   // Check DOM element first for exact visual alignment
@@ -24,11 +24,11 @@ export function getPortPosition(nodeId, portId) {
     y: node.y + 80
   };
 }
-export function buildBezierPath(x1, y1, x2, y2) {
+export function buildBezierPath(x1: number, y1: number, x2: number, y2: number): string {
   const dx = Math.max(Math.abs(x2 - x1) * 0.55, 60);
   return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
 }
-export function escapeHtml(str) {
+export function escapeHtml(str: unknown): string {
   return String(str ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
