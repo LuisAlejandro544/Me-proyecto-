@@ -40,3 +40,7 @@ lib/
 8. **Grid por tiles** de 512px alineados al grid global: solo existen los
    visibles, memoria constante (el canvas gigante rozaba el límite de
    textura GPU). 12 tiles: 0.59 ms total.
+9. **Aristas por tiles** (`EdgeTilePainter`): adiós a la textura de ~98MB
+   del canvas completo que ahogaba iGPUs viejas (Intel HD). Cada tile
+   filtra aristas por bbox y lotea en 2 paths + puntos. Tile adaptativo:
+   512px normal, 1024px con zoom bajo para dar menos capas.

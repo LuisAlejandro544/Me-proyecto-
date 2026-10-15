@@ -47,4 +47,19 @@ void main() {
       }
     });
   });
+
+  test('bench_aristas_por_tiles', () {
+    final p = VnProject.stress500();
+    const tile = Size(GridTilePainter.tile, GridTilePainter.tile);
+    bench('edges-tiled-12', () {
+      for (var tx = 0; tx < 4; tx++) {
+        for (var ty = 0; ty < 3; ty++) {
+          paintOnce(
+            EdgeTilePainter(project: p, version: 1, tx: tx, ty: ty),
+            tile,
+          );
+        }
+      }
+    });
+  });
 }

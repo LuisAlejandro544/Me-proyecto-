@@ -11,8 +11,8 @@ import 'package:me_proyecto/features/graph/models/vn_models.dart';
 
 /// Pinta un tile del grid. Los tiles son fijos: memoria constante.
 class GridTilePainter extends CustomPainter {
-  /// Crea el painter del tile ([tx], [ty]).
-  const new({required this.tx, required this.ty});
+  /// Crea el painter del tile ([tx], [ty]) con lado [size].
+  const new({required this.tx, required this.ty, this.size = tile});
 
   /// Columna del tile en la rejilla.
   final int tx;
@@ -21,6 +21,9 @@ class GridTilePainter extends CustomPainter {
   final int ty;
 
   /// Lado del tile en píxeles de escena.
+  final double size;
+
+  /// Lado base del tile; se duplica con zoom bajo para dar menos capas.
   static const double tile = 512;
 
   /// Separación de líneas del grid.
@@ -31,22 +34,22 @@ class GridTilePainter extends CustomPainter {
     final p = Paint()
       ..color = AppColors.surface
       ..strokeWidth = 1;
-    final ox = tx * tile;
-    final oy = ty * tile;
+    final ox = tx * size;
+    final oy = ty * size;
     // Alineado al grid global para que las líneas no se corten entre tiles.
     final startX = ox - (ox % step);
-    for (var x = startX; x <= ox + tile; x += step) {
-      c.drawLine(Offset(x - ox, 0), Offset(x - ox, tile), p);
+    for (var x = startX; x <= ox + size; x += step) {
+      c.drawLine(Offset(x - ox, 0), Offset(x - ox, size), p);
     }
     final startY = oy - (oy % step);
-    for (var y = startY; y <= oy + tile; y += step) {
-      c.drawLine(Offset(0, y - oy), Offset(tile, y - oy), p);
+    for (var y = startY; y <= oy + size; y += step) {
+      c.drawLine(Offset(0, y - oy), Offset(size, y - oy), p);
     }
   }
 
   @override
   bool shouldRepaint(covariant GridTilePainter old) =>
-      old.tx != tx || old.ty != ty;
+      old.tx != tx || old.ty != ty || old.size != size;
 }
 
 /// Pinta todas las aristas en lote (2 paths + puntos).
@@ -118,4 +121,109 @@ class EdgePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant EdgePainter old) => old.version != version;
+}
+
+/// Pinta en lote solo las aristas que cruzan un tile.
+/// Comparte la rejilla de [GridTilePainter] para alinear capas y
+/// evita la textura gigante del canvas completo que ahoga a las iGPU.
+class EdgeTilePainter extends CustomPainter {
+  /// Crea el painter del tile ([tx], [ty]) para [project] y [version].
+  new({
+    required this.project,
+    required this.version,
+    required this.tx,
+    required this.ty,
+    this.size = GridTilePainter.tile,
+  });
+
+  /// Proyecto cuyas aristas se dibujan.
+  final VnProject project;
+
+  /// Versión de datos; repinta solo si cambia.
+  final int version;
+
+  /// Columna del tile.
+  final int tx;
+
+  /// Fila del tile.
+  final int ty;
+
+  /// Lado del tile en píxeles de escena.
+  final double size;
+
+  static Offset _out(VnNode n) =>
+      Offset(n.x + (n.type == VnNodeType.start ? 110 : 190), n.y + 40);
+  static Offset _inp(VnNode n) => Offset(n.x, n.y + 40);
+
+  @override
+  void paint(Canvas canvas, Size s) {
+    // Margen para grosor de línea y dots en el borde del tile.
+    final bounds = Rect.fromLTWH(
+      tx * size - 12,
+      ty * size - 12,
+      size + 24,
+      size + 24,
+    );
+    final idx = <String, VnNode>{for (final n in project.nodes) n.id: n};
+    final cyanPath = Path();
+    final redPath = Path();
+    final cyanPts = <double>[];
+    final redPts = <double>[];
+    for (final e in project.edges) {
+      final a = idx[e.fromId];
+      final b = idx[e.toId];
+      if (a == null || b == null) continue;
+      final p1 = _out(a);
+      final p2 = _inp(b);
+      // La curva vive dentro del bbox de sus extremos: si no toca el
+      // tile se salta sin pintar nada.
+      if (!Rect.fromPoints(p1, p2).overlaps(bounds)) continue;
+      final mid = (p1.dx + p2.dx) / 2;
+      (e.isDanger ? redPath : cyanPath)
+        ..moveTo(p1.dx - tx * size, p1.dy - ty * size)
+        ..cubicTo(
+          mid - tx * size,
+          p1.dy - ty * size,
+          mid - tx * size,
+          p2.dy - ty * size,
+          p2.dx - tx * size,
+          p2.dy - ty * size,
+        );
+      (e.isDanger ? redPts : cyanPts)
+        ..add(p2.dx - tx * size)
+        ..add(p2.dy - ty * size);
+    }
+    final cyanLine = Paint()
+      ..color = AppColors.cyan
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+    final redLine = Paint()
+      ..color = AppColors.danger
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+    canvas
+      ..drawPath(cyanPath, cyanLine)
+      ..drawPath(redPath, redLine);
+    _dots(canvas, cyanPts, AppColors.cyan);
+    _dots(canvas, redPts, AppColors.danger);
+  }
+
+  void _dots(Canvas canvas, List<double> pts, Color color) {
+    if (pts.isEmpty) return;
+    canvas.drawRawPoints(
+      ui.PointMode.points,
+      Float32List.fromList(pts),
+      Paint()
+        ..color = color
+        ..strokeWidth = 10
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant EdgeTilePainter old) =>
+      old.version != version ||
+      old.tx != tx ||
+      old.ty != ty ||
+      old.size != size;
 }

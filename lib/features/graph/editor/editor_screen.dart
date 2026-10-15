@@ -163,6 +163,17 @@ class _EditorScreenState extends State<EditorScreen> {
                 builder: (ctx, _) {
                   final vis = _visibleRect(cons.biggest);
                   final size = graph.canvasSize;
+                  // Tile adaptativo: con zoom bajo el canvas visible es
+                  // enorme y 512px daría cientos de capas en una HD 5500.
+                  final scale = zoom.value.getMaxScaleOnAxis();
+                  final tSize = scale >= 0.75
+                      ? GridTilePainter.tile
+                      : GridTilePainter.tile * 2;
+                  final x0 = (vis.left / tSize).floor();
+                  final x1 = (vis.right / tSize).floor();
+                  final y0 = (vis.top / tSize).floor();
+                  final y1 = (vis.bottom / tSize).floor();
+                  final edgeVersion = graph.edgeVersion.value;
                   final visibles = <VnNode>[];
                   for (final n in project.nodes) {
                     final p = graph.posOf[n.id]?.value ?? Offset(n.x, n.y);
@@ -184,39 +195,43 @@ class _EditorScreenState extends State<EditorScreen> {
                         children: [
                           // Grid por tiles: solo existen los visibles, memoria
                           // constante. El pan los mueve la GPU sin repintar.
-                          for (
-                            var gx = (vis.left / GridTilePainter.tile).floor();
-                            gx <= (vis.right / GridTilePainter.tile).floor();
-                            gx++
-                          )
-                            for (
-                              var gy = (vis.top / GridTilePainter.tile).floor();
-                              gy <= (vis.bottom / GridTilePainter.tile).floor();
-                              gy++
-                            )
+                          for (var gx = x0; gx <= x1; gx++)
+                            for (var gy = y0; gy <= y1; gy++)
                               Positioned(
-                                left: gx * GridTilePainter.tile,
-                                top: gy * GridTilePainter.tile,
+                                left: gx * tSize,
+                                top: gy * tSize,
                                 child: RepaintBoundary(
                                   child: CustomPaint(
-                                    size: const Size(
-                                      GridTilePainter.tile,
-                                      GridTilePainter.tile,
+                                    size: Size(tSize, tSize),
+                                    painter: GridTilePainter(
+                                      tx: gx,
+                                      ty: gy,
+                                      size: tSize,
                                     ),
-                                    painter: GridTilePainter(tx: gx, ty: gy),
                                   ),
                                 ),
                               ),
-                          RepaintBoundary(
-                            child: CustomPaint(
-                              size: size,
-                              isComplex: true,
-                              painter: EdgePainter(
-                                project: project,
-                                version: graph.edgeVersion.value,
+                          // Aristas por tiles: adiós a la textura gigante
+                          // del canvas completo que ahogaba a la iGPU.
+                          for (var ex = x0; ex <= x1; ex++)
+                            for (var ey = y0; ey <= y1; ey++)
+                              Positioned(
+                                left: ex * tSize,
+                                top: ey * tSize,
+                                child: RepaintBoundary(
+                                  child: CustomPaint(
+                                    size: Size(tSize, tSize),
+                                    isComplex: true,
+                                    painter: EdgeTilePainter(
+                                      project: project,
+                                      version: edgeVersion,
+                                      tx: ex,
+                                      ty: ey,
+                                      size: tSize,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
                           for (final n in visibles)
                             ValueListenableBuilder<Offset>(
                               valueListenable: graph.posOf[n.id]!,
