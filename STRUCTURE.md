@@ -9,10 +9,12 @@ Me-proyecto-/
 ├── src/
 │   ├── main.ts               punto de entrada Vite
 │   ├── app.css               estilos portados + puertos + toolbar + móvil + share-play + playtest-horizontal
-│   ├── App.svelte            shell mínimo → StudioShell
+│   ├── App.svelte            shell mínimo → menú principal o StudioShell
 │   ├── components/
+│   │   ├── MainMenu.svelte     #mainMenu (continuar/autosave + 3 slots locales + nombre)
 │   │   └── StudioShell.svelte  chrome completo (ids INTACTOS, no renombrar)
-│   │       ├── header        #btnResetView #btnProjectDropdown #currentProjectLabel
+│   │       ├── header        #btnGoHome #btnResetView #btnProjectDropdown #currentProjectLabel
+│   │       │                 #projectNameInput .slot-save-btn[data-slot-save]
 │   │       │                 #projectDropdownMenu .preset-option
 │   │       │                 #btnShareLevel #btnPlayPreviewTop #btnUndo #btnRedo
 │   │       │                 #btnZoomResetTop #topZoomLabel #btnExportExe
@@ -37,13 +39,16 @@ Me-proyecto-/
 │   │       ├── #shareLoading #shareLoadingMsg #shareLoadingBar #shareLoadingGame
 │   │       │   └── #updateModal (pantalla auto-update) + #toastBanner #toastMessage
 │   └── lib/
-│       ├── types.ts          VNNode (+video/audio/sound) VNWire VNState GraphSnapshot DragState SfxKind
+│       ├── types.ts          VNNode (+video/audio/sound) VNWire VNState (+startNodeId) GraphSnapshot DragState SfxKind
 │       ├── platform.ts       isTauri/isCapacitor + saveHtmlExport (dialog/fs, Filesystem/Share)
 │       ├── assets.ts         galería (fotos+vídeos)/cámara/archivos (imagen+vídeo+audio) + catálogos
 │       └── studio/
-│           ├── index.ts        initStudio() idempotente + wiring de botones + Supr + share-boot
+│           ├── index.ts        initStudio() idempotente + wiring de botones + Supr + share-boot + enterEditor()
 │           ├── context.ts      ctx único { state, selectedNodeId, selectedWireId,
 │           │                         historyStack, redoStack, sfxEnabled, dragState… }
+│           ├── storage.ts      slots locales (3) + autosave + nombre + startNodeId
+│           │                         (loadSlots/saveSlot/clearSlot, scheduleAutosave,
+│           │                         applyLoadedState, renameProject, get/setStartNodeId)
 │           ├── data/
 │           │   ├── presets.ts  PRESET_SORA PRESET_AOI
 │           │   └── assets.ts   CHARACTER_ASSETS (base64 sora/yuki/aoi/mio)
@@ -52,7 +57,7 @@ Me-proyecto-/
 │           │   ├── geometry.ts getPortPosition buildBezierPath escapeHtml
 │           │   └── history.ts  pushHistory (30 pasos)
 │           └── ui/
-│               ├── render-nodes.ts  8 tipos + toolbar ✏️/🗑 + puertos a -9px
+│               ├── render-nodes.ts  8 tipos + toolbar ✏️/▶/🗑 + insignia ▶ INICIO + puertos a -9px
 │               │     banner_scene (in_main + portsOut repartidos %) · choice (in_main + out por opción; punto izq. decorativo)
 │               │     compact_scene · character_selector (in + out) · avatar_scene (in + outs)
 │               │     branch_scene (in + out) · video_scene (in + out, 🎬) · sound_cue (in + out, 🔊)

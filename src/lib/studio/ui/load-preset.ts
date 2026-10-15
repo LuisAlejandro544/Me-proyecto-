@@ -5,6 +5,7 @@ import { PRESET_AOI, PRESET_SORA } from '../data/presets';
 import { playSynthSfx } from '../domain/audio';
 import { renderNodes } from './render-nodes';
 import { applyTransform } from './transform';
+import { normalizeState, syncProjectLabel, scheduleAutosave, setActiveSlot } from '../storage';
 
 export function loadPreset(presetKey) {
   playSynthSfx('click');
@@ -45,15 +46,18 @@ export function loadPreset(presetKey) {
   // Update quick switcher pills
   const pillSora = document.getElementById('pillPresetSora');
   const pillAoi = document.getElementById('pillPresetAoi');
-  if (presetKey === 'sora') {
+  if (presetKey === 'sora' && pillSora && pillAoi) {
     pillSora.className = 'px-3 py-1 rounded-full text-xs font-semibold transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40';
     pillAoi.className = 'px-3 py-1 rounded-full text-xs font-semibold transition text-slate-400 hover:text-white';
-  } else if (presetKey === 'aoi') {
+  } else if (presetKey === 'aoi' && pillSora && pillAoi) {
     pillAoi.className = 'px-3 py-1 rounded-full text-xs font-semibold transition bg-rose-500/20 text-rose-300 border border-rose-400/40';
     pillSora.className = 'px-3 py-1 rounded-full text-xs font-semibold transition text-slate-400 hover:text-white';
   }
 
-  document.getElementById('currentProjectLabel').textContent = ctx.state.projectName;
+  normalizeState(ctx.state);
+  try { setActiveSlot(null); } catch {}
+  try { scheduleAutosave(); } catch {}
+  syncProjectLabel();
   // Limpia selección de cable/popover del preset anterior (eran del otro grafo).
   ctx.selectedWireId = null;
   document.querySelectorAll('.vn-wire-group.wire-selected').forEach((g) => g.classList.remove('wire-selected'));

@@ -8,6 +8,7 @@ import { openInlineEditorModal, openInlineOptionModal } from './editors';
 import { deleteNode, duplicateNode, openNodeEditor } from './node-editor';
 import { renderNodes } from './render-nodes';
 import { showToast } from './toast';
+import { setStartNodeId } from '../storage';
 import { getCharacterCatalog } from '../../assets';
 
 export function attachNodeInteractions() {
@@ -141,8 +142,15 @@ export function attachNodeInteractions() {
         playSynthSfx('click');
         openNodeEditor(nodeId);
       });
-    } else if (action === 'delete-node') {
+    } else if (action === 'set-start') {
       ctrl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        pushHistory();
+        playSynthSfx('click');
+        setStartNodeId(nodeId);
+        renderNodes();
+      });
+    } else if (action === 'delete-node') {      ctrl.addEventListener('click', (e) => {
         e.stopPropagation();
         playSynthSfx('click');
         if (confirm(`¿Eliminar este nodo y sus conexiones?`)) deleteNode(nodeId);

@@ -7,6 +7,7 @@ import { escapeHtml } from '../domain/geometry';
 import { pushHistory } from '../domain/history';
 import { renderNodes } from './render-nodes';
 import { showToast } from './toast';
+import { setStartNodeId } from '../storage';
 
 export function deleteNode(nodeId: string) {
   const node = ctx.state.nodes.find((n) => n.id === nodeId);
@@ -15,6 +16,10 @@ export function deleteNode(nodeId: string) {
   ctx.state.nodes = ctx.state.nodes.filter((n) => n.id !== nodeId);
   const removedWires = ctx.state.wires.filter((w) => w.fromNode === nodeId || w.toNode === nodeId).length;
   ctx.state.wires = ctx.state.wires.filter((w) => w.fromNode !== nodeId && w.toNode !== nodeId);
+  if ((ctx.state as { startNodeId?: string }).startNodeId === nodeId) {
+    (ctx.state as { startNodeId?: string }).startNodeId = ctx.state.nodes[0]?.id ?? '';
+    showToast('El nodo inicial se movió al primer nodo ▶');
+  }
   if (ctx.selectedNodeId === nodeId) {
     ctx.selectedNodeId = ctx.state.nodes[0]?.id ?? '';
   }
@@ -106,7 +111,10 @@ export function openNodeEditor(nodeId: string) {
   let form = `<div class="inline-flex items-center gap-2 mb-1">
       <span class="px-2.5 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-[11px] font-semibold text-cyan-300">${typeName}</span>
       <span class="font-mono text-[11px] text-slate-500">${escapeHtml(node.id)}</span>
-    </div><div class="space-y-3">`;
+    </div>
+    <button id="ed_setStart" class="w-full px-4 py-2.5 rounded-xl text-xs font-bold transition min-h-[44px] ${(ctx.state as { startNodeId?: string }).startNodeId === node.id ? 'bg-emerald-500/20 border border-emerald-400/50 text-emerald-200' : 'bg-slate-800 hover:bg-emerald-500/20 border border-slate-600 text-slate-200'}">
+      ${(ctx.state as { startNodeId?: string }).startNodeId === node.id ? '🟢 Este nodo inicia la partida (Jugar empieza aquí)' : '▶ Marcar como nodo inicial de la partida'}
+    </button><div class="space-y-3">`;
 
   if (node.type === 'banner_scene') {
     form += field('Etiqueta superior (badge)', `<input id="ed_badge" class="${inputCls}" value="${escapeHtml(node.badge ?? '')}" />`);
@@ -198,6 +206,12 @@ export function openNodeEditor(nodeId: string) {
     if (confirm(`¿Eliminar este nodo (${node.type}) y sus conexiones?`)) deleteNode(node.id);
   };
   $('ed_duplicate')!.onclick = () => duplicateNode(node.id);
+  const setStartBtn = $('ed_setStart');
+  if (setStartBtn) setStartBtn.onclick = () => {
+    pushHistory();
+    setStartNodeId(node.id);
+    openNodeEditor(node.id);
+  };
 
   const addBtn = $('ed_addOption');
   if (addBtn) addBtn.onclick = () => {
