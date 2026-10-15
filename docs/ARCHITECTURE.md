@@ -6,6 +6,11 @@
 └ legacy: my_novel_visual_novel_node_studio.html (referencia, no se toca)
 ```
 
+Donde viven los elementos de UI:
+- **Toda la UI** (top bar, canvas, nodos, wires, modales, playtest, bottom nav)
+  vive en `src/` (Svelte). El binario C++ (`cpp/`) solo la contiene.
+- Se retiró el port Qt Widgets (`qt/` eliminado): misma meta sin framework extra.
+
 - Una sola base web (`src/`) alimenta desktop y móvil.
 - `src/App.svelte` es solo el shell: monta `components/StudioShell.svelte` (chrome: header, canvas, footer, modales).
 - `src/lib/studio/` — lógica del editor partida por dominios (ver mapa abajo). Barrel: `index.ts` (`initStudio()`, `getStudioState()`).

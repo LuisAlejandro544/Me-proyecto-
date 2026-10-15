@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 ### Added
-- Port Qt Widgets/C++ en `qt/` (rebanada 1: preset Sora, canvas pan/zoom, nodos, wires con glow, smoke offscreen)
+- Shell nativo C++ en `cpp/` (webview, sin Qt); retira `qt/`
 ### Added
 - Importación de recursos (imágenes/audio) desde galería o administrador de archivos en web, PC (diálogo nativo Tauri) y móvil (galería/cámara Capacitor + respaldo a selector del sistema); módulo `src/lib/assets.ts` con persistencia local
 - Editor completo de nodos (`ui/node-editor.ts`): pregunta/diálogo, hablante y color, personaje y expresión, escala/posición y opciones de `choice` (añadir/quitar), con duplicar y eliminar

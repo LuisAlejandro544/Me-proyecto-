@@ -24,3 +24,8 @@
 **Contexto:** el `scale()` CSS rasterizaba los nodos como bitmap (+ `backdrop-filter`) y el texto se veía borroso al acercar.
 **Decisión:** `#panLayer` solo traslada (px de pantalla); `#canvasWorld` usa `zoom: <nivel>` para re-maquetar nítido. La matemática existente (`screenToWorld`, `zoomAtPoint`, drag ÷ zoom) no cambió.
 **Consecuencia:** texto y vectores nítidos de 35% a 200%; verificado con capturas headless.
+
+## ADR-007 — Shell C++ sin Qt, UI 100% web
+**Contexto:** se evaluó portar la UI a Qt Widgets y se descartó (curva + framework extra).
+**Decisión:** binario C++ (`cpp/`, librería `webview`) que hospeda `dist/`; cero rewrite de UI.
+**Consecuencia:** los bindings nativos (guardar archivo, etc.) se añaden en C++ sin tocar Svelte.
