@@ -219,22 +219,22 @@
 </script>
 
 <!-- Pantalla completa independiente del editor de composición (no es un popup). -->
-<div id="composerScreen" class="fixed inset-0 z-[80] flex flex-col bg-[#0d1124] text-slate-100">
-  <header class="flex items-center gap-2 px-3 sm:px-5 py-2.5 border-b border-slate-800 bg-[#111526]/95 shrink-0">
+<div id="composerScreen" class="fixed inset-0 z-[80] flex flex-col bg-[#0d1124] text-slate-100 w-screen max-w-[100vw] overflow-x-hidden box-border">
+  <header class="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-5 py-2.5 border-b border-slate-800 bg-[#111526]/95 shrink-0 min-w-0 max-w-full box-border">
     <button
       id="btnComposerBack"
       on:click={close}
-      class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-bold min-h-[44px]"
+      class="px-2 sm:px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-bold min-h-[44px] shrink-0"
     >
-      ← Volver
+      ← <span class="hidden min-[380px]:inline">Volver</span><span class="min-[380px]:hidden">Atrás</span>
     </button>
     <div class="flex-1 min-w-0">
-      <div class="text-sm font-bold truncate">🎨 Editor de escenas <span class="text-slate-400 font-normal">· fondo + sprites</span></div>
-      <div class="text-[11px] text-slate-400 truncate">Arrastra los sprites sobre el lienzo 16:9 y guárdalo en Recursos</div>
+      <div class="text-[13px] sm:text-sm font-bold truncate">🎨 Editor de escenas <span class="hidden min-[420px]:inline text-slate-400 font-normal">· fondo + sprites</span></div>
+      <div class="hidden sm:block text-[11px] text-slate-400 truncate">Arrastra los sprites sobre el lienzo 16:9 y guárdalo en Recursos</div>
     </div>
     <select
       aria-label="Composición activa"
-      class="hidden sm:block px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs max-w-52"
+      class="hidden sm:block px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs max-w-52 shrink-0 min-w-0"
       value={current?.id ?? ''}
       on:change={(e) => selectComposition((e.target as HTMLSelectElement).value)}
     >
@@ -245,16 +245,30 @@
     <button
       id="btnComposerNew"
       on:click={newComposition}
-      class="px-3 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-xs font-bold text-white min-h-[44px]"
+      class="px-2 sm:px-3 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-xs font-bold text-white min-h-[44px] shrink-0"
     >
-      ＋ Nueva
+      ＋ <span class="hidden min-[380px]:inline">Nueva</span><span class="min-[380px]:hidden">＋</span>
     </button>
   </header>
 
-  <div class="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
+  <!-- Selector de escena en móvil (segunda fila, a ancho completo, sin overflow) -->
+  <div class="sm:hidden px-2 py-1.5 border-b border-slate-800/70 bg-[#111526]/95 shrink-0 min-w-0 box-border">
+    <select
+      aria-label="Composición activa"
+      class="w-full min-w-0 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs min-h-[44px] truncate"
+      value={current?.id ?? ''}
+      on:change={(e) => selectComposition((e.target as HTMLSelectElement).value)}
+    >
+      {#each compositions as c (c.id)}
+        <option value={c.id}>{c.name}</option>
+      {/each}
+    </select>
+  </div>
+
+  <div class="flex-1 min-h-0 min-w-0 flex flex-col lg:flex-row overflow-hidden max-w-full">
     <!-- Lienzo 16:9 -->
-    <section class="flex-1 min-h-0 overflow-auto p-3 sm:p-5 flex flex-col items-center gap-3">
-      <div class="w-full max-w-3xl flex flex-wrap items-center gap-2">
+    <section class="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden box-border p-2 sm:p-5 flex flex-col items-stretch gap-3">
+      <div class="w-full max-w-3xl mx-auto min-w-0 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 box-border">
         <input
           aria-label="Nombre de la escena"
           bind:value={saveName}
@@ -266,18 +280,18 @@
               persist();
             }
           }}
-          class="flex-1 min-w-40 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs outline-none focus:border-cyan-400/70 min-h-[44px]"
+          class="w-full sm:flex-1 sm:min-w-40 min-w-0 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs outline-none focus:border-cyan-400/70 min-h-[44px] box-border"
         />
-        <div class="flex gap-1.5">
+        <div class="grid grid-cols-2 sm:flex gap-1.5 w-full sm:w-auto min-w-0">
           <button
             on:click={() => { sourceTarget = 'background'; showSourceMenu = true; }}
-            class="px-3 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-xs font-bold text-slate-950 min-h-[44px]"
+            class="px-3 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-xs font-bold text-slate-950 min-h-[44px] truncate min-w-0"
           >
             🖼 Fondo
           </button>
           <button
             on:click={() => { sourceTarget = 'layer'; showSourceMenu = true; }}
-            class="px-3 py-2 rounded-xl bg-fuchsia-500 hover:bg-fuchsia-400 text-xs font-bold text-white min-h-[44px]"
+            class="px-3 py-2 rounded-xl bg-fuchsia-500 hover:bg-fuchsia-400 text-xs font-bold text-white min-h-[44px] truncate min-w-0"
           >
             ✨ Sprite
           </button>
@@ -285,10 +299,10 @@
       </div>
 
       {#if showSourceMenu}
-        <div class="w-full max-w-3xl p-3 rounded-2xl bg-[#161c38] border border-slate-700 grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <button on:click={() => addFromDevice('gallery')} class="px-3 py-2.5 rounded-xl bg-indigo-500 text-xs font-bold min-h-[44px]">🖼️ Galería</button>
-          <button on:click={() => addFromDevice('files')} class="px-3 py-2.5 rounded-xl bg-slate-700 border border-slate-600 text-xs font-bold min-h-[44px]">📁 Archivos</button>
-          <button on:click={() => showSourceMenu = false} class="px-3 py-2.5 rounded-xl bg-transparent border border-slate-600 text-xs text-slate-300 min-h-[44px]">Cerrar</button>
+        <div class="w-full max-w-3xl mx-auto min-w-0 box-border p-3 rounded-2xl bg-[#161c38] border border-slate-700 grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button on:click={() => addFromDevice('gallery')} class="px-3 py-2.5 rounded-xl bg-indigo-500 text-xs font-bold min-h-[44px] min-w-0 truncate">🖼️ Galería</button>
+          <button on:click={() => addFromDevice('files')} class="px-3 py-2.5 rounded-xl bg-slate-700 border border-slate-600 text-xs font-bold min-h-[44px] min-w-0 truncate">📁 Archivos</button>
+          <button on:click={() => showSourceMenu = false} class="col-span-2 sm:col-span-2 px-3 py-2.5 rounded-xl bg-transparent border border-slate-600 text-xs text-slate-300 min-h-[44px]">Cerrar</button>
           <p class="col-span-2 sm:col-span-4 text-[11px] text-slate-400">
             {sourceTarget === 'background' ? 'El fondo' : 'El sprite'} también puede elegirse abajo desde tus Recursos o los sprites incluidos, sin salir de esta pantalla.
           </p>
@@ -301,7 +315,7 @@
         on:pointermove={onStagePointerMove}
         on:pointerup={onStagePointerUp}
         on:pointerleave={onStagePointerUp}
-        class="relative w-full max-w-3xl aspect-video rounded-2xl overflow-hidden border border-slate-700 select-none"
+        class="relative w-full max-w-3xl mx-auto min-w-0 aspect-video min-h-[220px] rounded-2xl overflow-hidden border border-slate-700 select-none box-border"
         style:background={current?.background ? undefined : (current?.bgColor ?? '#151b33')}
       >
         {#if current?.background}
@@ -340,25 +354,25 @@
           </div>
         {/each}
         {#if !(current?.layers?.length) && !current?.background}
-          <div class="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center p-6">
-            <div class="text-4xl">🎨</div>
+          <div class="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-center p-4 overflow-y-auto">
+            <div class="text-3xl leading-none">🎨</div>
             <div class="text-sm font-bold">Lienzo vacío</div>
-            <p class="text-xs text-slate-400 max-w-sm">Elige un fondo con «🖼 Fondo» y superpón sprites con «✨ Sprite» desde Recursos, sprites incluidos, galería o archivos.</p>
+            <p class="text-[11px] leading-snug text-slate-400 max-w-sm">Elige un fondo con «🖼 Fondo» y superpón sprites con «✨ Sprite» desde Recursos, sprites incluidos, galería o archivos.</p>
           </div>
         {/if}
       </div>
 
-      <div class="w-full max-w-3xl flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-        <span class="px-2 py-1 rounded-full bg-white/5 border border-white/10">Fondo: {current?.bgName ?? '—'}</span>
-        <span class="px-2 py-1 rounded-full bg-white/5 border border-white/10">{current?.layers.length ?? 0} sprite(s)</span>
-        {#if selectedLayer()}<span class="px-2 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-cyan-200">Seleccionado: {selectedLayer()?.name}</span>{/if}
+      <div class="w-full max-w-3xl mx-auto min-w-0 box-border flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+        <span class="px-2 py-1 rounded-full bg-white/5 border border-white/10 truncate max-w-full">Fondo: {current?.bgName ?? '—'}</span>
+        <span class="px-2 py-1 rounded-full bg-white/5 border border-white/10 shrink-0">{current?.layers.length ?? 0} sprite(s)</span>
+        {#if selectedLayer()}<span class="px-2 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-cyan-200 truncate max-w-full">Seleccionado: {selectedLayer()?.name}</span>{/if}
       </div>
 
       <!-- Catálogos rápidos sin salir de la pantalla -->
-      <div class="w-full max-w-3xl grid gap-3 md:grid-cols-2">
-        <div class="p-3 rounded-2xl bg-[#141a33] border border-slate-700/80">
-          <div class="text-xs font-bold mb-2">📁 Tus imágenes (toque = {sourceTarget === 'background' ? 'fondo' : 'sprite'})</div>
-          <div class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width: thin;">
+      <div class="w-full max-w-3xl mx-auto min-w-0 box-border grid gap-3 grid-cols-1 md:grid-cols-2">
+        <div class="p-3 rounded-2xl bg-[#141a33] border border-slate-700/80 min-w-0 max-w-full overflow-hidden box-border">
+          <div class="text-xs font-bold mb-2 truncate">📁 Tus imágenes (toque = {sourceTarget === 'background' ? 'fondo' : 'sprite'})</div>
+          <div class="flex gap-2 overflow-x-auto pb-1 min-w-0 max-w-full" style="scrollbar-width: thin;">
             {#each imageAssets() as a (a.id)}
               <button
                 on:click={() => (sourceTarget === 'background' ? setBackground(a.dataUrl, a.name) : addLayer(a.dataUrl, a.name))}
@@ -374,9 +388,9 @@
             {/if}
           </div>
         </div>
-        <div class="p-3 rounded-2xl bg-[#141a33] border border-slate-700/80">
-          <div class="text-xs font-bold mb-2">🎭 Sprites incluidos</div>
-          <div class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width: thin;">
+        <div class="p-3 rounded-2xl bg-[#141a33] border border-slate-700/80 min-w-0 max-w-full overflow-hidden box-border">
+          <div class="text-xs font-bold mb-2 truncate">🎭 Sprites incluidos</div>
+          <div class="flex gap-2 overflow-x-auto pb-1 min-w-0 max-w-full" style="scrollbar-width: thin;">
             {#each sprites() as s (s.id)}
               <button
                 on:click={() => (sourceTarget === 'background' ? setBackground(s.banner ?? s.avatar, s.name) : addLayer(s.avatar, s.name))}
@@ -393,7 +407,7 @@
     </section>
 
     <!-- Panel lateral de capas + guardado -->
-    <aside class="lg:w-80 shrink-0 border-t lg:border-t-0 lg:border-l border-slate-800 bg-[#111526]/95 p-3 sm:p-4 overflow-y-auto space-y-3 max-h-[42vh] lg:max-h-none">
+    <aside class="w-full lg:w-80 shrink-0 min-w-0 max-w-full box-border border-t lg:border-t-0 lg:border-l border-slate-800 bg-[#111526]/95 p-3 sm:p-4 overflow-y-auto overflow-x-hidden space-y-3 max-h-[42vh] lg:max-h-none">
       <div class="flex items-center justify-between">
         <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Capas ({current?.layers.length ?? 0})</h2>
         {#if selectedLayer()}
@@ -442,23 +456,23 @@
         {/each}
       </div>
 
-      <div class="p-3 rounded-xl bg-[#1a2140] border border-emerald-400/30 space-y-2">
+      <div class="p-3 rounded-xl bg-[#1a2140] border border-emerald-400/30 space-y-2 min-w-0 max-w-full box-border">
         <div class="text-xs font-bold text-emerald-200">💾 Guardar en Recursos</div>
         <input
           bind:value={saveTags}
           placeholder="Etiquetas: fondo, noche, bosque…"
-          class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs outline-none focus:border-emerald-400/70 min-h-[44px]"
+          class="w-full min-w-0 box-border px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs outline-none focus:border-emerald-400/70 min-h-[44px]"
         />
-        <div class="flex gap-2">
+        <div class="flex gap-2 min-w-0">
           <button
             id="btnComposerSave"
             on:click={exportToAssets}
             disabled={exporting || !current}
-            class="flex-1 px-3 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-xs font-bold text-slate-950 min-h-[44px]"
+            class="flex-1 min-w-0 px-3 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-xs font-bold text-slate-950 min-h-[44px] truncate"
           >
             {exporting ? 'Guardando…' : 'Guardar PNG'}
           </button>
-          <button on:click={removeComposition} class="px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-600 text-xs min-h-[44px]" title="Eliminar composición">🗑</button>
+          <button on:click={removeComposition} class="px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-600 text-xs min-h-[44px] shrink-0" title="Eliminar composición">🗑</button>
         </div>
         <p class="text-[10px] text-slate-500">Se renderiza a 1280×720 y queda en la carpeta como imagen con esas etiquetas.</p>
       </div>

@@ -404,6 +404,10 @@ button { touch-action: manipulation; }
   #canvasViewport { cursor: default; }
   #drawerModal > div { max-height: 92dvh; }
   .svelte-toast-pill { bottom: 6.5rem; }
+  #composerScreen, #composerScreen * { max-width: 100vw; }
+  #composerScreen { overflow-x: hidden; }
+  #composerStage { min-height: 220px; }
+  #mainMenu, #mainMenu * { box-sizing: border-box; }
   #wirePopover {
     max-width: calc(100vw - 24px);
     flex-wrap: wrap;

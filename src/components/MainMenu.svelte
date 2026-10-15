@@ -32,6 +32,7 @@
 
   onMount(() => {
     refresh();
+    openSection = autosave ? 'continue' : 'new';
   });
 
   function cleanName(v: string, fallback: string): string {
@@ -135,23 +136,75 @@
     const w = s.state.wires.length;
     return `${n} nodo(s) · ${w} conexión(es) · ${formatDate(s.updatedAt)}`;
   }
+
+  // Menú principal colapsable: solo una sección abierta a la vez.
+  type MenuSection = 'continue' | 'slots' | 'new';
+  let openSection: MenuSection = 'slots';
+
+  function toggle(section: MenuSection) {
+    openSection = openSection === section ? openSection : section;
+  }
+
+  function occupiedSlots(): number {
+    return slots.filter((s) => !!s).length;
+  }
 </script>
 
-<!-- Menú principal: continuar + 3 slots en almacenamiento local -->
-<div id="mainMenu" class="fixed inset-0 z-[60] overflow-y-auto bg-[#0d1124] vn-canvas-bg">
-  <div class="min-h-full flex flex-col items-center px-4 py-8 sm:py-12">
+<!-- Menú principal: botones que abren secciones (solo una abierta a la vez) -->
+<div id="mainMenu" class="fixed inset-0 z-[60] overflow-y-auto overflow-x-hidden bg-[#0d1124] vn-canvas-bg">
+  <div class="min-h-full flex flex-col items-center w-full max-w-xl mx-auto px-4 py-8 sm:py-12 box-border">
     <div class="text-4xl mb-2">📖</div>
     <h1 class="text-2xl sm:text-3xl font-bold text-white text-center">Mis Historias</h1>
     <p class="text-xs sm:text-sm text-slate-400 mt-1 mb-6 text-center max-w-md">
-      Todo se guarda en el almacenamiento local de tu dispositivo · Elige dónde seguir editando
+      Todo se guarda en el almacenamiento local de tu dispositivo · Elige una opción
     </p>
 
     {#if error}
-      <p class="mb-4 text-xs text-amber-200 bg-amber-400/10 border border-amber-400/40 rounded-xl px-4 py-2.5">{error}</p>
+      <p class="mb-4 w-full text-xs text-amber-200 bg-amber-400/10 border border-amber-400/40 rounded-xl px-4 py-2.5">{error}</p>
     {/if}
 
-    <!-- Opción 1: continuar donde la dejé -->
-    <section aria-label="Continuar historia" class="w-full max-w-xl rounded-2xl bg-[#161c33]/95 border border-cyan-400/30 shadow-xl p-4 sm:p-5 mb-4">
+    <!-- Botonera principal -->
+    <nav aria-label="Menú principal" class="w-full grid gap-2.5 mb-4">
+      <button
+        on:click={() => toggle('continue')}
+        aria-expanded={openSection === 'continue'}
+        class={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition min-h-[56px] ${openSection === 'continue' ? 'bg-cyan-500/15 border-cyan-400/50' : 'bg-[#161c33]/95 border-slate-700/70'}`}
+      >
+        <span class="text-xl shrink-0">▶</span>
+        <span class="flex-1 min-w-0">
+          <span class="block text-sm font-bold text-white truncate">Continuar donde la dejé</span>
+          <span class="block text-[11px] text-slate-400 truncate">{autosave ? `«${autosave.name}»` : 'Sin sesión todavía'}</span>
+        </span>
+        <span class="text-slate-400 text-xs shrink-0">{openSection === 'continue' ? '▲' : '▼'}</span>
+      </button>
+      <button
+        on:click={() => toggle('slots')}
+        aria-expanded={openSection === 'slots'}
+        class={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition min-h-[56px] ${openSection === 'slots' ? 'bg-indigo-500/15 border-indigo-400/50' : 'bg-[#161c33]/95 border-slate-700/70'}`}
+      >
+        <span class="text-xl shrink-0">💾</span>
+        <span class="flex-1 min-w-0">
+          <span class="block text-sm font-bold text-white truncate">Historias guardadas</span>
+          <span class="block text-[11px] text-slate-400 truncate">{occupiedSlots()} de {MAX_SLOTS} slots ocupados</span>
+        </span>
+        <span class="text-slate-400 text-xs shrink-0">{openSection === 'slots' ? '▲' : '▼'}</span>
+      </button>
+      <button
+        on:click={() => toggle('new')}
+        aria-expanded={openSection === 'new'}
+        class={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition min-h-[56px] ${openSection === 'new' ? 'bg-emerald-500/15 border-emerald-400/50' : 'bg-[#161c33]/95 border-slate-700/70'}`}
+      >
+        <span class="text-xl shrink-0">✨</span>
+        <span class="flex-1 min-w-0">
+          <span class="block text-sm font-bold text-white truncate">Nueva historia</span>
+          <span class="block text-[11px] text-slate-400 truncate">En blanco o desde plantilla</span>
+        </span>
+        <span class="text-slate-400 text-xs shrink-0">{openSection === 'new' ? '▲' : '▼'}</span>
+      </button>
+    </nav>
+
+    {#if openSection === 'continue'}
+    <section aria-label="Continuar historia" class="w-full rounded-2xl bg-[#161c33]/95 border border-cyan-400/30 shadow-xl p-4 sm:p-5">
       <h2 class="text-sm font-bold text-cyan-300 mb-1">▶ Continuar donde la dejé</h2>
       {#if autosave}
         <p class="text-sm font-semibold text-white truncate">«{autosave.name}»</p>
@@ -161,33 +214,47 @@
         <button on:click={continueEditing} class="w-full px-4 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-sm font-bold text-slate-950 transition min-h-[44px]">
           Seguir editando
         </button>
+        <button on:click={() => toggle('slots')} class="w-full mt-2 px-4 py-2.5 rounded-xl bg-transparent border border-slate-600 text-xs font-bold text-slate-300 transition min-h-[44px]">
+          Ver historias guardadas →
+        </button>
       {:else}
-        <p class="text-xs text-slate-400 mb-3">Aún no hay ninguna sesión en este dispositivo. Crea tu primera historia:</p>
-        <input bind:value={newName} maxlength="60" placeholder="Ponle nombre a tu historia…" aria-label="Nombre de la historia nueva"
-          class="w-full rounded-xl bg-[#0f1428] border border-slate-600 px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-400 mb-2 min-h-[44px]" />
-        <div class="flex items-center gap-2 mb-3">
-          <label for="newPreset" class="text-[11px] text-slate-400 shrink-0">Empezar con:</label>
-          <select id="newPreset" bind:value={newPreset} class="flex-1 rounded-xl bg-[#0f1428] border border-slate-600 px-3 py-2.5 text-sm text-white outline-none min-h-[44px]">
-            <option value="blank">✨ En blanco</option>
-            <option value="sora">Ruta de Sora</option>
-            <option value="aoi">Encuentro con Aoi</option>
-          </select>
-        </div>
-        <button on:click={createNew} class="w-full px-4 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-sm font-bold text-slate-950 transition min-h-[44px]">
-          Crear historia
+        <p class="text-xs text-slate-400 mb-3">Aún no hay ninguna sesión en este dispositivo.</p>
+        <button on:click={() => toggle('new')} class="w-full px-4 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-sm font-bold text-slate-950 transition min-h-[44px]">
+          Crear mi primera historia →
         </button>
       {/if}
     </section>
+    {/if}
 
-    <!-- Opción 2: 3 slots guardados -->
-    <section aria-label="Historias guardadas" class="w-full max-w-xl rounded-2xl bg-[#161c33]/95 border border-slate-700/70 shadow-xl p-4 sm:p-5">
+    {#if openSection === 'new'}
+    <section aria-label="Nueva historia" class="w-full rounded-2xl bg-[#161c33]/95 border border-emerald-400/30 shadow-xl p-4 sm:p-5">
+      <h2 class="text-sm font-bold text-emerald-300 mb-1">✨ Nueva historia</h2>
+      <p class="text-[11px] text-slate-400 mb-3">Ponle nombre y elige con qué empezar.</p>
+      <input bind:value={newName} maxlength="60" placeholder="Ponle nombre a tu historia…" aria-label="Nombre de la historia nueva"
+        class="w-full rounded-xl bg-[#0f1428] border border-slate-600 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-400 mb-2 min-h-[44px]" />
+      <div class="flex items-center gap-2 mb-3">
+        <label for="newPreset" class="text-[11px] text-slate-400 shrink-0">Empezar con:</label>
+        <select id="newPreset" bind:value={newPreset} class="flex-1 min-w-0 rounded-xl bg-[#0f1428] border border-slate-600 px-3 py-2.5 text-sm text-white outline-none min-h-[44px]">
+          <option value="blank">✨ En blanco</option>
+          <option value="sora">Ruta de Sora</option>
+          <option value="aoi">Encuentro con Aoi</option>
+        </select>
+      </div>
+      <button on:click={createNew} class="w-full px-4 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-sm font-bold text-slate-950 transition min-h-[44px]">
+        Crear historia
+      </button>
+    </section>
+    {/if}
+
+    {#if openSection === 'slots'}
+    <section aria-label="Historias guardadas" class="w-full rounded-2xl bg-[#161c33]/95 border border-slate-700/70 shadow-xl p-4 sm:p-5">
       <h2 class="text-sm font-bold text-white mb-1">💾 Historias guardadas</h2>
       <p class="text-[11px] text-slate-400 mb-3">{MAX_SLOTS} slots en este dispositivo · toca Editar para seguir editando</p>
       <div class="space-y-3">
         {#each slots as slot, i}
-          <div class="rounded-xl border border-slate-700 bg-[#101528] p-3.5">
+          <div class="rounded-xl border border-slate-700 bg-[#101528] p-3.5 min-w-0">
             {#if slot}
-              <div class="flex items-center gap-2 mb-1">
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
                 <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 font-bold shrink-0">SLOT {i + 1}</span>
                 {#if activeSlot === i}
                   <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 font-bold shrink-0">● ACTIVO</span>
@@ -197,16 +264,16 @@
                 class="w-full rounded-xl bg-[#0f1428] border border-slate-600 px-3 py-2 text-sm font-semibold text-white outline-none focus:border-cyan-400 mb-1 min-h-[44px]" />
               <p class="text-[11px] text-slate-400 mb-2.5">{slotMeta(slot)}</p>
               <div class="flex gap-2">
-                <button on:click={() => editSlot(i)} class="flex-1 px-4 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-xs font-bold text-white transition min-h-[44px]">
+                <button on:click={() => editSlot(i)} class="flex-1 min-w-0 px-4 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-xs font-bold text-white transition min-h-[44px]">
                   ✏️ Editar
                 </button>
-                <button on:click={() => deleteSlot(i)} aria-label={`Borrar slot ${i + 1}`} class="px-4 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500 border border-rose-500/40 hover:text-white text-xs font-bold text-rose-300 transition min-h-[44px]">
+                <button on:click={() => deleteSlot(i)} aria-label={`Borrar slot ${i + 1}`} class="px-4 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500 border border-rose-500/40 hover:text-white text-xs font-bold text-rose-300 transition min-h-[44px] shrink-0">
                   🗑
                 </button>
               </div>
             {:else}
               <div class="flex items-center gap-2 mb-2">
-                <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-700/60 text-slate-300 border border-slate-600 font-bold">SLOT {i + 1}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-700/60 text-slate-300 border border-slate-600 font-bold shrink-0">SLOT {i + 1}</span>
                 <span class="text-[11px] text-slate-500">Vacío</span>
               </div>
               <input bind:value={newSlotName[i]} maxlength="60" placeholder={`Nombre para la historia ${i + 1}…`} aria-label={`Nombre para el slot ${i + 1}`}
@@ -218,18 +285,7 @@
           </div>
         {/each}
       </div>
-      {#if autosave}
-        <div class="mt-4 pt-3 border-t border-slate-700/60">
-          <p class="text-[11px] text-slate-400 mb-2">¿Otra idea? Dale nombre y empieza de cero (luego guárdala en un slot desde el editor):</p>
-          <div class="flex flex-col sm:flex-row gap-2">
-            <input bind:value={newName} maxlength="60" placeholder="Nombre de la historia nueva…" aria-label="Nombre de otra historia nueva"
-              class="flex-1 rounded-xl bg-[#0f1428] border border-slate-600 px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-400 min-h-[44px]" />
-            <button on:click={createNew} class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-xs font-bold text-slate-950 transition min-h-[44px]">
-              ＋ Nueva
-            </button>
-          </div>
-        </div>
-      {/if}
     </section>
+    {/if}
   </div>
 </div>
