@@ -17,3 +17,4 @@
 - Playtest: Preview → avanzar diálogos → cerrar
 - Export Web (.html) y abrir el archivo resultante
 - Zoom mín/máx, paneo hasta los bordes, recargar (el estado es de sesión)
+- Actualizaciones: cabecera → «Buscar actualizaciones» abre `#updateModal` si hay release nuevo; en Ajustes se ve la versión y se cambia el repo vigilado

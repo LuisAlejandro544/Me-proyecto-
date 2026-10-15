@@ -497,7 +497,7 @@ export function openWorkspaceTab(tabName) {
               Guardar repo
             </button>
           </div>
-          <p class="text-[11px] text-slate-500 mt-2">Canal: workflow «Auto-update» publica el .zip de toda la app en cada tag <b>v*</b>. En web descarga el .zip; en Tauri/Capacitor también lo guarda con diálogo nativo.</p>
+          <p class="text-[11px] text-slate-500 mt-2">Canal: workflow «Auto-update» (solo al publicar un release o manual, nunca por commits/PRs) adjunta al release el .zip de toda la app. En web descarga el .zip; en Tauri/Capacitor también lo guarda con diálogo nativo.</p>
         </div>
         <div class="vn-anim-card flex items-center justify-between p-3.5 rounded-xl bg-[#101528] border border-slate-700">
           <div>

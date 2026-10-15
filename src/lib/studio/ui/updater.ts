@@ -1,7 +1,8 @@
 // @ts-nocheck
 // Auto-actualizaciones: escanea el último GitHub Release y avisa con pantalla.
-// Canal: workflow `.github/workflows/auto-update.yml` publica en cada tag `v*`
-// el zip web de toda la app + `update.json`. La app compara `tag_name` con su
+// Canal: workflow `.github/workflows/auto-update.yml` (solo en release
+// publicado o manual, nunca por push/PR) adjunta al release el zip web de
+// toda la app + `update.json`. La app compara `tag_name` con su
 // versión y ofrece descargar el .zip (web) o instalar el nuevo build (Tauri).
 // No hay hot-swap en caliente: la web recarga Pages y desktop reinstala.
 import { showToast } from './toast';

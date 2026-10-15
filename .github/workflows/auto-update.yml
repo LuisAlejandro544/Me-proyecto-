@@ -1,16 +1,19 @@
 name: Auto-update (releases con zip)
 
 # Canal de auto-actualización de la app:
-# - Al publicar un tag `v*` (ej. v0.2.0) empaqueta TODA la app web en un .zip
-#   y lo publica en GitHub Releases junto a un manifiesto `update.json`.
+# - Al PUBLICAR un release en GitHub (Releases > Draft new release > Publish)
+#   empaqueta TODA la app web en un .zip y lo sube a ese mismo release
+#   junto a un manifiesto `update.json`.
 # - La app escanea `GET /repos/{owner}/{repo}/releases/latest`, compara
 #   `tag_name` con su versión y muestra la pantalla "Nueva actualización".
-# También se puede lanzar a mano desde Actions > Run workflow.
+# - También se puede lanzar a mano desde Actions > Run workflow.
+#
+# Disparadores: SOLO `release` publicado y `workflow_dispatch` (manual).
+# NUNCA por push/commits, pull_request, ni ningún otro evento.
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       tag:
@@ -38,6 +41,8 @@ jobs:
         run: |
           if [ -n "${{ inputs.tag }}" ]; then
             echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ github.event.release.tag_name }}" ]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
           elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
             echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
           else
@@ -93,7 +98,7 @@ jobs:
           name: auto-update-${{ steps.tag.outputs.tag }}
           path: release/*
 
-      - name: Publicar Release (zip web + zip fuente + update.json)
+      - name: Publicar / adjuntar assets al Release (zip web + zip fuente + update.json)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

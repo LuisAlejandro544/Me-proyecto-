@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 ### Added
-- Auto-actualizaciones: workflow `Auto-update` publica en cada tag `v*` el .zip web de toda la app + .zip del código + `update.json`; la app escanea `releases/latest`, compara versión y muestra la pantalla «Nueva actualización disponible» (`#updateModal`) con Descargar .zip / Recargar / Ver release, botón `#btnCheckUpdates` (+ `#updateDot`) y tarjeta en Ajustes con repo editable
+- Auto-actualizaciones: workflow `Auto-update` (solo al publicar un release o manual, nunca por push/PR) adjunta al release el .zip web de toda la app + .zip del código + `update.json`; la app escanea `releases/latest`, compara versión y muestra la pantalla «Nueva actualización disponible» (`#updateModal`) con Descargar .zip / Recargar / Ver release, botón `#btnCheckUpdates` (+ `#updateDot`) y tarjeta en Ajustes con repo editable
 ### Changed
 - Chrome a componentes Svelte (TopBar, CanvasChrome, BottomNav, modales, toast); ids intactos, paridad verificada
 ### Added

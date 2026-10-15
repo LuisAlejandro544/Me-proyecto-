@@ -25,7 +25,7 @@ con `<video>` para `video_scene` y `<audio>` para `sound_cue`/`audioAssetId`;
 `share.ts` genera URLs compartibles (base pública, nunca localhost) o un
 `.html` jugable con el nivel incrustado.
 
-```
+```text
 src/lib/studio/
 ├── index.ts        # orquesta: initStudio(), getStudioState(), wiring top-bar
 ├── context.ts      # ÚNICO estado mutable legacy (ctx.*)
@@ -33,13 +33,20 @@ src/lib/studio/
 ├── domain/         # audio.ts, history.ts, geometry.ts (puros + DOM queries)
 └── ui/             # render-nodes, render-wires, interactions, viewport,
                     # transform, minimap, editors, playtest, workspace,
-                    # exporter, load-preset, toast
+                    # exporter, load-preset, share, updater, toast
 src/components/
 ├── StudioShell.svelte  # compone todo + onMount(initStudio)
 ├── TopBar.svelte, CanvasChrome.svelte, BottomNav.svelte
 ├── DrawerModal.svelte, PlaytestModal.svelte, ShareLoading.svelte, ToastBanner.svelte
+├── UpdateModal.svelte  # pantalla «Nueva actualización disponible» (#updateModal)
 └── (Fase 2: NodeCard/* por tipo de nodo)
 ```
+
+Auto-update: `ui/updater.ts` compara `tag_name` de `releases/latest` con
+`__APP_VERSION__` (inyectada en `vite.config.ts`) y abre `UpdateModal.svelte`;
+el workflow `auto-update.yml` SOLO corre al publicar un release o manual
+(nunca por push/PR) y adjunta al release el `.zip` web + `.zip` fuente +
+`update.json`.
 
 **Fase 2 (pendiente):** migrar cada tipo de nodo a componente Svelte (`NodeCard/*`) y el estado a stores (`lib/stores/project.svelte.ts`); `context.ts` es el seam para hacerlo por slices.
 

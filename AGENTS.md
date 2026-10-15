@@ -18,6 +18,7 @@ Idioma del repo: español en respuestas al usuario.
   - `ui/render-nodes.ts` — tarjetas + toolbar ✏️/🗑 + puertos a `-9px` visibles
   - `ui/node-editor.ts` — `openNodeEditor` / `deleteNode` / `duplicateNode`
   - `ui/share.ts` — URL `#nivel=` (permiso `jugar`) + carga + `shared-play-mode`
+  - `ui/updater.ts` + `components/UpdateModal.svelte` — chequeo `releases/latest` + pantalla `#updateModal` (`#btnCheckUpdates`/`#updateDot`); workflow `auto-update.yml` solo en release publicado o manual, nunca push/PR
   - `ui/render-wires.ts` + `domain/geometry.ts` — cables y posiciones de puertos
     (`renderWires` solo al cambiar el grafo; `updateWirePaths` en drag; nada en pan/zoom)
   - `ui/viewport.ts` + `ui/transform.ts` — pan/pinch/zoom GPU (pan en `#panLayer`, scale en `#canvasWorld`, `body.vn-gesturing` en el gesto)
