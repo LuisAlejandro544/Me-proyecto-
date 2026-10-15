@@ -6,6 +6,8 @@
 ### Changed
 - `src/lib/studio.ts` monolítico → `src/lib/studio/{data,domain,ui}/` + `context.ts` (paridad verificada); chrome a `components/StudioShell.svelte`
 - Interfaz completa traducida al español (cabecera, lienzo, pestañas, paneles, previsualización, exportaciones y presets de ejemplo)
+### Fixed
+- Zoom borroso: layout-zoom (`#panLayer` traslada, `#canvasWorld` con CSS `zoom`); nítido 35%–200%
 
 ## [0.1.0] — 2026-10-15
 ### Added

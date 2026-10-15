@@ -43,8 +43,10 @@
       -webkit-user-select: none;
       user-select: none;
     }
-    #canvasWorld {
+    #panLayer {
       will-change: transform;
+    }
+    #canvasWorld {
     }
     /* Node Glass Card */
     .vn-node {

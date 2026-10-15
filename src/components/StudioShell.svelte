@@ -142,8 +142,9 @@
       </span>
     </div>
 
-    <!-- Transformable World Container (Nodes + SVG Wires) -->
-    <div id="canvasWorld" class="absolute inset-0 origin-top-left" style="transform: translate(0px, 0px) scale(1);">
+    <!-- Pan Layer (translate only) > Zoom Layer (CSS zoom: crisp re-layout, no bitmap scaling) -->
+    <div id="panLayer" class="absolute inset-0">
+    <div id="canvasWorld" class="absolute top-0 left-0 origin-top-left" style="zoom: 1;">
       <!-- SVG Layer for Glowing Bezier Wires -->
       <svg id="wiresSvg" class="absolute inset-0 w-[4000px] h-[3000px] pointer-events-none overflow-visible" style="z-index: 5;">
         <defs>
@@ -172,6 +173,7 @@
 
       <!-- Nodes Container -->
       <div id="nodesLayer" class="relative w-full h-full"></div>
+    </div>
     </div>
 
     <!-- Floating Bottom-Left Zoom / Pan Pill (from Image 1) -->

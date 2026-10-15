@@ -142,3 +142,6 @@ export function initStudio() {
 if (typeof window !== 'undefined') {
   (window as any).__studio = { initStudio, getStudioState };
 }
+
+// Public zoom API (also used by automated visual tests).
+export { setZoom } from './ui/transform';
