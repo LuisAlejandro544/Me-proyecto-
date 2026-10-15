@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Compila Manga Maker / My Novel por plataforma.
-# Uso: bash scripts/build.sh [--apk] [--linux] [--windows] [--web] [--all]
+# Uso: bash scripts/build.sh [--apk] [--linux] [--windows] [--web] [--all] [--clean]
+# --clean borra la caché corrupta de Gradle + build (úsalo si falla el APK).
 # En CI lo ejecuta GitHub Actions; en local compila lo que soporte tu OS.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -9,7 +10,7 @@ cd "$ROOT"
 need() { command -v "$1" >/dev/null 2>&1 || { echo "Falta $1 en PATH"; exit 1; }; }
 need flutter
 
-DO_APK=0; DO_LINUX=0; DO_WIN=0; DO_WEB=0
+DO_APK=0; DO_LINUX=0; DO_WIN=0; DO_WEB=0; DO_CLEAN=0
 if [ "$#" -eq 0 ]; then set -- --all; fi
 for a in "$@"; do
   case "$a" in
@@ -17,13 +18,20 @@ for a in "$@"; do
     --linux) DO_LINUX=1;;
     --windows) DO_WIN=1;;
     --web) DO_WEB=1;;
+    --clean) DO_CLEAN=1;;
     --all) DO_APK=1; DO_LINUX=1; DO_WIN=1; DO_WEB=1;;
     -h|--help) sed -n '2,5p' "$0"; exit 0;;
-    *) echo "Flag desconocido: $a (usa --apk --linux --windows --web --all)"; exit 1;;
+    *) echo "Flag desconocido: $a (usa --apk --linux --windows --web --all --clean)"; exit 1;;
   esac
 done
 
 OS="$(uname -s)"
+if [ "$DO_CLEAN" -eq 1 ]; then
+  echo "== Limpieza Gradle + Flutter =="
+  ./android/gradlew --stop >/dev/null 2>&1 || true
+  rm -rf "$HOME"/.gradle/caches/*/transforms
+  flutter clean
+fi
 flutter pub get
 flutter analyze
 flutter test
