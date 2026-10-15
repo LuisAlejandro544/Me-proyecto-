@@ -351,7 +351,7 @@ function endPointer(e) {
       });
       playSynthSfx('connect');
       renderWires();
-      showToast('Nodes connected!');
+      showToast('¡Nodos conectados!');
     }
   } else if (ctx.dragState.mode === 'node' && ctx.dragState.moved) {
     pushHistory();

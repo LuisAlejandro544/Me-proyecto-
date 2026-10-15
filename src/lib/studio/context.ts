@@ -8,6 +8,7 @@ export const ctx = {
   state: JSON.parse(JSON.stringify(PRESET_SORA)),
   activePresetKey: 'sora',
   selectedNodeId: 'start_scene_1',
+  selectedWireId: null as unknown,
   historyStack: [] as unknown[],
   redoStack: [] as unknown[],
   sfxEnabled: true,

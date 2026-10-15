@@ -174,6 +174,57 @@
       background: rgba(100, 116, 139, 0.5);
       border-radius: 9999px;
     }
+    /* ---- Toasts animados (entrada + salida suave) ---- */
+    #toastBanner {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.96);
+      transition: opacity 0.32s ease, transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+      pointer-events: none;
+    }
+    #toastBanner.toast-show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    #toastBanner.toast-hide {
+      opacity: 0;
+      transform: translateY(-10px) scale(0.95);
+    }
+    @keyframes toast-pop-in {
+      0% { opacity: 0; transform: translate(-50%, 16px) scale(0.92); }
+      60% { opacity: 1; transform: translate(-50%, -2px) scale(1.02); }
+      100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    }
+    @keyframes toast-pop-out {
+      to { opacity: 0; transform: translate(-50%, 10px) scale(0.94); }
+    }
+    .svelte-toast-pill {
+      animation: toast-pop-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .svelte-toast-pill.toast-leaving {
+      animation: toast-pop-out 0.36s ease both;
+    }
+    /* ---- Playtest a pantalla completa: entrada suave ---- */
+    #playtestModal:not(.hidden) > div {
+      animation: playtest-rise 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes playtest-rise {
+      from { opacity: 0; transform: translateY(18px) scale(0.985); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    /* ---- Popover para quitar conexiones ---- */
+    #wirePopover {
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+    #wirePopover.wire-pop-hidden {
+      opacity: 0;
+      transform: translate(-50%, 6px) scale(0.95);
+      pointer-events: none;
+    }
+    .vn-wire-group.wire-selected .vn-wire-core {
+      stroke-width: 5px;
+      filter: brightness(1.35);
+    }
 /* Svelte root fills viewport like original body */
 html, body, #app { height: 100%; }
 body { margin: 0; overflow: hidden; background: #0d1124; }
