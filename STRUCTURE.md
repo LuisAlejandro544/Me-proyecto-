@@ -8,7 +8,7 @@ Me-proyecto-/
 ├── index.html  vite.config.ts  svelte.config.js  tailwind.config.js  postcss.config.js
 ├── src/
 │   ├── main.ts               punto de entrada Vite
-│   ├── app.css               estilos portados + puertos + toolbar + móvil + share-play
+│   ├── app.css               estilos portados + puertos + toolbar + móvil + share-play + playtest-horizontal
 │   ├── App.svelte            shell mínimo → StudioShell
 │   ├── components/
 │   │   └── StudioShell.svelte  chrome completo (ids INTACTOS, no renombrar)
@@ -26,16 +26,19 @@ Me-proyecto-/
 │   │       │   └── #btnFabAddNode + #minimapSvg #btnMinimapZoomOut/In
 │   │       ├── footer.nav      .nav-tab-btn[data-tab=nodes|assets|timeline|characters|playtest|settings]
 │   │       ├── #drawerModal   #drawerModalTitle #drawerModalBody #btnCloseDrawer
-│   │       ├── #playtestModal #vnStageBg #vnCurrentNodeBadge #btnVnRestart
-│   │       │                 #btnVnToggleAudio #btnClosePlaytest #vnSpriteContainer
-│   │       │                 #vnCharacterSprite #vnChoicesOverlay #vnSpeakerName
+│   │       ├── #playtestModal #vnPlaytestCard.vn-playtest-landscape #vnStageBg
+│   │       │                 #vnCurrentNodeBadge #btnVnRestart #btnVnToggleAudio
+│   │       │                 #btnVnFullscreen #btnClosePlaytest #vnSpriteContainer
+│   │       │                 #vnCharacterSprite #vnVideoPlayer #vnAudioPlayer
+│   │       │                 #vnRotateHint #vnChoicesOverlay #vnSpeakerName
 │   │       │                 #vnExpressionTag #vnDialogueText #vnVariablesReadout #btnVnNext
+│   │       │                 (drawer comparte #shareBase #shareHtml)
 │   │       ├── #shareLoading #shareLoadingMsg #shareLoadingBar #shareLoadingGame
 │   │       └── #toastBanner #toastMessage (+ toast Svelte)
 │   └── lib/
-│       ├── types.ts          VNNode VNWire VNState GraphSnapshot DragState SfxKind
+│       ├── types.ts          VNNode (+video/audio/sound) VNWire VNState GraphSnapshot DragState SfxKind
 │       ├── platform.ts       isTauri/isCapacitor + saveHtmlExport (dialog/fs, Filesystem/Share)
-│       ├── assets.ts         galería/cámara/archivos + getCharacterCatalog + resolveCharacter
+│       ├── assets.ts         galería (fotos+vídeos)/cámara/archivos (imagen+vídeo+audio) + catálogos
 │       └── studio/
 │           ├── index.ts        initStudio() idempotente + wiring de botones + Supr + share-boot
 │           ├── context.ts      ctx único { state, selectedNodeId, selectedWireId,
@@ -48,10 +51,10 @@ Me-proyecto-/
 │           │   ├── geometry.ts getPortPosition buildBezierPath escapeHtml
 │           │   └── history.ts  pushHistory (30 pasos)
 │           └── ui/
-│               ├── render-nodes.ts  6 tipos + toolbar ✏️/🗑 + puertos a -9px
+│               ├── render-nodes.ts  8 tipos + toolbar ✏️/🗑 + puertos a -9px
 │               │     banner_scene (in_main + portsOut) · choice (in/out por opción)
 │               │     compact_scene · character_selector (in + out) · avatar_scene (in + outs)
-│               │     branch_scene (in + out)
+│               │     branch_scene (in + out) · video_scene (in + out, 🎬) · sound_cue (in + out, 🔊)
 │               ├── node-editor.ts   openNodeEditor() por tipo + deleteNode() + duplicateNode()
 │               ├── editors.ts       edición rápida inline (doble-clic / doble-toque)
 │               ├── interactions.ts  drag nodos, drag cables, botones, doble-toque, Supr
@@ -62,11 +65,12 @@ Me-proyecto-/
 │               ├── transform.ts     setZoom/applyTransform (panLayer translate GPU + world scale GPU)
 │               ├── minimap.ts       renderMinimap
 │               ├── load-preset.ts   loadPreset(sora|aoi|blank)
-│               ├── playtest.ts      startPlaytest/renderPlaytestStep
-│               ├── exporter.ts      exportStandaloneHtml + openExeExportModal
+│               ├── playtest.ts      startPlaytest/closePlaytest/renderPlaytestStep (horizontal 16:9 + <video>/<audio>)
+│               ├── exporter.ts      exportStandaloneHtml (+vídeo/audio) + openExeExportModal
 │               ├── workspace.ts     openWorkspaceTab + addNewNodeOfType + assets/timeline/chars
-│               ├── share.ts         buildShareUrl/parseShareHash/openShareModal/
-│               │                         enterSharedPlayMode/checkSharedPlayModeOnBoot
+│               ├── share.ts         getShareBaseUrl/isLocalOrPrivateHost/buildShareUrl/
+│               │                         parseShareHash/openShareModal (base editable + .html)/
+│               │                         downloadPlayableHtml/enterSharedPlayMode/checkSharedPlayModeOnBoot
 │               └── toast.ts         showToast
 ├── src-tauri/  tauri.conf.json (frontendDist ../dist) + main.rs + plugin-fs/dialog
 ├── android/    proyecto Capacitor (generado, no editar a mano; `npx cap sync`)

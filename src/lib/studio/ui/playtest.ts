@@ -1,20 +1,121 @@
 // @ts-nocheck
-// Studio module — see src/lib/studio/index.ts barrel and docs/ARCHITECTURE.md.
+// Motor de prueba: reproductor horizontal 16:9 con vídeo y sonido.
+// Los nodos `video_scene` muestran <video> y los `sound_cue` / `audioAssetId`
+// disparan <audio> al entrar en el paso.
 import { ctx } from '../context';
 import { playSynthSfx } from '../domain/audio';
 import { escapeHtml } from '../domain/geometry';
 import { showToast } from './toast';
-import { resolveCharacter } from '../../assets';
+import { findCustomAsset, resolveCharacter } from '../../assets';
+
+function stopPlaytestMedia() {
+  try {
+    const v = document.getElementById('vnVideoPlayer') as HTMLVideoElement | null;
+    if (v) {
+      v.pause();
+      v.removeAttribute('src');
+      v.load();
+      v.classList.add('hidden');
+    }
+  } catch {}
+  try {
+    const a = document.getElementById('vnAudioPlayer') as HTMLAudioElement | null;
+    if (a) {
+      a.pause();
+      a.removeAttribute('src');
+      a.load();
+    }
+  } catch {}
+  try {
+    const img = document.getElementById('vnCharacterSprite') as HTMLImageElement | null;
+    img?.classList.remove('hidden');
+  } catch {}
+}
+
+async function tryLandscapeLock() {
+  try {
+    const hint = document.getElementById('vnRotateHint');
+    const isPortraitPhone =
+      window.matchMedia?.('(orientation: portrait)').matches && window.innerWidth < 640;
+    if (hint) hint.classList.toggle('hidden', !isPortraitPhone);
+  } catch {}
+  try {
+    const oo: any = screen.orientation as any;
+    if (oo && typeof oo.lock === 'function' && document.fullscreenElement) {
+      await oo.lock('landscape').catch(() => {});
+    }
+  } catch {}
+}
 
 export function startPlaytest() {
   playSynthSfx('click');
   const modal = document.getElementById('playtestModal');
-  modal.classList.remove('hidden');
+  modal?.classList.remove('hidden');
+  document.body.classList.add('vn-playing');
+  tryLandscapeLock();
+  wirePlaytestChrome();
   const startNode = ctx.state.nodes[0];
   if (startNode) {
     renderPlaytestStep(startNode.id);
+  } else {
+    showToast('Añade al menos un nodo para probar');
   }
 }
+
+export function closePlaytest() {
+  stopPlaytestMedia();
+  document.getElementById('playtestModal')?.classList.add('hidden');
+  document.body.classList.remove('vn-playing');
+  try {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  } catch {}
+  try {
+    const oo: any = screen.orientation as any;
+    if (oo && typeof oo.unlock === 'function') oo.unlock();
+  } catch {}
+}
+
+let __chromeWired = false;
+function wirePlaytestChrome() {
+  // El botón Salir lo recablea share.ts en modo invitado; aquí solo el resto.
+  const fsBtn = document.getElementById('btnVnFullscreen');
+  if (fsBtn && !(fsBtn as any).__wired) {
+    (fsBtn as any).__wired = true;
+    fsBtn.onclick = async () => {
+      try {
+        const card = document.getElementById('vnPlaytestCard') ?? document.getElementById('playtestModal');
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        } else {
+          await (card as any)?.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => (card as any)?.requestFullscreen?.());
+        }
+        await tryLandscapeLock();
+      } catch {
+        showToast('Tu navegador no permite pantalla completa aquí');
+      }
+    };
+  }
+  if (__chromeWired) return;
+  __chromeWired = true;
+  document.addEventListener('fullscreenchange', () => tryLandscapeLock());
+}
+
+function playAudioAsset(assetId: string | undefined, volumePct = 100, loop = false) {
+  if (!assetId) return;
+  const found = findCustomAsset(assetId);
+  if (!found) return;
+  const el = document.getElementById('vnAudioPlayer') as HTMLAudioElement | null;
+  if (!el) return;
+  try {
+    el.pause();
+    el.src = found.dataUrl;
+    el.loop = !!loop;
+    el.volume = Math.max(0, Math.min(1, (volumePct ?? 100) / 100));
+    el.muted = !ctx.sfxEnabled ? false : false;
+    el.play().catch(() => {});
+  } catch {}
+}
+
 export function renderPlaytestStep(nodeId) {
   ctx.currentPlayNodeId = nodeId;
   const node = ctx.state.nodes.find(n => n.id === nodeId);
@@ -30,21 +131,59 @@ export function renderPlaytestStep(nodeId) {
 
   const spriteImg = document.getElementById('vnCharacterSprite');
   const spriteWrap = document.getElementById('vnSpriteContainer');
+  const videoEl = document.getElementById('vnVideoPlayer') as HTMLVideoElement | null;
   const charObj = resolveCharacter(node.characterId || node.selectedCharId);
 
-  spriteImg.src = node.type === 'banner_scene' ? charObj.banner : charObj.avatar;
+  stopPlaytestMedia();
+
+  // ——— Vídeo: protagonista del paso ———
+  if (node.type === 'video_scene') {
+    const found = findCustomAsset(node.videoAssetId);
+    spriteImg.classList.add('hidden');
+    if (found && videoEl) {
+      videoEl.classList.remove('hidden');
+      videoEl.src = found.dataUrl;
+      videoEl.loop = !!node.videoLoop;
+      videoEl.muted = !!node.videoMuted;
+      videoEl.controls = node.videoControls !== false;
+      if (node.videoAutoplay !== false) videoEl.play().catch(() => {});
+    }
+    document.getElementById('vnSpeakerName').textContent = node.videoName || found?.name || 'Vídeo';
+    document.getElementById('vnSpeakerName').style.color = '#e879f9';
+    document.getElementById('vnExpressionTag').textContent =
+      `${node.videoLoop ? '🔁 Bucle' : '▶ Una vez'}${node.videoMuted ? ' · 🔇' : ''}`;
+  } else {
+    spriteImg.classList.remove('hidden');
+    spriteImg.src = node.type === 'banner_scene' ? charObj.banner : charObj.avatar;
+  }
   spriteWrap.style.transform = `translateX(${(posPct - 50) * 2.2}px) scale(${scalePct / 100})`;
 
-  document.getElementById('vnSpeakerName').textContent = node.speaker || charObj.name;
-  document.getElementById('vnSpeakerName').style.color = node.speakerColor || charObj.color;
-  document.getElementById('vnExpressionTag').textContent =
-    `${charSelector?.expression || charObj.expressions[0]} • Escala ${scalePct}%`;
+  // ——— Sonido: complemento que suena al entrar ———
+  if (node.type === 'sound_cue') {
+    document.getElementById('vnSpeakerName').textContent = node.soundName || node.audioName || '🔊 Sonido';
+    document.getElementById('vnSpeakerName').style.color = '#fbbf24';
+    document.getElementById('vnExpressionTag').textContent = `Vol ${node.volume ?? 100}%${node.loop ? ' · 🔁' : ''}`;
+    playAudioAsset(node.soundAssetId || node.audioAssetId, node.volume ?? 100, !!node.loop);
+  } else if (node.audioAssetId) {
+    playAudioAsset(node.audioAssetId, 100, false);
+  }
+
+  if (node.type !== 'video_scene' && node.type !== 'sound_cue') {
+    document.getElementById('vnSpeakerName').textContent = node.speaker || charObj.name;
+    document.getElementById('vnSpeakerName').style.color = node.speakerColor || charObj.color;
+    document.getElementById('vnExpressionTag').textContent =
+      `${charSelector?.expression || charObj.expressions[0]} • Escala ${scalePct}%`;
+  }
 
   const dialogueEl = document.getElementById('vnDialogueText');
   if (node.type === 'choice') {
     dialogueEl.textContent = 'Elige tu próxima decisión:';
   } else if (node.type === 'character_selector') {
     dialogueEl.textContent = `¡${charObj.name} entra en escena (${node.expression})!`;
+  } else if (node.type === 'video_scene') {
+    dialogueEl.textContent = node.dialogue || 'Reproduciendo vídeo… pulsa Continuar para seguir.';
+  } else if (node.type === 'sound_cue') {
+    dialogueEl.textContent = node.dialogue || '🔊 Efecto sonoro (la historia continúa con Continuar).';
   } else {
     dialogueEl.textContent = node.dialogue || '…';
   }

@@ -1,16 +1,19 @@
 // Gestión unificada de assets personalizados: Web + Tauri (PC) + Capacitor (móvil).
-// - Web: <input type="file" accept="image/*,audio/*"> (abre galería / administrador de archivos).
+// - Web: <input type="file" accept="image/*,video/*,audio/*"> (abre galería / administrador de archivos).
 // - Tauri (PC): diálogo nativo `open` + lectura binaria con plugin-fs.
-// - Capacitor (móvil): plugin Camera.pickImages (galería) con respaldo a <input type="file">,
-//   que en Android/iOS también abre la galería o el administrador de archivos.
+// - Capacitor (móvil): plugin Camera.pickImages (galería de fotos) con respaldo a
+//   <input type="file">, que en Android/iOS también abre la galería de vídeos
+//   o el administrador de archivos según el `accept`.
 //
 // Los assets se guardan como dataURL y persisten en localStorage para que el
 // proyecto, la previsualización y la exportación .html los resuelvan sin red.
+// Nota: los vídeos pesan mucho; si el nivel supera ~8 KB de URL compartida se
+// avisa en el modal de compartir (mejor enviar el .html exportado).
 
 import { isCapacitor, isTauri } from './platform';
 import { CHARACTER_ASSETS } from './studio/data/assets';
 
-export type CustomAssetKind = 'imagen' | 'audio';
+export type CustomAssetKind = 'imagen' | 'audio' | 'video';
 
 export interface CustomAsset {
   id: string;
@@ -23,8 +26,13 @@ export interface CustomAsset {
 }
 
 const STORAGE_KEY = 'vn_custom_assets_v1';
-export const MAX_ASSET_BYTES = 8 * 1024 * 1024;
-export const ASSET_ACCEPT = 'image/*,audio/*,.png,.jpg,.jpeg,.webp,.gif,.mp3,.wav,.ogg';
+export const MAX_ASSET_BYTES = 30 * 1024 * 1024;
+export const MAX_ASSET_LABEL = '30 MB';
+export const ASSET_ACCEPT =
+  'image/*,video/*,audio/*,.png,.jpg,.jpeg,.webp,.gif,.mp4,.webm,.mov,.mp3,.wav,.ogg,.m4a';
+export const IMAGE_ACCEPT = 'image/*,.png,.jpg,.jpeg,.webp,.gif';
+export const VIDEO_ACCEPT = 'video/*,.mp4,.webm,.mov';
+export const AUDIO_ACCEPT = 'audio/*,.mp3,.wav,.ogg,.m4a';
 
 function safeParse(raw: string | null): CustomAsset[] {
   if (!raw) return [];
@@ -62,9 +70,11 @@ function persist(assets: CustomAsset[]): void {
 
 function kindOf(mime: string, name: string): CustomAssetKind | null {
   if (mime.startsWith('image/')) return 'imagen';
+  if (mime.startsWith('video/')) return 'video';
   if (mime.startsWith('audio/')) return 'audio';
   const ext = name.split('.').pop()?.toLowerCase() ?? '';
   if (['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg'].includes(ext)) return 'imagen';
+  if (['mp4', 'webm', 'mov', 'mkv'].includes(ext)) return 'video';
   if (['mp3', 'wav', 'ogg', 'm4a', 'aac'].includes(ext)) return 'audio';
   return null;
 }
@@ -78,6 +88,9 @@ function mimeOf(name: string, fallback: string): string {
     jpeg: 'image/jpeg',
     webp: 'image/webp',
     gif: 'image/gif',
+    mp4: 'video/mp4',
+    webm: 'video/webm',
+    mov: 'video/quicktime',
     mp3: 'audio/mpeg',
     wav: 'audio/wav',
     ogg: 'audio/ogg',
@@ -109,11 +122,11 @@ export async function addAssetFiles(files: FileList | File[]): Promise<ImportRes
   for (const file of list) {
     const kind = kindOf(file.type, file.name);
     if (!kind) {
-      rechazados.push(`${file.name}: tipo no soportado (usa imagen o audio)`);
+      rechazados.push(`${file.name}: tipo no soportado (usa imagen, vídeo o audio)`);
       continue;
     }
     if (file.size > MAX_ASSET_BYTES) {
-      rechazados.push(`${file.name}: supera los 8 MB`);
+      rechazados.push(`${file.name}: supera los ${MAX_ASSET_LABEL}`);
       continue;
     }
     try {
@@ -231,9 +244,10 @@ async function importViaTauri(): Promise<ImportResult> {
   const { readFile } = await import('@tauri-apps/plugin-fs');
   const picked = await open({
     multiple: true,
-    title: 'Importar recursos (imágenes o audio)',
+    title: 'Importar recursos (imágenes, vídeos o audio)',
     filters: [
       { name: 'Imágenes', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] },
+      { name: 'Vídeos', extensions: ['mp4', 'webm', 'mov'] },
       { name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'm4a'] }
     ]
   });
@@ -249,7 +263,7 @@ async function importViaTauri(): Promise<ImportResult> {
       const bytes = await readFile(String(p));
       const bin = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes as ArrayBuffer);
       if (bin.byteLength > MAX_ASSET_BYTES) {
-        rechazados.push(`${name}: supera los 8 MB`);
+        rechazados.push(`${name}: supera los ${MAX_ASSET_LABEL}`);
         continue;
       }
       let binary = '';
@@ -336,9 +350,21 @@ export async function pickGalleryImages(limit = 10): Promise<ImportResult> {
     const gallery = await importViaCapacitorGallery(limit);
     if (gallery) return gallery;
   }
-  const files = await openSystemFilePicker('image/*,.png,.jpg,.jpeg,.webp,.gif', true);
+  const files = await openSystemFilePicker(IMAGE_ACCEPT, true);
   if (!files) return { agregados: 0, rechazados: [] };
   return addAssetFiles(Array.from(files));
+}
+
+/** Galería de vídeos: en móvil abre el selector del sistema filtrado a vídeo. */
+export async function pickGalleryVideos(): Promise<ImportResult> {
+  const files = await openSystemFilePicker(VIDEO_ACCEPT, true);
+  if (!files) return { agregados: 0, rechazados: [] };
+  return addAssetFiles(Array.from(files));
+}
+
+/** Selector de audio: administrador de archivos filtrado a audio. */
+export async function pickAudioFiles(): Promise<ImportResult> {
+  return pickFilesAsAssets(AUDIO_ACCEPT, true);
 }
 
 /** Administrador de archivos del sistema (en móvil abre Archivos, no solo galería). */
@@ -421,4 +447,13 @@ export async function takePhotoAsAsset(): Promise<ImportResult> {
     // Sin cámara (web/PC): abrir el selector de archivos como alternativa.
     return pickAssetsFromDevice({ accept: 'image/*', multiple: true });
   }
+}
+
+/** Recursos filtrados por tipo para los nodos de vídeo / sonido. */
+export function getVideoAssets(): CustomAsset[] {
+  return getCustomAssets().filter((a) => a.kind === 'video');
+}
+
+export function getAudioAssets(): CustomAsset[] {
+  return getCustomAssets().filter((a) => a.kind === 'audio');
 }

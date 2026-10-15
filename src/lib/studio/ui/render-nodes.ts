@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Studio module — see src/lib/studio/index.ts barrel and docs/ARCHITECTURE.md.
 import { ctx } from '../context';
-import { getCharacterCatalog, resolveCharacter } from '../../assets';
+import { findCustomAsset, getCharacterCatalog, resolveCharacter } from '../../assets';
 import { escapeHtml } from '../domain/geometry';
 import { attachNodeInteractions } from './interactions';
 import { renderWires } from './render-wires';
@@ -309,10 +309,72 @@ export function renderNodes() {
           <!-- Output Port -->
           <div class="vn-port vn-port-ring-cyan vn-port-out"
                style="right: -9px; top: 62px;"
+                data-node-id="${node.id}"
+                data-port-id="out_main"
+                data-port-dir="out"
+                data-port-color="cyan"></div>
+        </div>
+      `;
+    }
+
+    // 7. VIDEO SCENE NODE — reproduce un vídeo de la carpeta en el playtest.
+    else if (node.type === 'video_scene') {
+      const video = findCustomAsset(node.videoAssetId);
+      el.innerHTML = `
+        <div class="p-3.5 relative vn-node-pad-ports">
+          <div class="vn-port vn-port-cyan vn-port-in"
+               style="left: -9px; top: 26px;"
+               data-node-id="${node.id}"
+               data-port-id="in_main"
+               data-port-dir="in"
+               data-port-color="cyan"></div>
+          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-fuchsia-500 to-indigo-500 text-white text-xs font-bold shadow-md mb-2.5">
+            <span class="editable-field" data-field="badge">${escapeHtml(node.badge || 'Vídeo')}</span>
+          </div>
+          <div class="relative w-full rounded-xl overflow-hidden border border-fuchsia-400/30 mb-2.5 bg-black/60">
+            ${video ? `<video src="${video.dataUrl}" class="w-full h-24 object-cover" muted playsinline preload="metadata"></video>` : `<div class="w-full h-24 flex flex-col items-center justify-center gap-1 text-3xl">🎬<span class="text-[10px] text-slate-300 font-semibold">Sin vídeo — toca ✏️ para elegir</span></div>`}
+          </div>
+          <div class="text-xs font-bold text-fuchsia-300 truncate">${escapeHtml(node.videoName || video?.name || 'Sin vídeo asignado')}</div>
+          <div class="text-[11px] text-slate-400 truncate editable-field" data-field="dialogue">${escapeHtml(node.dialogue || 'Se reproduce y continúa…')}</div>
+          <div class="text-[10px] text-slate-500 mt-1">${node.videoAutoplay === false ? '⏸ Manual' : '▶ Auto'} · ${node.videoLoop ? '🔁 Bucle' : '➡ Sigue'}${node.videoMuted ? ' · 🔇' : ''}</div>
+          <div class="vn-port vn-port-cyan vn-port-out"
+               style="right: -9px; top: 50%;"
                data-node-id="${node.id}"
                data-port-id="out_main"
                data-port-dir="out"
                data-port-color="cyan"></div>
+        </div>
+      `;
+    }
+
+    // 8. SOUND CUE NODE (complemento) — disparo de audio al entrar en el paso.
+    else if (node.type === 'sound_cue') {
+      const sound = findCustomAsset(node.soundAssetId || node.audioAssetId);
+      el.innerHTML = `
+        <div class="p-3.5 relative vn-node-pad-ports">
+          <div class="vn-port vn-port-cyan vn-port-in"
+               style="left: -9px; top: 26px;"
+               data-node-id="${node.id}"
+               data-port-id="in_main"
+               data-port-dir="in"
+               data-port-color="cyan"></div>
+          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-xs font-bold shadow-md mb-2.5">
+            <span class="editable-field" data-field="badge">${escapeHtml(node.badge || '🔊 Sonido')}</span>
+          </div>
+          <div class="w-full rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-400/30 p-3 flex items-center gap-2.5 mb-2">
+            <span class="text-2xl">🎵</span>
+            <div class="min-w-0">
+              <div class="text-xs font-bold text-amber-200 truncate">${escapeHtml(node.soundName || node.audioName || sound?.name || 'Sin audio')}</div>
+              <div class="text-[10px] text-slate-400">Vol ${(node.volume ?? 100)}% · ${node.loop ? '🔁 Bucle' : '1×'}</div>
+            </div>
+          </div>
+          <div class="text-[11px] text-slate-400 truncate editable-field" data-field="dialogue">${escapeHtml(node.dialogue || 'Complemento: no bloquea la historia')}</div>
+          <div class="vn-port vn-port-coral vn-port-out"
+               style="right: -9px; top: 50%;"
+               data-node-id="${node.id}"
+               data-port-id="out_main"
+               data-port-dir="out"
+               data-port-color="coral"></div>
         </div>
       `;
     }

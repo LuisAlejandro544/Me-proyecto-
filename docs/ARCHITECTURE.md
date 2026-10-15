@@ -20,6 +20,11 @@ Donde viven los elementos de UI:
 - `src/lib/platform.ts` = puente de export nativo (Tauri dialog/fs, Capacitor Filesystem/Share).
 - Estado canónico del grafo: tipos en `src/lib/types.ts`; estado mutable legacy centralizado en `studio/context.ts`.
 
+Reproductor: `playtest.ts` abre el modal en horizontal 16:9 (`#vnPlaytestCard`)
+con `<video>` para `video_scene` y `<audio>` para `sound_cue`/`audioAssetId`;
+`share.ts` genera URLs compartibles (base pública, nunca localhost) o un
+`.html` jugable con el nivel incrustado.
+
 ```
 src/lib/studio/
 ├── index.ts        # orquesta: initStudio(), getStudioState(), wiring top-bar

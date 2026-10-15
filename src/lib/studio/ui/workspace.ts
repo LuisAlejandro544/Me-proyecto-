@@ -11,8 +11,10 @@ import { showToast } from './toast';
 import {
   assetSizeLabel,
   getCustomAssets,
+  pickAudioFiles,
   pickFilesAsAssets,
   pickGalleryImages,
+  pickGalleryVideos,
   removeCustomAsset,
   renameCustomAsset,
   takePhotoAsAsset
@@ -20,7 +22,7 @@ import {
 
 /** Memoria de la carpeta para no perder búsqueda/filtro al re-renderizar. */
 let lastAssetsQuery = '';
-let lastAssetsFilter: 'todos' | 'imagen' | 'audio' = 'todos';
+let lastAssetsFilter: 'todos' | 'imagen' | 'video' | 'audio' = 'todos';
 let lastTab = 'nodes';
 
 /** Transición de entrada cada vez que se cambia de apartado. */
@@ -79,6 +81,9 @@ function assetPreviewHtml(a: { kind: string; dataUrl: string; name: string }): s
   if (a.kind === 'imagen') {
     return `<img src="${a.dataUrl}" loading="lazy" class="w-full h-24 rounded-lg object-cover border border-white/15" alt="${escapeHtml(a.name)}" />`;
   }
+  if (a.kind === 'video') {
+    return `<video src="${a.dataUrl}" muted playsinline preload="metadata" class="w-full h-24 rounded-lg object-cover border border-fuchsia-400/30 bg-black"></video>`;
+  }
   return `<div class="w-full h-24 rounded-lg bg-gradient-to-br from-violet-600/40 to-cyan-500/30 border border-white/15 flex flex-col items-center justify-center gap-1 text-2xl">🎵<span class="text-[10px] text-slate-300 font-semibold">Audio</span></div>`;
 }
 
@@ -117,6 +122,22 @@ function wireFolderActions(reopen: () => void, scope: 'assets' | 'characters') {
       } else {
         showToast('No se tomó ninguna foto');
       }
+    };
+  }
+  const btnVideo = bodyEl.querySelector('#btnAddMoreVideo');
+  if (btnVideo) {
+    (btnVideo as HTMLElement).onclick = async () => {
+      showToast('Abriendo vídeos…');
+      const res = await pickGalleryVideos();
+      handleImportResult(res, 'Vídeo(s) añadido(s)', reopen);
+    };
+  }
+  const btnAudio = bodyEl.querySelector('#btnAddMoreAudio');
+  if (btnAudio) {
+    (btnAudio as HTMLElement).onclick = async () => {
+      showToast('Abriendo audios…');
+      const res = await pickAudioFiles();
+      handleImportResult(res, 'Audio(s) añadido(s)', reopen);
     };
   }
 
@@ -212,6 +233,14 @@ export function openWorkspaceTab(tabName) {
           <div class="font-bold text-emerald-300 mb-1">🎭 Nodo selector de personaje</div>
           <div class="text-xs text-slate-400">Carrusel de avatares, lista de expresiones y deslizadores de tamaño y posición.</div>
         </button>
+        <button data-new-node="video_scene" class="vn-anim-card p-4 rounded-xl bg-[#1e2646] hover:bg-[#263159] border border-fuchsia-400/30 text-left transition hover:-translate-y-0.5">
+          <div class="font-bold text-fuchsia-300 mb-1">🎬 Bloque de vídeo</div>
+          <div class="text-xs text-slate-400">Reproduce un vídeo de la carpeta (galería o archivos) y sigue la historia.</div>
+        </button>
+        <button data-new-node="sound_cue" class="vn-anim-card p-4 rounded-xl bg-[#1e2646] hover:bg-[#263159] border border-amber-400/30 text-left transition hover:-translate-y-0.5">
+          <div class="font-bold text-amber-300 mb-1">🔊 Nodo complemento de sonido</div>
+          <div class="text-xs text-slate-400">Dispara un audio/efecto al entrar (música, ambiente o SFX) sin bloquear.</div>
+        </button>
       </div>
     `;
     modal.classList.remove('hidden');
@@ -251,6 +280,7 @@ export function openWorkspaceTab(tabName) {
             <select id="assetFilter" class="px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-700 text-xs text-white outline-none">
               <option value="todos" ${lastAssetsFilter === 'todos' ? 'selected' : ''}>Todos</option>
               <option value="imagen" ${lastAssetsFilter === 'imagen' ? 'selected' : ''}>🖼 Imágenes</option>
+              <option value="video" ${lastAssetsFilter === 'video' ? 'selected' : ''}>🎬 Vídeos</option>
               <option value="audio" ${lastAssetsFilter === 'audio' ? 'selected' : ''}>🎵 Audios</option>
             </select>
           </div>
@@ -261,11 +291,17 @@ export function openWorkspaceTab(tabName) {
             <button id="btnAddMoreGallery" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-xs font-bold text-white transition active:scale-95 min-h-[44px]">
               🖼️ Galería
             </button>
+            <button id="btnAddMoreVideo" class="px-4 py-2 rounded-xl bg-fuchsia-500 hover:bg-fuchsia-400 text-xs font-bold text-white transition active:scale-95 min-h-[44px]">
+              🎬 Vídeo
+            </button>
+            <button id="btnAddMoreAudio" class="px-4 py-2 rounded-xl bg-violet-500 hover:bg-violet-400 text-xs font-bold text-white transition active:scale-95 min-h-[44px]">
+              🎵 Audio
+            </button>
             <button id="btnAddMoreCamera" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-xs font-bold text-slate-950 transition active:scale-95 min-h-[44px]">
               📷 Cámara
             </button>
           </div>
-          <p class="text-[11px] text-slate-400">En móvil: <b>Galería</b> abre tus fotos, <b>Archivos</b> abre el administrador y <b>Cámara</b> toma una foto. En web/PC se abre el explorador de archivos.</p>
+          <p class="text-[11px] text-slate-400">En móvil: <b>Galería</b> abre tus fotos, <b>Vídeo</b> abre la galería de vídeos, <b>Audio</b>/<b>Archivos</b> abren el administrador y <b>Cámara</b> toma una foto. En web/PC se abre el explorador de archivos.</p>
         </div>
       </div>
       ${customs.length ? `
@@ -276,7 +312,7 @@ export function openWorkspaceTab(tabName) {
             class="vn-anim-card group relative p-2.5 rounded-xl bg-[#1d2442] hover:bg-[#27315a] border border-slate-700 hover:border-cyan-400/50 cursor-pointer text-center transition hover:-translate-y-0.5">
             ${assetPreviewHtml(c)}
             <div data-asset-name class="mt-2 text-xs font-bold text-white truncate px-1">${escapeHtml(c.name)}</div>
-            <div class="text-[10px] text-slate-400">${c.kind === 'imagen' ? '🖼 Imagen' : '🎵 Audio'} · ${assetSizeLabel(c.size)}</div>
+            <div class="text-[10px] text-slate-400">${c.kind === 'imagen' ? '🖼 Imagen' : c.kind === 'video' ? '🎬 Vídeo' : '🎵 Audio'} · ${assetSizeLabel(c.size)}</div>
             <div class="mt-1.5 flex items-center justify-center gap-1.5">
               <button data-rename-asset="${c.id}" title="Cambiar nombre" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 border border-slate-600 text-[11px] transition min-w-[44px] min-h-[36px]">✏️</button>
               <button data-remove-custom="${c.id}" title="Eliminar de la carpeta" class="px-2 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500 hover:text-white border border-rose-500/40 text-[11px] transition min-w-[44px] min-h-[36px]">🗑</button>
@@ -314,7 +350,7 @@ export function openWorkspaceTab(tabName) {
       try { again?.setSelectionRange(pos, pos); } catch {}
     });
     filter?.addEventListener('change', () => {
-      lastAssetsFilter = filter.value as 'todos' | 'imagen' | 'audio';
+      lastAssetsFilter = filter.value as 'todos' | 'imagen' | 'video' | 'audio';
       openWorkspaceTab('assets');
     });
 
@@ -339,10 +375,26 @@ export function openWorkspaceTab(tabName) {
             pushHistory();
             node.audioAssetId = a.id;
             node.audioName = a.name;
+            if (node.type === 'sound_cue') {
+              node.soundAssetId = a.id;
+              node.soundName = a.name;
+            }
             renderNodes();
             showToast(`🎵 «${a.name}» asignado como audio del nodo`);
           } else {
             showToast('Selecciona primero un nodo para asignarle el audio');
+            return;
+          }
+        } else if (cId && customsNow.find((a) => a.id === cId && a.kind === 'video')) {
+          const a = customsNow.find((x) => x.id === cId);
+          if (node) {
+            pushHistory();
+            node.videoAssetId = a.id;
+            node.videoName = a.name;
+            renderNodes();
+            showToast(`🎬 «${a.name}» asignado como vídeo del nodo`);
+          } else {
+            showToast('Selecciona primero un nodo para asignarle el vídeo');
             return;
           }
         }
@@ -507,6 +559,35 @@ export function addNewNodeOfType(type) {
       scale: 100,
       position: 50,
       inColor: 'coral'
+    });
+  } else if (type === 'video_scene') {
+    ctx.state.nodes.push({
+      id,
+      type: 'video_scene',
+      badge: `Vídeo ${ctx.state.nodes.length + 1}`,
+      x: offsetX,
+      y: offsetY,
+      width: 250,
+      dialogue: 'Se reproduce el vídeo y continúa…',
+      videoAutoplay: true,
+      videoLoop: false,
+      videoMuted: false,
+      videoControls: true,
+      inColor: 'cyan'
+    });
+  } else if (type === 'sound_cue') {
+    ctx.state.nodes.push({
+      id,
+      type: 'sound_cue',
+      badge: '🔊 Sonido',
+      x: offsetX,
+      y: offsetY,
+      width: 240,
+      dialogue: 'Complemento: suena y sigue sin bloquear.',
+      volume: 100,
+      loop: false,
+      trigger: 'auto',
+      inColor: 'cyan'
     });
   } else {
     ctx.state.nodes.push({

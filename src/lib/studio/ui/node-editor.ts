@@ -2,7 +2,7 @@
 // Editor completo de nodos: preguntas/diálogos, personaje, opciones y borrado.
 // Se abre con el botón ✏️ de cada nodo (táctil) o doble-clic en el texto.
 import { ctx } from '../context';
-import { getCharacterCatalog } from '../../assets';
+import { findCustomAsset, getAudioAssets, getCharacterCatalog, getVideoAssets } from '../../assets';
 import { escapeHtml } from '../domain/geometry';
 import { pushHistory } from '../domain/history';
 import { renderNodes } from './render-nodes';
@@ -79,7 +79,29 @@ export function openNodeEditor(nodeId: string) {
     node.type === 'choice' ? 'Decisión / pregunta' :
     node.type === 'character_selector' ? 'Selector de personaje' :
     node.type === 'avatar_scene' ? 'Escena con avatar' :
+    node.type === 'video_scene' ? 'Bloque de vídeo' :
+    node.type === 'sound_cue' ? 'Complemento de sonido' :
     node.type === 'compact_scene' ? 'Escena compacta' : 'Rama de escena';
+
+  const videoOptions = (selectedId?: string) => {
+    const vids = getVideoAssets();
+    if (!vids.length) return `<option value="">— Sin vídeos en la carpeta —</option>`;
+    return `<option value="">— Elegir vídeo —</option>` + vids
+      .map((v) => `<option value="${v.id}" ${v.id === selectedId ? 'selected' : ''}>🎬 ${escapeHtml(v.name)}</option>`)
+      .join('');
+  };
+  const audioOptions = (selectedId?: string) => {
+    const auds = getAudioAssets();
+    if (!auds.length) return `<option value="">— Sin audios en la carpeta —</option>`;
+    return `<option value="">— Sin audio —</option>` + auds
+      .map((a) => `<option value="${a.id}" ${a.id === selectedId ? 'selected' : ''}>🎵 ${escapeHtml(a.name)}</option>`)
+      .join('');
+  };
+  const checkRow = (id: string, label: string, checked?: boolean) => `
+    <label class="flex items-center gap-2.5 p-3 rounded-xl bg-[#0f1428] border border-slate-700 text-sm text-slate-200 cursor-pointer min-h-[44px]">
+      <input id="${id}" type="checkbox" ${checked ? 'checked' : ''} class="w-5 h-5 accent-cyan-400" />
+      ${label}
+    </label>`;
 
   let form = `<div class="inline-flex items-center gap-2 mb-1">
       <span class="px-2.5 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-[11px] font-semibold text-cyan-300">${typeName}</span>
@@ -127,6 +149,24 @@ export function openNodeEditor(nodeId: string) {
     form += field('Personaje', `<select id="ed_characterId" class="${inputCls}">${charOptions(node.characterId)}</select>`);
     form += field('Hablante', `<input id="ed_speaker" class="${inputCls}" value="${escapeHtml(node.speaker ?? '')}" />`);
     form += field('Pregunta / diálogo', `<textarea id="ed_dialogue" rows="3" class="${inputCls}">${escapeHtml(node.dialogue ?? '')}</textarea>`);
+    form += field('Audio de la escena (opcional)', `<select id="ed_audioAssetId" class="${inputCls}">${audioOptions(node.audioAssetId)}</select>`);
+  } else if (node.type === 'video_scene') {
+    form += field('Etiqueta', `<input id="ed_badge" class="${inputCls}" value="${escapeHtml(node.badge ?? 'Vídeo')}" />`);
+    form += field('Vídeo (carpeta: galería o archivos)', `<select id="ed_videoAssetId" class="${inputCls}">${videoOptions(node.videoAssetId)}</select>`);
+    form += field('Texto mientras se reproduce', `<textarea id="ed_dialogue" rows="2" class="${inputCls}">${escapeHtml(node.dialogue ?? '')}</textarea>`);
+    form += `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        ${checkRow('ed_videoAutoplay', '▶ Reproducir automáticamente', node.videoAutoplay !== false)}
+        ${checkRow('ed_videoLoop', '🔁 Repetir en bucle', !!node.videoLoop)}
+        ${checkRow('ed_videoMuted', '🔇 Empezar silenciado', !!node.videoMuted)}
+        ${checkRow('ed_videoControls', '🎛 Mostrar controles', node.videoControls !== false)}
+      </div>`;
+    form += field('Audio extra (opcional)', `<select id="ed_audioAssetId" class="${inputCls}">${audioOptions(node.audioAssetId)}</select>`);
+  } else if (node.type === 'sound_cue') {
+    form += field('Etiqueta', `<input id="ed_badge" class="${inputCls}" value="${escapeHtml(node.badge ?? '🔊 Sonido')}" />`);
+    form += field('Sonido (carpeta: archivos o audio)', `<select id="ed_soundAssetId" class="${inputCls}">${audioOptions(node.soundAssetId || node.audioAssetId)}</select>`);
+    form += field(`Volumen (${node.volume ?? 100}%)`, `<input id="ed_volume" type="range" min="0" max="100" value="${node.volume ?? 100}" class="vn-slider mt-3" />`);
+    form += checkRow('ed_loop', '🔁 Repetir mientras dure el paso', !!node.loop);
+    form += field('Nota (no bloquea la historia)', `<textarea id="ed_dialogue" rows="2" class="${inputCls}">${escapeHtml(node.dialogue ?? '')}</textarea>`);
   } else {
     // compact_scene + branch_scene
     if (node.title !== undefined) form += field('Título', `<input id="ed_title" class="${inputCls}" value="${escapeHtml(node.title ?? '')}" />`);
@@ -216,6 +256,35 @@ export function openNodeEditor(nodeId: string) {
     } else if ($('ed_expression')) node.expression = val('ed_expression')!;
     if ($('ed_scale')) node.scale = Number(val('ed_scale'));
     if ($('ed_position')) node.position = Number(val('ed_position'));
+    // Bloque de vídeo
+    if ($('ed_videoAssetId')) {
+      const vid = val('ed_videoAssetId')!;
+      node.videoAssetId = vid || undefined;
+      const found = findCustomAsset(vid);
+      node.videoName = found?.name;
+    }
+    const boolOf = (id: string) => ($(id) as HTMLInputElement | null)?.checked;
+    if ($('ed_videoAutoplay')) node.videoAutoplay = !!boolOf('ed_videoAutoplay');
+    if ($('ed_videoLoop')) node.videoLoop = !!boolOf('ed_videoLoop');
+    if ($('ed_videoMuted')) node.videoMuted = !!boolOf('ed_videoMuted');
+    if ($('ed_videoControls')) node.videoControls = !!boolOf('ed_videoControls');
+    if ($('ed_audioAssetId')) {
+      const aid = val('ed_audioAssetId')!;
+      node.audioAssetId = aid || undefined;
+      const found = findCustomAsset(aid);
+      node.audioName = found?.name;
+    }
+    // Complemento de sonido
+    if ($('ed_soundAssetId')) {
+      const sid = val('ed_soundAssetId')!;
+      node.soundAssetId = sid || undefined;
+      node.audioAssetId = sid || undefined;
+      const found = findCustomAsset(sid);
+      node.soundName = found?.name;
+      node.audioName = found?.name;
+    }
+    if ($('ed_volume')) node.volume = Number(val('ed_volume'));
+    if ($('ed_loop')) node.loop = !!boolOf('ed_loop');
     // Opciones de choice
     bodyEl.querySelectorAll('[data-opt-label]').forEach((inp) => {
       const i = Number((inp as HTMLElement).dataset.optLabel);

@@ -25,7 +25,11 @@ export type NodeType =
   | 'character_selector'
   | 'avatar_scene'
   | 'branch_scene'
+  | 'video_scene'
+  | 'sound_cue'
   | string;
+
+export type SoundTrigger = 'auto' | 'with_dialogue';
 
 export interface VNNode {
   id: string;
@@ -52,6 +56,22 @@ export interface VNNode {
   position?: number;
   inColor?: PortColor;
   showAddButtons?: boolean;
+  // Nodos de escena genéricos: audio de fondo / efecto asignado desde la carpeta.
+  audioAssetId?: string;
+  audioName?: string;
+  // Bloque de vídeo: recurso de la carpeta + comportamiento de reproducción.
+  videoAssetId?: string;
+  videoName?: string;
+  videoAutoplay?: boolean;
+  videoLoop?: boolean;
+  videoMuted?: boolean;
+  videoControls?: boolean;
+  // Nodo complemento de sonido: se reproduce al entrar en el paso.
+  soundAssetId?: string;
+  soundName?: string;
+  volume?: number;
+  loop?: boolean;
+  trigger?: SoundTrigger;
 }
 
 export interface VNWire {

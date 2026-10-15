@@ -1,6 +1,12 @@
 # Changelog — formato Keep a Changelog
 
 ## [Unreleased]
+### Added
+- Bloque de vídeo (`video_scene` 🎬): reproduce vídeos de la carpeta con autoplay/bucle/silencio/controles; tarjeta, editor, playtest y export `.html`
+- Nodo complemento de sonido (`sound_cue` 🔊): dispara audio al entrar (volumen + bucle); audio extra opcional en cualquier escena
+- Carpeta de recursos con vídeos (galería de vídeos + administrador de archivos, `.mp4`/`.webm`/`.mov`) y audios (archivos, `.mp3`/`.wav`/`.ogg`/`.m4a`); filtros Todos/Imágenes/Vídeos/Audios y asignación al nodo seleccionado
+- Probar en horizontal 16:9 (`#vnPlaytestCard.vn-playtest-landscape` + `#vnVideoPlayer`/`#vnAudioPlayer` + `#btnVnFullscreen` + aviso `#vnRotateHint`)
+- Compartir sin `localhost`: base pública editable (`vn_share_base_url_v1`, `getShareBaseUrl`/`isLocalOrPrivateHost`) + botón «📦 .html jugable» (`downloadPlayableHtml`) para enviar sin servidor
 ### Removed
 - Shell C++ (`cpp/`) y port Qt (`qt/` ya retirado): stack único TypeScript; Tauri cubre desktop
 - Importación de recursos (imágenes/audio) desde galería o administrador de archivos en web, PC (diálogo nativo Tauri) y móvil (galería/cámara Capacitor + respaldo a selector del sistema); módulo `src/lib/assets.ts` con persistencia local
