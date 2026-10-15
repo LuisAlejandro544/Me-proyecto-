@@ -1,7 +1,11 @@
-// Editor por nodos estilo imagen: grid, conexiones cyan/rojo, drag, zoom Fit.
-// Barra inferior + Dialogue/Sprite/Choice/Sound. Igual en Android y PC.
+// Editor por nodos optimizado para 500+ nodos sin lag.
+// Técnicas: posiciones por ValueNotifier (mover 1 nodo no reconstruye los demás),
+// culling por viewport (solo se construyen los nodos visibles), aristas que solo
+// se repintan al soltar un nodo, painters cacheados y tarjetas sin sombras.
+// Funciona igual en Android, Linux, Windows y Web.
 import 'package:flutter/material.dart';
 import '../models/vn_models.dart';
+import 'node_widgets.dart';
 import '../player/player_screen.dart';
 import '../export/html_exporter.dart';
 
@@ -15,35 +19,130 @@ class EditorScreen extends StatefulWidget {
 class _EditorScreenState extends State<EditorScreen> {
   late VnProject project;
   final TransformationController zoom = TransformationController();
+  final ValueNotifier<int> edgeVersion = ValueNotifier(0);
+  final ValueNotifier<int> fps = ValueNotifier(0);
+  final Map<String, ValueNotifier<Offset>> posOf = {};
   int seq = 100;
+  int lastVisible = 0;
+  int frames = 0;
+  DateTime t0 = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     project = VnProject.demo();
+    _indexPositions();
+    _fpsLoop();
   }
 
-  void _add(VnNodeType t) {
-    setState(() {
-      seq++;
-      final id = '${t.name}_$seq';
-      project.nodes.add(VnNode(
-        id: id, type: t, title: '${t.name} - $seq',
-        x: 300 + (seq % 5) * 40, y: 120 + (seq % 4) * 80,
-        speaker: 'Yui', text: 'Nuevo texto...',
-        options: t == VnNodeType.choice
-            ? [VnOption(label: '1: Sí', nextId: 'dlg_c'), VnOption(label: '2: No', nextId: 'dlg_l', isDanger: true)]
-            : [],
-      ));
+  @override
+  void dispose() {
+    for (final v in posOf.values) {
+      v.dispose();
+    }
+    zoom.dispose();
+    edgeVersion.dispose();
+    fps.dispose();
+    super.dispose();
+  }
+
+  // Contador de fps barato: cuenta frames reales por segundo.
+  void _fpsLoop() {
+    frames++;
+    final now = DateTime.now();
+    if (now.difference(t0).inMilliseconds >= 1000) {
+      fps.value = frames;
+      frames = 0;
+      t0 = now;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _fpsLoop();
     });
   }
 
-  void _fit() => setState(() => zoom.value = Matrix4.identity());
+  void _indexPositions() {
+    for (final n in project.nodes) {
+      posOf[n.id] = ValueNotifier(Offset(n.x, n.y));
+    }
+  }
+
+  void _clearPositions() {
+    for (final v in posOf.values) {
+      v.dispose();
+    }
+    posOf.clear();
+  }
+
+  void _add(VnNodeType t) {
+    seq++;
+    final id = '${t.name}_$seq';
+    final n = VnNode(
+      id: id, type: t, title: '${t.name} - $seq',
+      x: 300 + (seq % 5) * 40, y: 120 + (seq % 4) * 80,
+      speaker: 'Yui', text: 'Nuevo texto...',
+      options: t == VnNodeType.choice
+          ? [VnOption(label: '1: Sí', nextId: 'dlg_c'), VnOption(label: '2: No', nextId: 'dlg_l', isDanger: true)]
+          : [],
+    );
+    project.nodes.add(n);
+    posOf[id] = ValueNotifier(Offset(n.x, n.y));
+    setState(() => edgeVersion.value++);
+  }
+
+  // Genera 500 nodos de prueba de una sola vez (1 solo rebuild).
+  void _stress500() {
+    _clearPositions();
+    project = VnProject.stress500();
+    seq = 1000;
+    _indexPositions();
+    zoom.value = Matrix4.identity();
+    setState(() => edgeVersion.value++);
+  }
+
+  void _restoreDemo() {
+    _clearPositions();
+    project = VnProject.demo();
+    seq = 100;
+    _indexPositions();
+    zoom.value = Matrix4.identity();
+    setState(() => edgeVersion.value++);
+  }
+
+  void _delete(VnNode n) {
+    project.nodes.removeWhere((e) => e.id == n.id);
+    project.edges.removeWhere((e) => e.fromId == n.id || e.toId == n.id);
+    posOf.remove(n.id)?.dispose();
+    setState(() => edgeVersion.value++);
+  }
+
+  void _fit() => zoom.value = Matrix4.identity();
 
   void _zoomBy(double d) {
-    final m = zoom.value.clone();
-    final s = (m.getMaxScaleOnAxis() + d).clamp(0.4, 2.5);
+    final s = (zoom.value.getMaxScaleOnAxis() + d).clamp(0.4, 2.5);
     zoom.value = Matrix4.identity()..scaleByDouble(s, s, s, 1.0);
+  }
+
+  // Tamaño del canvas según el nodo más lejano (crece con 500 nodos).
+  Size _canvasSize() {
+    double mx = 1300, my = 640;
+    for (final n in project.nodes) {
+      if (n.x + 320 > mx) mx = n.x + 320;
+      if (n.y + 260 > my) my = n.y + 260;
+    }
+    return Size(mx, my);
+  }
+
+  // Rect visible en coordenadas de escena, con margen de precarga.
+  Rect _visibleRect(Size viewport) {
+    final inv = Matrix4.inverted(zoom.value);
+    final tl = MatrixUtils.transformPoint(inv, Offset.zero);
+    final br = MatrixUtils.transformPoint(inv, Offset(viewport.width, viewport.height));
+    return Rect.fromPoints(tl, br).inflate(260);
+  }
+
+  static bool _overlaps(VnNode n, Offset p, Rect vis) {
+    final w = n.type == VnNodeType.start ? 110.0 : 190.0;
+    return vis.overlaps(Rect.fromLTWH(p.dx, p.dy, w, 220));
   }
 
   void _showHtml() {
@@ -73,11 +172,21 @@ class _EditorScreenState extends State<EditorScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0F172A),
         toolbarHeight: 76,
-        title: Text('Project: ${project.title}',
-            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Project: ${project.title}',
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            ValueListenableBuilder<int>(
+              valueListenable: fps,
+              builder: (ctx, value, child) => Text('$value fps · $lastVisible/${project.nodes.length} nodos',
+                  style: const TextStyle(color: Colors.white54, fontSize: 11)),
+            ),
+          ],
+        ),
         actions: [
           _topBtn(Icons.share, 'Share', () => _showHtml()),
-          _topBtn(Icons.window, '.exe', () => _snack('Windows: usa flutter build windows')),
+          _topBtn(Icons.window, '.exe', () => _snack('Windows: usa scripts/build.sh --windows')),
           _topBtn(Icons.html, '.html', _showHtml, active: true),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -93,31 +202,67 @@ class _EditorScreenState extends State<EditorScreen> {
       body: Column(
         children: [
           Expanded(
-            child: InteractiveViewer(
-              transformationController: zoom,
-              constrained: false,
-              boundaryMargin: const EdgeInsets.all(400),
-              minScale: 0.4, maxScale: 2.5,
-              child: SizedBox(
-                width: 1300, height: 640,
-                child: Stack(
-                  children: [
-                    const Positioned.fill(child: CustomPaint(painter: _GridPainter())),
-                    CustomPaint(size: const Size(1300, 640), painter: _EdgePainter(project: project)),
-                    for (final n in project.nodes)
-                      Positioned(
-                        left: n.x, top: n.y,
-                        child: DraggableNode(
-                          node: n,
-                          onMove: (dx, dy) => setState(() { n.x += dx; n.y += dy; }),
-                          onDelete: () => setState(() {
-                            project.nodes.removeWhere((e) => e.id == n.id);
-                            project.edges.removeWhere((e) => e.fromId == n.id || e.toId == n.id);
-                          }),
-                        ),
+            child: LayoutBuilder(
+              builder: (ctx, cons) => AnimatedBuilder(
+                // Solo se reconstruye el filtro al mover zoom o cambiar datos,
+                // NUNCA durante el arrastre de un nodo (ese usa estado local).
+                animation: Listenable.merge([zoom, edgeVersion]),
+                builder: (ctx, _) {
+                  final vis = _visibleRect(cons.biggest);
+                  final size = _canvasSize();
+                  final visibles = <VnNode>[];
+                  for (final n in project.nodes) {
+                    final p = posOf[n.id]?.value ?? Offset(n.x, n.y);
+                    if (_overlaps(n, p, vis)) visibles.add(n);
+                  }
+                  lastVisible = visibles.length;
+                  return InteractiveViewer(
+                    transformationController: zoom,
+                    constrained: false,
+                    boundaryMargin: const EdgeInsets.all(400),
+                    minScale: 0.4, maxScale: 2.5,
+                    // Importante: el hijo NO se reconstruye al hacer pan/zoom,
+                    // Flutter solo aplica la matriz (gratis en GPU).
+                    child: SizedBox.fromSize(
+                      size: size,
+                      child: Stack(
+                        children: [
+                          const Positioned.fill(
+                            child: RepaintBoundary(
+                              child: CustomPaint(painter: GridPainter()),
+                            ),
+                          ),
+                          RepaintBoundary(
+                            child: CustomPaint(
+                              size: size, isComplex: true, willChange: false,
+                              painter: EdgePainter(project: project, version: edgeVersion.value),
+                            ),
+                          ),
+                          for (final n in visibles)
+                            ValueListenableBuilder<Offset>(
+                              valueListenable: posOf[n.id]!,
+                              builder: (ctx, p, child) => Positioned(
+                                left: p.dx, top: p.dy,
+                                child: RepaintBoundary(
+                                  child: DraggableNode(
+                                    key: ValueKey(n.id),
+                                    node: n,
+                                    onDragEnd: (dx, dy) {
+                                      n.x += dx;
+                                      n.y += dy;
+                                      posOf[n.id]!.value = Offset(n.x, n.y);
+                                      edgeVersion.value++;
+                                    },
+                                    onDelete: () => _delete(n),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                  ],
-                ),
+                    ),
+                  );
+                },
               ),
             ),
           ),
@@ -139,6 +284,8 @@ class _EditorScreenState extends State<EditorScreen> {
                   _addBtn('+ Sprite', VnNodeType.sprite, const Color(0xFF22D3EE)),
                   _addBtn('+ Choice', VnNodeType.choice, const Color(0xFFF87171)),
                   _addBtn('+ Sound', VnNodeType.sound, const Color(0xFFF87171)),
+                  _actionBtn('⚡500', _stress500),
+                  _actionBtn('Demo', _restoreDemo),
                 ],
               ),
             ),
@@ -193,141 +340,23 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
-  void _snack(String m) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
-}
-
-class DraggableNode extends StatelessWidget {
-  final VnNode node;
-  final void Function(double dx, double dy) onMove;
-  final VoidCallback onDelete;
-  const DraggableNode({super.key, required this.node, required this.onMove, required this.onDelete});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDangerTarget = node.id == 'dlg_l';
-    final border = node.type == VnNodeType.start
-        ? const Color(0xFF4ADE80)
-        : isDangerTarget
-            ? const Color(0xFFF87171)
-            : const Color(0xFF22D3EE);
-    return GestureDetector(
-      onPanUpdate: (d) => onMove(d.delta.dx, d.delta.dy),
-      onLongPress: onDelete,
-      child: Container(
-        width: node.type == VnNodeType.start ? 110 : 190,
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E293B).withValues(alpha: 0.95),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: border, width: 1.4),
-          boxShadow: [BoxShadow(color: border.withValues(alpha: 0.25), blurRadius: 12)],
+  Widget _actionBtn(String label, VoidCallback fn) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: OutlinedButton(
+        onPressed: fn,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFFFACC15),
+          side: const BorderSide(color: Color(0xFFFACC15)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
-        child: _inner(),
+        child: Text(label),
       ),
     );
   }
 
-  Widget _inner() {
-    const tWhite = TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13);
-    const tBody = TextStyle(color: Colors.white, fontSize: 13);
-    const tDim = TextStyle(color: Colors.white54, fontSize: 12);
-    switch (node.type) {
-      case VnNodeType.start:
-        return const Center(child: Text('Start', style: TextStyle(color: Color(0xFF4ADE80), fontWeight: FontWeight.bold)));
-      case VnNodeType.sprite:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(node.title, style: tWhite),
-            const SizedBox(height: 8),
-            const Center(
-              child: CircleAvatar(
-                radius: 24, backgroundColor: Color(0xFFF9A8D4),
-                child: Text('Y', style: TextStyle(color: Colors.black, fontSize: 22)),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(node.enterFrom, style: tDim),
-            Text('Pose: ${node.pose}', style: tDim),
-          ],
-        );
-      case VnNodeType.dialogue:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(node.title, style: tWhite),
-            const SizedBox(height: 6),
-            Text('${node.speaker}: "${node.text}"', style: tBody),
-          ],
-        );
-      case VnNodeType.choice:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Choices', style: tWhite),
-            const SizedBox(height: 6),
-            for (final o in node.options)
-              Container(
-                margin: const EdgeInsets.only(bottom: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                decoration: BoxDecoration(
-                  color: o.isDanger ? const Color(0x55F87171) : const Color(0x3322D3EE),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: o.isDanger ? const Color(0xFFF87171) : const Color(0xFF22D3EE)),
-                ),
-                child: Text(o.label, style: const TextStyle(color: Colors.white, fontSize: 12)),
-              ),
-          ],
-        );
-      case VnNodeType.sound:
-        return const Column(
-          crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min,
-          children: [Text('Sound', style: tWhite), Text('bgm.mp3', style: tDim)],
-        );
-    }
-  }
+  void _snack(String m) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
 }
 
-class _GridPainter extends CustomPainter {
-  const _GridPainter();
-  @override
-  void paint(Canvas c, Size s) {
-    final p = Paint()..color = const Color(0xFF1E293B)..strokeWidth = 1;
-    for (double x = 0; x < s.width; x += 28) {
-      c.drawLine(Offset(x, 0), Offset(x, s.height), p);
-    }
-    for (double y = 0; y < s.height; y += 28) {
-      c.drawLine(Offset(0, y), Offset(s.width, y), p);
-    }
-  }
-  @override
-  bool shouldRepaint(covariant CustomPainter old) => false;
-}
+// Nodos y painters del canvas en node_widgets.dart.
 
-class _EdgePainter extends CustomPainter {
-  final VnProject project;
-  _EdgePainter({required this.project});
-
-  Offset _out(VnNode n) => Offset(n.x + (n.type == VnNodeType.start ? 110 : 190), n.y + 40);
-  Offset _inp(VnNode n) => Offset(n.x, n.y + 40);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    for (final e in project.edges) {
-      VnNode? a, b;
-      try { a = project.byId(e.fromId); b = project.byId(e.toId); } catch (_) { continue; }
-      final p1 = _out(a);
-      final p2 = _inp(b);
-      final mid = (p1.dx + p2.dx) / 2;
-      final path = Path()
-        ..moveTo(p1.dx, p1.dy)
-        ..cubicTo(mid, p1.dy, mid, p2.dy, p2.dx, p2.dy);
-      final color = e.isDanger ? const Color(0xFFF87171) : const Color(0xFF22D3EE);
-      canvas.drawPath(path, Paint()..color = color..strokeWidth = 3..style = PaintingStyle.stroke);
-      canvas.drawCircle(p2, 5, Paint()..color = color);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _EdgePainter old) => true;
-}

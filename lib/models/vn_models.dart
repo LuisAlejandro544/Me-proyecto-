@@ -89,5 +89,23 @@ class VnProject {
     return VnProject(title: 'My Novel', nodes: nodes, edges: edges);
   }
 
+  /// Proyecto de estrés: 500 nodos en rejilla con aristas en cadena.
+  /// Sirve para probar que el canvas no tira lag.
+  factory VnProject.stress500() {
+    final nodes = <VnNode>[];
+    const cols = 25;
+    for (int i = 0; i < 500; i++) {
+      final col = i % cols;
+      final row = i ~/ cols;
+      nodes.add(VnNode(
+        id: 'n_$i', type: VnNodeType.dialogue, title: 'Dlg - $i',
+        x: 40.0 + col * 260, y: 40.0 + row * 170,
+        speaker: 'Yui', text: 'Texto $i...',
+      ));
+    }
+    final edges = <VnEdge>[for (int i = 0; i < 499; i++) VnEdge(fromId: 'n_$i', toId: 'n_${i + 1}')];
+    return VnProject(title: 'Stress 500', nodes: nodes, edges: edges);
+  }
+
   VnNode byId(String id) => nodes.firstWhere((n) => n.id == id);
 }

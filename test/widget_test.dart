@@ -34,4 +34,15 @@ void main() {
     expect(p.edges.length, 5);
     expect(p.edges.where((e) => e.isDanger).length, 1);
   });
+
+  test('deberia_generar_estres_500_nodos_validos', () {
+    final p = VnProject.stress500();
+    expect(p.nodes.length, 500);
+    expect(p.edges.length, 499);
+    final ids = {for (final n in p.nodes) n.id};
+    for (final e in p.edges) {
+      expect(ids.contains(e.fromId), true);
+      expect(ids.contains(e.toId), true);
+    }
+  });
 }

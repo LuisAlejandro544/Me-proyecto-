@@ -23,11 +23,18 @@ flutter run -d android   # Android
 flutter run -d chrome    # Web preview
 ```
 
-## Compilar local
+## Compilar local (o un script para todo)
 ```bash
-flutter build apk --release --split-per-abi  # build/app/outputs/flutter-apk/
-flutter build web --release                  # build/web (.html jugable)
+bash scripts/build.sh --all      # APK + Linux + Windows + Web (salta lo que tu OS no soporte)
+bash scripts/build.sh --apk      # build/app/outputs/flutter-apk/ (arm64 + arm32)
+flutter build web --release      # build/web (.html jugable)
 ```
+
+## CI (sin PC, lo corre GitHub)
+Workflow **Build APK + Linux + Windows**: `check` (analyze+test) y luego en
+paralelo `android` (APK split + Web), `linux` (bundle) y `windows` (Release).
+Artefactos: `app-release-apks`, `web-build`, `linux-bundle`, `windows-release`.
+Se dispara con push a `main` o manual en Actions > Run workflow.
 
 ## Estructura
 ```
