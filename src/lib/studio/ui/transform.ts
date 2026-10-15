@@ -19,19 +19,25 @@ export function updateZoomLabels() {
   if (mini) mini.textContent = pct;
 }
 export function applyTransform() {
-  // Zoom por GPU (transform scale): nativo y sin re-layout.
-  // El pan vive en #panLayer (px de pantalla, sin escalar) y el zoom en
-  // #canvasWorld (scale con origen arriba-izquierda). La matemática de
-  // pantalla = mundo * zoom + pan no cambia respecto al zoom por layout,
-  // pero evita el coste de CSS `zoom` (re-maquetaba todos los nodos por frame).
-  // Los cables SVG están dentro del mundo y escalan vectorialmente gratis.
+  // Zoom híbrido: en escritorio (puntero fino) CSS `zoom` re-maqueta nítido;
+  // en táctil (coarse) `transform: scale` por GPU (60fps en móvil).
+  // El pan vive en #panLayer (px de pantalla, sin escalar) en ambos modos y
+  // la matemática (pantalla = mundo * zoom + pan) no cambia.
+  const coarse = typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(pointer: coarse)').matches;
   const pan = document.getElementById('panLayer');
   if (pan) pan.style.transform = `translate3d(${ctx.state.panX}px, ${ctx.state.panY}px, 0)`;
   const world = document.getElementById('canvasWorld');
   if (world) {
-    if ('zoom' in world.style) world.style.zoom = '';
-    world.style.transformOrigin = '0 0';
-    world.style.transform = `scale(${ctx.state.zoom})`;
+    if (coarse) {
+      if ('zoom' in world.style) world.style.zoom = '';
+      world.style.transformOrigin = '0 0';
+      world.style.transform = `scale(${ctx.state.zoom})`;
+    } else {
+      world.style.transform = '';
+      world.style.zoom = String(ctx.state.zoom);
+    }
   }
   updateZoomLabels();
 }

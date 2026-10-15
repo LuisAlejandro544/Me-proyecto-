@@ -49,7 +49,7 @@ export function renderNodes() {
           <!-- 16:9 Character Banner -->
           <div class="relative w-full h-24 rounded-xl overflow-hidden border border-white/15 mb-2.5 shadow-inner group">
             <img src="${charObj.banner}" alt="${escapeHtml(node.speaker)}" class="w-full h-full object-cover" />
-            <button data-action="cycle-char" data-node="${node.id}" title="Cambiar sprite del personaje" class="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded bg-black/65 text-[10px] text-cyan-300 opacity-0 group-hover:opacity-100 transition">
+            <button data-action="cycle-char" data-node="${node.id}" title="Cambiar sprite del personaje" class="vn-appear absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded bg-black/65 text-[10px] text-cyan-300 opacity-0 group-hover:opacity-100 transition">
               Cambiar sprite
             </button>
           </div>

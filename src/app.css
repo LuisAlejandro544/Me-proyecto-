@@ -190,7 +190,8 @@
        intermedios que shimmeren contra el backdrop-filter. */
     body.fx-instant .vn-node-toolbar,
     body.fx-instant .vn-wire-hi,
-    body.fx-instant .vn-port-dim {
+    body.fx-instant .vn-port-dim,
+    body.fx-instant .vn-appear {
       transition: none !important;
     }
     /* SVG Wire animations & hover (opacity-only highlight: no geometry/filter
