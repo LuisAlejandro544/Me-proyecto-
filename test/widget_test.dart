@@ -34,4 +34,20 @@ void main() {
     final html = buildPlayableHtml(p);
     expect(html.contains('Vacio'), isTrue);
   });
+
+  testWidgets('deberia_animar_fit_y_agregar_nodo', (tester) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(const MyNovelApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Fit'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('+ Dialogue'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('dialogue -'), findsWidgets);
+  });
 }

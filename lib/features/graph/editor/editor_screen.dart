@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:me_proyecto/core/perf/fps_chip.dart';
 import 'package:me_proyecto/core/theme/app_theme.dart';
 import 'package:me_proyecto/features/graph/editor/node_widgets.dart';
@@ -21,9 +22,12 @@ class EditorScreen extends StatefulWidget {
   State<EditorScreen> createState() => _EditorScreenState();
 }
 
-class _EditorScreenState extends State<EditorScreen> {
+class _EditorScreenState extends State<EditorScreen>
+    with SingleTickerProviderStateMixin {
   late final GraphController graph;
   final TransformationController zoom = TransformationController();
+  late final AnimationController _zoomAnim;
+  Size _viewSize = Size.zero;
   int lastVisible = 0;
 
   @override
@@ -31,6 +35,10 @@ class _EditorScreenState extends State<EditorScreen> {
     super.initState();
     graph = GraphController.demo();
     graph.addListener(_onGraphChanged);
+    _zoomAnim = AnimationController(
+      duration: const Duration(milliseconds: 220),
+      vsync: this,
+    );
   }
 
   void _onGraphChanged() {
@@ -41,15 +49,48 @@ class _EditorScreenState extends State<EditorScreen> {
   void dispose() {
     graph.removeListener(_onGraphChanged);
     graph.dispose();
+    _zoomAnim.dispose();
     zoom.dispose();
     super.dispose();
   }
 
-  void _fit() => zoom.value = Matrix4.identity();
+  /// Anima la matriz del canvas con ease-out (220ms): el cerebro lee
+  /// "fluido" aunque el hardware vaya justo. Todo movimiento es real.
+  void _animateZoom(Matrix4 target) {
+    _zoomAnim
+      ..stop()
+      ..reset();
+    final tween = Matrix4Tween(
+      begin: zoom.value.clone(),
+      end: target,
+    ).chain(CurveTween(curve: Curves.easeOutCubic));
+    tween.animate(_zoomAnim).addListener(() {
+      zoom.value = tween.evaluate(_zoomAnim);
+    });
+    unawaited(
+      _zoomAnim.forward().whenComplete(() {
+        if (mounted) graph.bumpView();
+      }),
+    );
+  }
 
-  void _zoomBy(double d) {
-    final s = (zoom.value.getMaxScaleOnAxis() + d).clamp(0.4, 2.5);
-    zoom.value = Matrix4.identity()..scaleByDouble(s, s, s, 1);
+  /// Encuadra todo el canvas con animación.
+  void _fit() => _animateZoom(Matrix4.identity());
+
+  /// Zoom con animación centrado en el viewport (no pierde el pan).
+  void _zoomBy(double step) {
+    final view = _viewSize;
+    final focal = Offset(view.width / 2, view.height / 2);
+    final old = zoom.value.clone();
+    final oldScale = old.getMaxScaleOnAxis();
+    final newScale = (oldScale + step).clamp(0.4, 2.5);
+    final k = newScale / oldScale;
+    final target = Matrix4.identity()
+      ..translateByDouble(focal.dx, focal.dy, 0, 1)
+      ..scaleByDouble(k, k, k, 1)
+      ..translateByDouble(-focal.dx, -focal.dy, 0, 1)
+      ..multiply(old);
+    _animateZoom(target);
   }
 
   // Rect visible en coordenadas de escena, con margen de precarga.
@@ -138,12 +179,32 @@ class _EditorScreenState extends State<EditorScreen> {
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.black,
               ),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute<void>(
-                  builder: (_) => PlayerScreen(project: project),
-                ),
-              ),
+              onPressed: () {
+                unawaited(HapticFeedback.selectionClick());
+                Navigator.push(
+                  context,
+                  PageRouteBuilder<void>(
+                    transitionDuration: const Duration(milliseconds: 250),
+                    transitionsBuilder: (ctx, anim, _, child) {
+                      final curved = CurvedAnimation(
+                        parent: anim,
+                        curve: Curves.easeOutCubic,
+                      );
+                      return FadeTransition(
+                        opacity: curved,
+                        child: SlideTransition(
+                          position: Tween(
+                            begin: const Offset(0.04, 0),
+                            end: Offset.zero,
+                          ).animate(curved),
+                          child: child,
+                        ),
+                      );
+                    },
+                    pageBuilder: (_, _, _) => PlayerScreen(project: project),
+                  ),
+                );
+              },
               child: const Text('Play'),
             ),
           ),
@@ -153,109 +214,120 @@ class _EditorScreenState extends State<EditorScreen> {
         children: [
           Expanded(
             child: LayoutBuilder(
-              builder: (ctx, cons) => AnimatedBuilder(
-                // El pan/zoom lo mueve la GPU sin reconstruir nada.
-                // El filtro se recalcula al SOLTAR o al cambiar datos.
-                animation: Listenable.merge([
-                  graph.edgeVersion,
-                  graph.viewVersion,
-                ]),
-                builder: (ctx, _) {
-                  final vis = _visibleRect(cons.biggest);
-                  final size = graph.canvasSize;
-                  // Tile adaptativo: con zoom bajo el canvas visible es
-                  // enorme y 512px daría cientos de capas en una HD 5500.
-                  final scale = zoom.value.getMaxScaleOnAxis();
-                  final tSize = scale >= 0.75
-                      ? GridTilePainter.tile
-                      : GridTilePainter.tile * 2;
-                  final x0 = (vis.left / tSize).floor();
-                  final x1 = (vis.right / tSize).floor();
-                  final y0 = (vis.top / tSize).floor();
-                  final y1 = (vis.bottom / tSize).floor();
-                  final edgeVersion = graph.edgeVersion.value;
-                  final visibles = <VnNode>[];
-                  for (final n in project.nodes) {
-                    final p = graph.posOf[n.id]?.value ?? Offset(n.x, n.y);
-                    if (_overlaps(n, p, vis)) visibles.add(n);
-                  }
-                  lastVisible = visibles.length;
-                  return InteractiveViewer(
-                    transformationController: zoom,
-                    constrained: false,
-                    boundaryMargin: const EdgeInsets.all(400),
-                    minScale: 0.4,
-                    // Al soltar el pan/zoom se recalcula el culling.
-                    onInteractionEnd: (_) => graph.bumpView(),
-                    // Importante: el hijo NO se reconstruye al hacer pan/zoom,
-                    // Flutter solo aplica la matriz (gratis en GPU).
-                    child: SizedBox.fromSize(
-                      size: size,
-                      child: Stack(
-                        children: [
-                          // Grid por tiles: solo existen los visibles, memoria
-                          // constante. El pan los mueve la GPU sin repintar.
-                          for (var gx = x0; gx <= x1; gx++)
-                            for (var gy = y0; gy <= y1; gy++)
-                              Positioned(
-                                left: gx * tSize,
-                                top: gy * tSize,
-                                child: RepaintBoundary(
-                                  child: CustomPaint(
-                                    size: Size(tSize, tSize),
-                                    painter: GridTilePainter(
-                                      tx: gx,
-                                      ty: gy,
-                                      size: tSize,
+              builder: (ctx, cons) {
+                _viewSize = cons.biggest;
+                return AnimatedBuilder(
+                  // El pan/zoom lo mueve la GPU sin reconstruir nada.
+                  // El filtro se recalcula al SOLTAR o al cambiar datos.
+                  animation: Listenable.merge([
+                    graph.edgeVersion,
+                    graph.viewVersion,
+                  ]),
+                  builder: (ctx, _) {
+                    final vis = _visibleRect(cons.biggest);
+                    final size = graph.canvasSize;
+                    // Tile adaptativo: con zoom bajo el canvas visible es
+                    // enorme y 512px daría cientos de capas en una HD 5500.
+                    final scale = zoom.value.getMaxScaleOnAxis();
+                    final tSize = scale >= 0.75
+                        ? GridTilePainter.tile
+                        : GridTilePainter.tile * 2;
+                    final x0 = (vis.left / tSize).floor();
+                    final x1 = (vis.right / tSize).floor();
+                    final y0 = (vis.top / tSize).floor();
+                    final y1 = (vis.bottom / tSize).floor();
+                    final edgeVersion = graph.edgeVersion.value;
+                    final visibles = <VnNode>[];
+                    for (final n in project.nodes) {
+                      final p = graph.posOf[n.id]?.value ?? Offset(n.x, n.y);
+                      if (_overlaps(n, p, vis)) visibles.add(n);
+                    }
+                    lastVisible = visibles.length;
+                    return InteractiveViewer(
+                      transformationController: zoom,
+                      constrained: false,
+                      boundaryMargin: const EdgeInsets.all(400),
+                      minScale: 0.4,
+                      // Al soltar el pan/zoom se recalcula el culling.
+                      onInteractionEnd: (_) => graph.bumpView(),
+                      // Importante: el hijo NO se reconstruye al
+                      // hacer pan/zoom, Flutter solo aplica la matriz.
+                      child: SizedBox.fromSize(
+                        size: size,
+                        child: Stack(
+                          children: [
+                            // Grid por tiles: solo existen los visibles.
+                            // El pan los mueve la GPU sin repintar.
+                            for (var gx = x0; gx <= x1; gx++)
+                              for (var gy = y0; gy <= y1; gy++)
+                                Positioned(
+                                  left: gx * tSize,
+                                  top: gy * tSize,
+                                  child: RepaintBoundary(
+                                    child: CustomPaint(
+                                      size: Size(tSize, tSize),
+                                      painter: GridTilePainter(
+                                        tx: gx,
+                                        ty: gy,
+                                        size: tSize,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            // Aristas por tiles: adiós a la textura gigante
+                            // del canvas completo que ahogaba a la iGPU.
+                            for (var ex = x0; ex <= x1; ex++)
+                              for (var ey = y0; ey <= y1; ey++)
+                                Positioned(
+                                  left: ex * tSize,
+                                  top: ey * tSize,
+                                  child: RepaintBoundary(
+                                    child: CustomPaint(
+                                      size: Size(tSize, tSize),
+                                      isComplex: true,
+                                      painter: EdgeTilePainter(
+                                        project: project,
+                                        version: edgeVersion,
+                                        tx: ex,
+                                        ty: ey,
+                                        size: tSize,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            for (final n in visibles)
+                              ValueListenableBuilder<Offset>(
+                                valueListenable: graph.posOf[n.id]!,
+                                builder: (ctx, p, child) => Positioned(
+                                  left: p.dx,
+                                  top: p.dy,
+                                  child: RepaintBoundary(
+                                    child: DraggableNode(
+                                      key: ValueKey(n.id),
+                                      node: n,
+                                      onMove: (dx, dy) =>
+                                          graph.previewMove(n, dx, dy),
+                                      onDragEnd: () {
+                                        unawaited(HapticFeedback.lightImpact());
+                                        graph.commitMove();
+                                      },
+                                      onDelete: () {
+                                        unawaited(
+                                          HapticFeedback.mediumImpact(),
+                                        );
+                                        graph.deleteNode(n);
+                                      },
                                     ),
                                   ),
                                 ),
                               ),
-                          // Aristas por tiles: adiós a la textura gigante
-                          // del canvas completo que ahogaba a la iGPU.
-                          for (var ex = x0; ex <= x1; ex++)
-                            for (var ey = y0; ey <= y1; ey++)
-                              Positioned(
-                                left: ex * tSize,
-                                top: ey * tSize,
-                                child: RepaintBoundary(
-                                  child: CustomPaint(
-                                    size: Size(tSize, tSize),
-                                    isComplex: true,
-                                    painter: EdgeTilePainter(
-                                      project: project,
-                                      version: edgeVersion,
-                                      tx: ex,
-                                      ty: ey,
-                                      size: tSize,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          for (final n in visibles)
-                            ValueListenableBuilder<Offset>(
-                              valueListenable: graph.posOf[n.id]!,
-                              builder: (ctx, p, child) => Positioned(
-                                left: p.dx,
-                                top: p.dy,
-                                child: RepaintBoundary(
-                                  child: DraggableNode(
-                                    key: ValueKey(n.id),
-                                    node: n,
-                                    onMove: (dx, dy) =>
-                                        graph.previewMove(n, dx, dy),
-                                    onDragEnd: graph.commitMove,
-                                    onDelete: () => graph.deleteNode(n),
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                );
+              },
             ),
           ),
           Container(
@@ -344,7 +416,10 @@ class _EditorScreenState extends State<EditorScreen> {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: OutlinedButton(
-        onPressed: () => graph.addNode(t),
+        onPressed: () {
+          unawaited(HapticFeedback.selectionClick());
+          graph.addNode(t);
+        },
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.white,
           side: BorderSide(color: c),

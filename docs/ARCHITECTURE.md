@@ -45,3 +45,7 @@ lib/
    del canvas completo que ahogaba iGPUs viejas (Intel HD). Cada tile
    filtra aristas por bbox y lotea en 2 paths + puntos. Tile adaptativo:
    512px normal, 1024px con zoom bajo para dar menos capas.
+10. **Movimiento honesto**: zoom Fit/botones con ease-out real (220ms,
+    centrado en viewport sin perder el pan), transición fade+slide a
+    Play (250ms) y hápticos reales en agregar/soltar/borrar. Nada
+    placebo: en Linux el háptico es no-op y está bien.
