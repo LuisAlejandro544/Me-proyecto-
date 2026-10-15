@@ -36,15 +36,26 @@
         id="updateNotes"
         class="text-xs text-slate-300 leading-relaxed whitespace-pre-line max-h-32 overflow-y-auto rounded-xl bg-[#0f1428] border border-slate-700/70 p-3"
       ></p>
-      <p id="updateZipInfo" class="text-[11px] font-mono text-cyan-200 break-all"></p>
+      <p id="updateZipInfo" class="text-[11px] font-mono text-cyan-200 break-all whitespace-pre-line"></p>
       <p id="updateEnvHint" class="text-[11px] text-slate-400 leading-relaxed"></p>
+
+      <div id="updateProgressWrap" class="hidden space-y-1.5 rounded-xl bg-[#0f1428] border border-slate-700/70 p-3">
+        <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
+          <div id="updateProgressBar" class="h-full w-0 rounded-full bg-emerald-400 transition-[width] duration-200"></div>
+        </div>
+        <p class="flex items-center justify-between gap-2 text-[11px] text-slate-300">
+          <span id="updateStatus" class="flex-1">Descargando…</span>
+          <span id="updateProgressLabel" class="font-mono text-slate-400 shrink-0"></span>
+        </p>
+        <p id="updateSavedPath" class="text-[10px] font-mono text-slate-500 break-all"></p>
+      </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
         <button
           id="btnDownloadUpdate"
           class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-xs font-bold text-slate-950 transition min-h-[44px]"
         >
-          📦 Descargar .zip
+          📦 Descargar / instalar
         </button>
         <button
           id="btnReloadApp"
