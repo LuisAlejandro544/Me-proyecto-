@@ -19,7 +19,7 @@ Me-proyecto-/
 │   │       │                 #projectDropdownMenu .preset-option
 │   │       │                 #btnShareLevel #btnPlayPreviewTop #btnUndo #btnRedo
 │   │       │                 #btnZoomResetTop #topZoomLabel #btnExportExe
-│   │       │                 #btnExportHtml #btnTopSettings #btnCheckUpdates #updateDot
+│   │       │                 #btnExportHtml #btnExportLinux #btnTopSettings #btnCheckUpdates #updateDot
 │   │       │                 (+ #updateModal #updateVersionBadge #btnDownloadUpdate)
 │   │       ├── main#canvasViewport  lienzo
 │   │       │   ├── #pillPresetSora #pillPresetAoi
@@ -74,19 +74,20 @@ Me-proyecto-/
 │               ├── minimap.ts       renderMinimap
 │               ├── load-preset.ts   loadPreset(sora|aoi|blank)
 │               ├── playtest.ts      startPlaytest/closePlaytest/renderPlaytestStep (horizontal 16:9 + <video>/<audio>)
-│               ├── exporter.ts      exportStandaloneHtml (+vídeo/audio) + openExeExportModal
+│               ├── compile.ts       compilador ÚNICO (buildStandaloneHtml/buildHistoria/validateStory/saveTextFile + openCompileModal + exportWindowsPackage/exportLinuxPackage)
+│               ├── exporter.ts      compat (delega a compile.ts: exportStandaloneHtml/openExeExportModal)
 │               ├── workspace.ts     openWorkspaceTab + addNewNodeOfType + assets/timeline/chars
 │               ├── share.ts         getShareBaseUrl/isLocalOrPrivateHost/buildShareUrl/
-│               │                         parseShareHash/openShareModal (base editable + .html)/
+│               │                         parseShareHash/openShareModal (base editable + .html vía compile.ts)/
 │               │               downloadPlayableHtml/enterSharedPlayMode/checkSharedPlayModeOnBoot
 │               ├── updater.ts       check GitHub releases/latest + pantalla #updateModal
 │               │                     + descarga .zip (Tauri save/fs, Capacitor Share)
 │               └── toast.ts         showToast
-├── src-tauri/  tauri.conf.json (frontendDist ../dist) + main.rs + plugin-fs/dialog
+├── src-tauri/  tauri.conf.json (frontendDist ../dist, bundle targets all) + src/main.rs (Rust + plugin-fs/dialog/opener) + plugin-fs/dialog
 ├── android/    proyecto Capacitor (generado, no editar a mano; `npx cap sync`)
 ├── capacitor.config.ts
 ├── scripts/    bootstrap, check, build-all, package-web, release
-├── .github/workflows/  web-check (push/PR), release-web (manual), auto-update (SOLO release publicado + manual, nunca push/PR), tauri-linux (manual), apk-debug (manual)
+├── .github/workflows/  web-check (push/PR), release-web (manual), auto-update (SOLO release publicado + manual, nunca push/PR), tauri-linux (manual), apk-debug (manual), bundle-desktop (SOLO manual: .exe NSIS/MSI en Windows + .deb/.AppImage en Linux → Artifacts)
 ├── my_novel_visual_novel_node_studio.html  referencia legacy (NO borrar)
 └── icon.svg    fuente de iconos
 ```
@@ -104,7 +105,8 @@ Me-proyecto-/
 | Añadir pestaña inferior | `StudioShell.svelte` (footer) + `ui/workspace.ts` (`openWorkspaceTab`) |
 | Nueva pantalla completa (no popup) | `components/*.svelte` montado en `App.svelte` + evento `vn:open-*`/`vn:close-*` + `data-tab` en el footer (ver `CompositionStudio.svelte`) |
 | Etiquetar assets | `lib/assets.ts` (`tags`, `setAssetTags`, `getAllAssetTags`) + chips `[data-tag-filter]` y botón `[data-edit-tags]` en `ui/workspace.ts` |
-| Cambiar export nativo | `lib/platform.ts` + `ui/exporter.ts` |
+| Cambiar export nativo | `lib/platform.ts` + `ui/compile.ts` (generador único) + workflow `bundle-desktop.yml` (solo manual; Rust/Tauri compila el .exe/.deb/.AppImage real) |
+| Cambiar compilar novela | `ui/compile.ts` (`buildStandaloneHtml`/`buildHistoria`/`validateStory`/`saveTextFile`/`openCompileModal`/`exportWindowsPackage`/`exportLinuxPackage`) + `index.ts` (wiring `#btnExportExe`/`#btnExportHtml`/`#btnExportLinux`) |
 | Cambiar auto-update | `ui/updater.ts` + `components/UpdateModal.svelte` (`#updateModal`) + workflow `auto-update.yml` (solo `release: published` + `workflow_dispatch`; ver `docs/RELEASING.md`) |
 | Añadir personaje base | `studio/data/assets.ts` + `lib/assets.ts` |
 

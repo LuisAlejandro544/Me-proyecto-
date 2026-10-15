@@ -1,0 +1,59 @@
+name: Bundle escritorio (.exe + Linux, manual)
+
+# Compila el instalador nativo REAL del estudio/jugador:
+# - Windows: .exe (NSIS) + .msi en windows-latest (WebView2)
+# - Linux: .deb + .AppImage en ubuntu-22.04 (WebKit/GTK)
+# Los artefactos quedan descargables en la pestaña Actions del run.
+#
+# Cómo conseguir el .exe / .AppImage de tu novela:
+# 1. En la app: «Compilar novela» → formato Windows/Linux → descarga inmediata
+#    (.html jugable + lanzadores .bat/.sh: funcional sin instalar nada).
+# 2. Para el instalador nativo: Actions > este workflow > Run workflow.
+#    Descarga los bundles de Artifacts y repártelos con tu .html/.vn.json.
+#
+# Disparador: SOLO manual (workflow_dispatch). Nunca en push/PR.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bundle-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm install --no-audit --no-fund
+      - uses: tauri-apps/tauri-action@v0
+        with:
+          args: --bundles nsis,msi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe
+          path: src-tauri/target/release/bundle/
+
+  bundle-linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Dependencias del sistema (WebKit/GTK)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - run: npm install --no-audit --no-fund
+      - uses: tauri-apps/tauri-action@v0
+        with:
+          args: --bundles deb,appimage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-bundles
+          path: src-tauri/target/release/bundle/

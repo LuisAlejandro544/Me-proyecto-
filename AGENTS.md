@@ -17,7 +17,8 @@ Idioma del repo: español en respuestas al usuario.
 - `src/lib/studio/` — módulos por dominio (`data/`, `domain/`, `ui/`); barrel `index.ts`; estado en `context.ts`
   - `ui/render-nodes.ts` — tarjetas + toolbar ✏️/🗑 + puertos a `-9px` visibles
   - `ui/node-editor.ts` — `openNodeEditor` / `deleteNode` / `duplicateNode`
-  - `ui/share.ts` — URL `#nivel=` (permiso `jugar`) + carga + `shared-play-mode`
+  - `ui/share.ts` — URL `#nivel=` (permiso `jugar`) + carga + `shared-play-mode` (el `.html` delega al generador único de `compile.ts`)
+  - `ui/compile.ts` — compilador ÚNICO (`buildStandaloneHtml` jugable completo + `buildHistoria` `.vn.json` + `validateStory` errores/avisos + `saveTextFile` Tauri/Capacitor/web + modal «Compilar novela» + paquetes funcionales Windows `.html`+`.bat` y Linux `.html`+`.sh`+`.desktop`); `ui/exporter.ts` solo compat que delega; botones `#btnExportExe`/`#btnExportHtml`/`#btnExportLinux` cableados en `index.ts`; binario nativo real = **Rust** vía Tauri (`src-tauri/src/main.rs`) + workflow manual `bundle-desktop.yml` (Windows NSIS/MSI + Linux .deb/.AppImage → Artifacts)
   - `ui/updater.ts` + `components/UpdateModal.svelte` — chequeo `releases/latest` (plan B a `update.json` directo si hay rate-limit) + pantalla `#updateModal` (`#btnCheckUpdates`/`#updateDot`, progreso `#updateProgressWrap`/`#updateStatus`); descarga el instalador nativo y lo ABRE (opener/APK) o hard-reload en web — el .zip es portable y NO auto-instala; workflow `auto-update.yml` solo en release publicado o manual, nunca push/PR
   - `ui/render-wires.ts` + `domain/geometry.ts` — cables y posiciones de puertos
     (`renderWires` solo al cambiar el grafo; `updateWirePaths` en drag; nada en pan/zoom)

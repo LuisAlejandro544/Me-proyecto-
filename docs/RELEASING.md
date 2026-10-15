@@ -6,11 +6,23 @@
 | Auto-update (canal de la app) | Publicar un release (GitHub → Releases → Draft new release → Publish, ej. `v0.2.0`) o `Auto-update` manual (Actions → Run, tag opcional) | Zip web portable + zip del código + `update.json`/`latest.json` + `SHA256SUMS.txt` en ese mismo Release (versión = tag); la app lo detecta y muestra «Nueva actualización». Si subes instaladores nativos al release (.exe/.msi, .AppImage/.deb, .dmg, .apk), la app los descarga y abre para actualizar de verdad |
 | APK Android | `APK debug Android` | `my-novel-studio-debug.apk` en Releases (`android-debug`) + Artifacts |
 | Linux desktop | `Bundle Linux Tauri` | `.deb` + `.AppImage` en Artifacts |
+| Escritorio (.exe + Linux) | `Bundle escritorio (.exe + Linux)` (manual) | Windows NSIS/MSI + Linux `.deb`/`.AppImage` en Artifacts (Rust/Tauri compila el binario real; repártelo junto al `.html`/`.vn.json` de tu novela) |
 
 Disparadores: `Auto-update` SOLO corre al publicar un release o manual
 (`release: published` + `workflow_dispatch`). Nunca por push/commits,
 pull requests ni ningún otro evento (tampoco por crear el tag `v*` sin
-publicar el release).
+publicar el release). `Bundle escritorio (.exe + Linux)` es SOLO manual
+(`workflow_dispatch`): compila con Rust/Tauri en runners Windows/Ubuntu y deja
+los instaladores en Artifacts.
+
+## Cómo repartir tu novela compilada (`.exe` / Linux)
+1. En la app: **Compilar novela** → Windows o Linux → descarga inmediata
+   funcional (`.html` jugable + lanzadores: `Iniciar_*.bat` / `jugar-*.sh` +
+   `.desktop`). Esto ya juega al doble clic, sin instalar nada.
+2. Para el instalador nativo: Actions → `Bundle escritorio (.exe + Linux)` →
+   Run workflow → descarga los bundles de Artifacts y repártelos junto a tu
+   `.html` / `.vn.json`. El navegador no fabrica binarios: el que compila es
+   Rust vía Tauri (`src-tauri/src/main.rs`).
 
 Desde laptop: `bash scripts/release.sh` (sube patch, verifica, empaqueta) y luego crea + publica el release en GitHub.
 Versionado: semver en `package.json` + `tauri.conf.json` + `Cargo.toml` (los tres a la par).

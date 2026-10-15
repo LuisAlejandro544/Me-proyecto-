@@ -37,6 +37,22 @@ con `<video>` para `video_scene` y `<audio>` para `sound_cue`/`audioAssetId`;
 `share.ts` genera URLs compartibles (base pública, nunca localhost) o un
 `.html` jugable con el nivel incrustado.
 
+Compilador (`ui/compile.ts`, fuente única): `buildStandaloneHtml()` (novela
+jugable autocontenida `file://`: `startNodeId` real, variables, audio/vídeo,
+decisiones `out_*`, continuar con teclado, reinicio, contador de pasos y solo
+assets usados) + `buildHistoria()` (`.vn.json` portable: grafo + variables +
+assets) + `validateStory()` (errores que bloquean + avisos) + `saveTextFile()`
+(Tauri `dialog`/`fs` → Capacitor `Filesystem`/`Share` → descarga web) +
+`openCompileModal()` (selector `.html`/`.vn.json`/Windows/Linux, validación
+visible, tamaño estimado, progreso) + `exportWindowsPackage()` (`.html` +
+`Iniciar_*.bat`) + `exportLinuxPackage()` (`.html` + `jugar-*.sh` + `.desktop`).
+`ui/exporter.ts` y el `.html` de `share.ts` delegan aquí. Botones
+`#btnExportExe`/`#btnExportHtml`/`#btnExportLinux` cableados en `index.ts`.
+El `.exe`/`.AppImage`/`.deb` binario real lo compila **Rust** vía Tauri
+(`src-tauri/src/main.rs`, `tauri.conf.json` con `bundle targets: all`):
+`npm run tauri:build` en local o workflow manual `bundle-desktop.yml`
+(Windows NSIS/MSI + Linux .deb/.AppImage → Artifacts).
+
 ```text
 src/lib/studio/
 ├── index.ts        # orquesta: initStudio(), getStudioState(), wiring top-bar
@@ -45,7 +61,7 @@ src/lib/studio/
 ├── domain/         # audio.ts, history.ts, geometry.ts (puros + DOM queries)
 └── ui/             # render-nodes, render-wires, interactions, viewport,
                     # transform, minimap, editors, playtest, workspace,
-                    # exporter, load-preset, share, updater, toast
+                    # compile (fuente única), exporter (compat), load-preset, share, updater, toast
 src/components/
 ├── StudioShell.svelte  # compone todo + onMount(initStudio)
 ├── TopBar.svelte, CanvasChrome.svelte, BottomNav.svelte

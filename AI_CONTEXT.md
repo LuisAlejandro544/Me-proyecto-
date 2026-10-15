@@ -52,7 +52,19 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
   base pública editable) → `buildShareUrl('jugar')` → `#nivel=<b64url>` →
   `parseShareHash` → `enterSharedPlayMode` (pantallas `#shareLoading` + clase
   `body.shared-play-mode` + `renderPlaytestStep`) → `checkSharedPlayModeOnBoot`.
-  Alternativa sin servidor: `downloadPlayableHtml()`.
+  Alternativa sin servidor: `.html` jugable vía `ui/compile.ts`.
+- Compilar (`ui/compile.ts`, fuente única): `buildStandaloneHtml()` (jugable
+  `file://`: inicio real `startNodeId`, variables, audio/vídeo, decisiones
+  `out_*`, teclado, reinicio, solo assets usados) + `buildHistoria()`
+  (`.vn.json` portable) + `validateStory()` (errores bloquean, avisos no) +
+  `saveTextFile()` (Tauri `dialog`/`fs` → Capacitor `Filesystem`/`Share` →
+  descarga web) + `openCompileModal()` (4 formatos + tamaño estimado) +
+  `exportWindowsPackage()` (`.html` + `Iniciar_*.bat`) +
+  `exportLinuxPackage()` (`.html` + `jugar-*.sh` + `.desktop`).
+  `ui/exporter.ts` y el `.html` de `share.ts` delegan aquí (no duplicar).
+  El `.exe`/`.AppImage`/`.deb` binario real NO sale del navegador: lo compila
+  **Rust** vía Tauri (`src-tauri/src/main.rs`) con `npm run tauri:build` o el
+  workflow manual `bundle-desktop.yml` (solo `workflow_dispatch`).
 - Playtest horizontal: `#vnPlaytestCard.vn-playtest-landscape` (16:9) +
   `#vnVideoPlayer`/`#vnAudioPlayer` + `#btnVnFullscreen`/`closePlaytest()`;
   assets con vídeo: `lib/assets.ts` (`imagen|video|audio`).
@@ -72,7 +84,7 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
 ## Patrones de edición
 
 - Nuevo campo de nodo: añade a `VNNode` en `types.ts`, píntalo en
-  `render-nodes.ts`, edítalo en `node-editor.ts` (y en `playtest.ts`/`exporter.ts`
+  `render-nodes.ts`, edítalo en `node-editor.ts` (y en `playtest.ts`/`compile.ts`
   si afecta a jugar/exportar).
 - Nuevo puerto: `data-port-id` único por nodo; respeta convención
   `in_*` (entrada) / `out_*` (salida); en `choice` es `in_<optId>` / `out_<optId>`.

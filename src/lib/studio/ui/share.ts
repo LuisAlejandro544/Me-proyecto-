@@ -8,6 +8,7 @@ import { applyTransform } from './transform';
 import { renderPlaytestStep } from './playtest';
 import { showToast } from './toast';
 import { getStartNodeId, normalizeState } from '../storage';
+import { exportStandaloneHtmlFile } from './compile';
 
 export type SharePermission = 'jugar';
 
@@ -174,18 +175,9 @@ export function openShareModal() {
 }
 
 /** Descarga un .html jugable con el nivel incrustado: se puede enviar por chat/correo sin servidor. */
-export function downloadPlayableHtml() {
+export async function downloadPlayableHtml() {
   try {
-    const payload = { v: 1, permiso: 'jugar', proyecto: ctx.state.projectName, state: ctx.state };
-    const json = JSON.stringify(payload).replace(/</g, '\\u003c');
-    const html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>' + payload.proyecto.replace(/</g, '') + ' — Nivel jugable</title><style>body{margin:0;font-family:system-ui;background:#0b0f1f;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh} .s{width:min(960px,96vw);background:#101528;border:2px solid #00f2fe;border-radius:18px;padding:20px} video,img{max-width:100%;border-radius:12px} button{background:#00f2fe;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;margin:4px} .c{display:flex;flex-direction:column;gap:8px;margin-top:10px}</style></head><body><div class="s"><h2 id="t"></h2><div id="m"></div><p id="d"></p><div id="c" class="c"></div></div><script>const P=' + json + ';let cur=(P.state.startNodeId&&P.state.nodes.some(function(n){return n.id===P.state.startNodeId;}))?P.state.startNodeId:P.state.nodes[0]?.id;function go(id){const n=P.state.nodes.find(x=>x.id===id)||P.state.nodes[0];if(!n)return;cur=n.id;document.getElementById("t").textContent=n.badge||n.headerBar||n.title||"Escena";document.getElementById("d").textContent=n.dialogue||n.title||"";const m=document.getElementById("m");m.innerHTML="";const outs=P.state.wires.filter(w=>w.fromNode===n.id);const c=document.getElementById("c");c.innerHTML="";if(n.videoAssetId){const v=document.createElement("video");v.controls=true;v.playsInline=true;v.src=n.videoAssetId;const a=P.state; c.appendChild(v);} if(n.type==="choice"&&n.options){n.options.forEach(o=>{const w=outs.find(x=>x.fromPort==="out_"+o.id);const b=document.createElement("button");b.textContent=o.label;b.onclick=()=>w?go(w.toNode):alert("Fin de rama");c.appendChild(b);});}else if(outs.length){const b=document.createElement("button");b.textContent="Continuar →";b.onclick=()=>go(outs[0].toNode);c.appendChild(b);}}go(cur);<\/script></body></html>';
-    const blob = new Blob([html], { type: 'text/html' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'nivel-jugable.html';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-    showToast('📦 .html jugable descargado: envíalo como archivo');
+    await exportStandaloneHtmlFile();
   } catch { showToast('No se pudo generar el .html'); }
 }
 

@@ -15,7 +15,8 @@ export function isCapacitor(): boolean {
   );
 }
 
-function currentStandaloneHtml(): string {
+function currentStandaloneHtml(explicit?: string): string {
+  if (explicit) return explicit;
   // Ask legacy studio for state, then reuse its exporter if present.
   const w = window as unknown as {
     __studio?: { getStudioState?: () => unknown };
@@ -27,8 +28,8 @@ function currentStandaloneHtml(): string {
     .replace(/</g, '&lt;')}</pre></body></html>`;
 }
 
-export async function saveHtmlExport(filename = 'my-novel-export.html'): Promise<void> {
-  const html = currentStandaloneHtml();
+export async function saveHtmlExport(filename = 'my-novel-export.html', content?: string): Promise<void> {
+  const html = currentStandaloneHtml(content);
 
   if (isTauri()) {
     const { save } = await import('@tauri-apps/plugin-dialog');

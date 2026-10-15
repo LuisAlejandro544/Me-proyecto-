@@ -46,6 +46,15 @@ para jugar a pantalla completa**.
   pública editable, p. ej. GitHub Pages) → tu amigo ve pantallas de carga y juega
   a pantalla completa sin editor. Si el nivel pesa mucho (vídeos), usa
   «📦 .html jugable» para enviarlo como archivo sin servidor.
+- **Compilar novela**: modal **Compilar novela** (botones `Win (.exe)` /
+  `Web (.html)` / `Linux` en la cabecera) con 4 formatos: `.html` jugable
+  autocontenido (doble clic, sin servidor), `.vn.json` portable (grafo +
+  assets para importar/respaldar), paquete Windows (`.html` + `Iniciar_*.bat`
+  que sí juega al doble clic) y paquete Linux (`.html` + `jugar-*.sh` con
+  `chmod +x` + `.desktop`). Incluye validación previa (errores que bloquean +
+  avisos de ramas sin cable, nodos inalcanzables y recursos rotos), tamaño
+  estimado y guardado nativo (Tauri `dialog`/`fs`, Capacitor `Filesystem`/
+  `Share`, descarga web).
 - **Exportar**: Web autónoma (`.html`), manifiesto Windows (`.bat`, binario real vía
   Tauri) y JSON del proyecto.
 
@@ -59,14 +68,27 @@ npm run preview
 npm run check    # svelte-check, 0 errores
 ```
 
-## Desktop — Tauri v2 → .exe real
+## Desktop — Tauri v2 + Rust → .exe / Linux reales
 
-El botón «Win (.exe)» antes solo bajaba un `.bat`. El binario real sale de Tauri:
+El navegador **no puede fabricar un `.exe`/`.AppImage` binario por sí solo**
+(sería un agujero de seguridad). Por eso hay dos vías, ambas documentadas en
+el modal «Compilar novela»:
+
+1. **Descarga inmediata y funcional** (sin instalar nada): el `.html` jugable +
+   lanzador (`Iniciar_*.bat` en Windows, `jugar-*.sh` + `.desktop` en Linux).
+   Doble clic → juega en el navegador.
+2. **Binario nativo** (instalador real): el lenguaje específico que compila es
+   **Rust** vía Tauri (`src-tauri/src/main.rs`, `plugin-fs/dialog/opener`).
+   Se compila con:
 
 ```bash
 npm run tauri:dev    # dev con WebView
 npm run tauri:build  # → src-tauri/target/release/bundle/ (.exe, .AppImage, .dmg)
 ```
+
+O sin PC: Actions → **`Bundle escritorio (.exe + Linux)`** (solo manual,
+nunca en push/PR) → Windows (NSIS/MSI) + Linux (`.deb`/`.AppImage`) en
+Artifacts. Repártelos junto a tu `.html`/`.vn.json`.
 
 Config: `src-tauri/tauri.conf.json` (`frontendDist: ../dist`),
 `src-tauri/src/main.rs` + `plugin-fs/dialog`.
@@ -137,6 +159,8 @@ src/lib/studio/ui/render-nodes.ts  tarjetas + puertos + toolbar ✏️/🗑
 src/lib/studio/ui/node-editor.ts   editor completo + eliminar/duplicar
 src/lib/studio/ui/share.ts         URL para jugar + carga + fullscreen
 src/lib/studio/ui/render-wires.ts  cables SVG + popover
+src/lib/studio/ui/compile.ts      compilador (buildStandaloneHtml/buildHistoria/validateStory/saveTextFile + modal + paquetes Win/Linux)
+src/lib/studio/ui/exporter.ts     compat (delega a compile.ts) · ui/share.ts delega el .html al generador único
 src/lib/studio/ui/updater.ts      chequeo de releases/latest + pantalla #updateModal
 src/components/UpdateModal.svelte pantalla «Nueva actualización disponible»
 src/lib/platform.ts             Tauri dialog/fs + Capacitor Filesystem/Share
