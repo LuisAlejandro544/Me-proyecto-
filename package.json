@@ -21,7 +21,7 @@
   "dependencies": {
     "@capacitor/android": "^7.2.0",
     "@capacitor/core": "^7.2.0",
-    "@capacitor/filesystem": "^7.0.1",
+    "@capacitor/filesystem": "^8.1.4",
     "@capacitor/ios": "^7.2.0",
     "@capacitor/share": "^7.0.1",
     "@tauri-apps/api": "^2.1.1",
