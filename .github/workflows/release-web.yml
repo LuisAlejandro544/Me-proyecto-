@@ -1,0 +1,43 @@
+name: Release web (manual, desde el celular)
+
+# Luis: GitHub app > repo > Actions > "Release web" > Run workflow.
+# Publica el zip jugable en Releases + lo deja como artifact.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag del release (ej. v0.2.0). Vacío = v<package.json>"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  release-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - name: Resolver tag
+        id: tag
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT";
+          else echo "tag=v$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"; fi
+      - run: bash scripts/package-web.sh release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-${{ steps.tag.outputs.tag }}
+          path: release/*.zip
+      - name: Publicar Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ls release/*.zip | xargs gh release create "${{ steps.tag.outputs.tag }}" \
+            --title "My Novel Studio ${{ steps.tag.outputs.tag }} (web)" \
+            --notes "Build web jugable: dist/ + html legacy." || \
+          ls release/*.zip | xargs gh release upload "${{ steps.tag.outputs.tag }}" --clobber
