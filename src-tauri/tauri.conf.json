@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "My Novel — Visual Novel Node Studio",
+        "title": "Mi Novela — Estudio de Nodos de Novela Visual",
         "width": 1280,
         "height": 800,
         "resizable": true,

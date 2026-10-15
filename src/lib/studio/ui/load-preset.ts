@@ -17,7 +17,7 @@ export function loadPreset(presetKey) {
     ctx.selectedNodeId = 'node_1_intro';
   } else {
     ctx.state = {
-      projectName: 'My Novel (Custom)',
+      projectName: 'Mi Novela (personalizada)',
       zoom: 0.92,
       panX: 40,
       panY: 40,
@@ -26,14 +26,14 @@ export function loadPreset(presetKey) {
         {
           id: 'start_1',
           type: 'banner_scene',
-          badge: 'Start Scene 1',
+          badge: 'Escena inicial 1',
           x: 120,
           y: 120,
           width: 245,
           characterId: 'sora',
           speaker: 'Sora',
           speakerColor: '#ff758c',
-          dialogue: 'Welcome to your new visual novel!\nAdd nodes below.',
+          dialogue: '¡Bienvenido a tu nueva novela visual!\nAñade nodos abajo.',
           portsOut: [{ id: 'out_cyan', color: 'cyan', yOffset: 160 }]
         }
       ],

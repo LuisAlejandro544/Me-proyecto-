@@ -1,8 +1,11 @@
 # Changelog — formato Keep a Changelog
 
 ## [Unreleased]
+### Added
+- Importación de recursos (imágenes/audio) desde galería o administrador de archivos en web, PC (diálogo nativo Tauri) y móvil (galería/cámara Capacitor + respaldo a selector del sistema); módulo `src/lib/assets.ts` con persistencia local
 ### Changed
 - `src/lib/studio.ts` monolítico → `src/lib/studio/{data,domain,ui}/` + `context.ts` (paridad verificada); chrome a `components/StudioShell.svelte`
+- Interfaz completa traducida al español (cabecera, lienzo, pestañas, paneles, previsualización, exportaciones y presets de ejemplo)
 
 ## [0.1.0] — 2026-10-15
 ### Added

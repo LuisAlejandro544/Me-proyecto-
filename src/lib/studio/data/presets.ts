@@ -2,7 +2,7 @@
 // Studio module — see src/lib/studio/index.ts barrel and docs/ARCHITECTURE.md.
 
 export const PRESET_SORA = {
-  projectName: 'My Novel',
+  projectName: 'Mi Novela',
   zoom: 0.92,
   panX: 20,
   panY: 15,
@@ -11,14 +11,14 @@ export const PRESET_SORA = {
     {
       id: 'start_scene_1',
       type: 'banner_scene',
-      badge: 'Start Scene 1',
+      badge: 'Escena inicial 1',
       x: 65,
       y: 85,
       width: 245,
       characterId: 'sora',
       speaker: 'Sora',
       speakerColor: '#ff758c',
-      dialogue: 'Hey! Glad you made it.\nWhere to?',
+      dialogue: '¡Hola! Qué bueno que llegaste.\n¿A dónde vamos?',
       portsOut: [
         { id: 'out_coral', color: 'coral', yOffset: 120 },
         { id: 'out_cyan', color: 'cyan', yOffset: 205 }
@@ -27,37 +27,37 @@ export const PRESET_SORA = {
     {
       id: 'choice_deciding',
       type: 'choice',
-      title: 'Choice:',
-      subtitle: 'Deciding',
+      title: 'Elección:',
+      subtitle: 'Decidiendo',
       x: 385,
       y: 135,
       width: 225,
       options: [
-        { id: 'opt_forest', label: 'Go to Forest', style: 'dark', inColor: 'cyan', outColor: 'cyan' },
-        { id: 'opt_school', label: 'Explore School', style: 'dark', inColor: 'coral', outColor: 'coral' }
+        { id: 'opt_forest', label: 'Ir al bosque', style: 'dark', inColor: 'cyan', outColor: 'cyan' },
+        { id: 'opt_school', label: 'Explorar la escuela', style: 'dark', inColor: 'coral', outColor: 'coral' }
       ]
     },
     {
       id: 'forest_scene',
       type: 'compact_scene',
-      title: 'Forest Scene',
+      title: 'Escena del bosque',
       x: 695,
       y: 80,
       width: 225,
       characterId: 'sora',
       speaker: 'Sora',
-      dialogue: 'Hey! Glad you made it.\nWhere to?',
+      dialogue: '¡Hola! Qué bueno que llegaste.\n¿A dónde vamos?',
       inColor: 'cyan'
     },
     {
       id: 'char_selector',
       type: 'character_selector',
-      title: 'Character Selector',
+      title: 'Selector de personaje',
       x: 695,
       y: 265,
       width: 230,
       selectedCharId: 'yuki',
-      expression: 'Yuki - Joyful',
+      expression: 'Yuki - Alegre',
       scale: 92,
       position: 62,
       inColor: 'coral'
@@ -71,7 +71,7 @@ export const PRESET_SORA = {
   ]
 };
 export const PRESET_AOI = {
-  projectName: 'My Novel',
+  projectName: 'Mi Novela',
   zoom: 0.70,
   panX: 35,
   panY: 25,
@@ -80,16 +80,16 @@ export const PRESET_AOI = {
     {
       id: 'node_1_intro',
       type: 'avatar_scene',
-      topTitle: 'Node 1: Introduction',
-      topSubtitle: 'Start',
-      headerBar: 'Scene 1: Meetup',
+      topTitle: 'Nodo 1: Introducción',
+      topSubtitle: 'Inicio',
+      headerBar: 'Escena 1: Encuentro',
       x: 75,
       y: 145,
       width: 250,
       characterId: 'aoi',
       speaker: 'Aoi (Casual)',
       speakerSub: 'Thumbnail',
-      dialogue: 'Hey! Did you wait long?',
+      dialogue: '¡Hola! ¿Esperaste mucho?',
       portsOut: [
         { id: 'out_1', color: 'cyan', yOffset: 112 },
         { id: 'out_2', color: 'cyan', yOffset: 144 }
@@ -98,39 +98,39 @@ export const PRESET_AOI = {
     {
       id: 'node_2_split',
       type: 'choice',
-      title: 'Node 2: Decision Split',
-      subtitle: 'Choice Node',
+      title: 'Nodo 2: Bifurcación de decisión',
+      subtitle: 'Nodo de elección',
       showAddButtons: true,
       x: 405,
       y: 125,
       width: 245,
       options: [
-        { id: 'opt_a', label: 'Option A: "Yes, forever"', style: 'coral', inColor: 'cyan', outColor: 'coral' },
-        { id: 'opt_b', label: 'Option B: "Not at all"', style: 'teal', inColor: 'cyan', outColor: 'cyan' }
+        { id: 'opt_a', label: 'Opción A: "Sí, una eternidad"', style: 'coral', inColor: 'cyan', outColor: 'coral' },
+        { id: 'opt_b', label: 'Opción B: "Para nada"', style: 'teal', inColor: 'cyan', outColor: 'cyan' }
       ]
     },
     {
       id: 'node_3_apology',
       type: 'branch_scene',
-      headerBar: 'Node 3: Scene 1A (Apology)',
+      headerBar: 'Nodo 3: Escena 1A (Disculpa)',
       x: 735,
       y: 55,
       width: 255,
       characterId: 'mio',
       speaker: 'Aoi',
-      dialogue: 'Aoi: "Oh no, I\'m so sorry!"',
+      dialogue: 'Aoi: "Ay no, lo siento\'m so sorry!"',
       inColor: 'coral'
     },
     {
       id: 'node_4_tease',
       type: 'branch_scene',
-      headerBar: 'Node 4: Scene 1B (Tease)',
+      headerBar: 'Nodo 4: Escena 1B (Broma)',
       x: 735,
       y: 265,
       width: 255,
       characterId: 'mio',
       speaker: 'Aoi',
-      dialogue: 'Aoi: "Heh, I knew it."',
+      dialogue: 'Aoi: "Je, lo sabía."',
       inColor: 'cyan'
     }
   ],
