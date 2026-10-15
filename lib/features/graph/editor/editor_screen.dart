@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:me_proyecto/core/perf/fps_chip.dart';
 import 'package:me_proyecto/core/theme/app_theme.dart';
+import 'package:me_proyecto/features/assets/assets_screen.dart';
 import 'package:me_proyecto/features/graph/editor/node_widgets.dart';
 import 'package:me_proyecto/features/graph/editor/painters.dart';
 import 'package:me_proyecto/features/graph/export/html_exporter.dart';
@@ -125,6 +126,14 @@ class _EditorScreenState extends State<EditorScreen> {
         ),
         actions: [
           _topBtn(Icons.share, 'Share', _showHtml),
+          _topBtn(
+            Icons.folder_open,
+            'Assets',
+            () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(builder: (_) => const AssetsScreen()),
+            ),
+          ),
           _topBtn(
             Icons.window,
             '.exe',
