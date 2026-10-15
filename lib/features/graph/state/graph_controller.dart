@@ -27,6 +27,9 @@ class GraphController extends ChangeNotifier {
   /// Sube al soltar pan/zoom; recalcula culling sin tocar datos.
   final ValueNotifier<int> viewVersion = ValueNotifier(0);
 
+  /// Evita repintar aristas más de ~60 veces/seg durante el arrastre.
+  DateTime _lastEdge = DateTime.fromMillisecondsSinceEpoch(0);
+
   /// Tamaño del canvas cacheado (se recalcula solo al cambiar datos).
   Size canvasSize = const Size(1300, 640);
 
@@ -117,17 +120,38 @@ class GraphController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Mueve un nodo al SOLTAR un arrastre: 1 repintado de aristas por gesto.
-  /// Crea un objeto nuevo (modelos inmutables) y actualiza índice y posición.
-  void moveNode(VnNode n, double dx, double dy) {
-    if (!index.containsKey(n.id)) return;
-    final updated = n.copyWith(x: n.x + dx, y: n.y + dy);
+  /// Mueve un nodo SIN repintar aristas en cada tick (arrastre en vivo).
+  /// Las aristas se limitan a ~60 repintados/seg. Resuelve el objeto
+  /// actual por id porque el widget puede tener una copia anterior.
+  /// Llamar a [commitMove] al soltar para el repintado final garantizado.
+  void previewMove(VnNode n, double dx, double dy) {
+    final cur = index[n.id];
+    if (cur == null) return;
+    final updated = cur.copyWith(x: cur.x + dx, y: cur.y + dy);
     final nodes = [...project.nodes];
     nodes[nodes.indexWhere((e) => e.id == n.id)] = updated;
     project = project.copyWith(nodes: nodes);
     index[n.id] = updated;
     posOf[n.id]?.value = Offset(updated.x, updated.y);
+    final now = DateTime.now();
+    if (now.difference(_lastEdge).inMilliseconds >= 16) {
+      _lastEdge = now;
+      edgeVersion.value++;
+    }
+  }
+
+  /// Repintado final garantizado al soltar el arrastre.
+  void commitMove() {
+    _lastEdge = DateTime.fromMillisecondsSinceEpoch(0);
     edgeVersion.value++;
+  }
+
+  /// Mueve un nodo con repintado inmediato (atajo para tests y código).
+  /// No hace nada si el id no existe.
+  void moveNode(VnNode n, double dx, double dy) {
+    if (!index.containsKey(n.id)) return;
+    previewMove(n, dx, dy);
+    commitMove();
   }
 
   /// Recalcula el culling (llamado al soltar pan/zoom).

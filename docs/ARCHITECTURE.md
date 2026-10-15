@@ -25,7 +25,8 @@ lib/
 1. **Culling por viewport**: solo se construyen los nodos visibles. El pan/zoom
    lo compone la GPU; el filtro se recalcula solo al soltar (`onInteractionEnd`).
 2. **Estado local de arrastre**: mover 1 nodo repinta solo ese nodo; las
-   aristas se repintan 1 vez por gesto (`EdgePainter.version`).
+   conexiones siguen en vivo (`previewMove` por tick, aristas limitadas
+   a ~60 repintados/seg) y `commitMove` garantiza el estado final.
 3. **Índice O(1)** de nodos en pintado y controlador (nada de `byId` en loops).
 4. **Cero sombras y cero opacidades** en el canvas (evitan `saveLayer`, lo más
    caro en GPUs integradas). Colores sólidos + `RepaintBoundary` por capa.

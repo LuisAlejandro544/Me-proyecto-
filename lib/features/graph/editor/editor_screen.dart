@@ -242,8 +242,9 @@ class _EditorScreenState extends State<EditorScreen> {
                                   child: DraggableNode(
                                     key: ValueKey(n.id),
                                     node: n,
-                                    onDragEnd: (dx, dy) =>
-                                        graph.moveNode(n, dx, dy),
+                                    onMove: (dx, dy) =>
+                                        graph.previewMove(n, dx, dy),
+                                    onDragEnd: graph.commitMove,
                                     onDelete: () => graph.deleteNode(n),
                                   ),
                                 ),

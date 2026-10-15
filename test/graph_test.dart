@@ -109,5 +109,18 @@ void main() {
       expect(c.index.length, 500);
       expect(c.posOf.length, 500);
     });
+
+    test('deberia_mover_en_vivo_y_confirmar_al_soltar', () {
+      final c = GraphController.demo();
+      addTearDown(c.dispose);
+      final before = c.index['dlg_01']!;
+      c.previewMove(before, 10, 20);
+      // La posición sigue en vivo sin esperar al drop...
+      expect(c.posOf['dlg_01']!.value, const Offset(490, 220));
+      // ...y el commit garantiza el repintado final.
+      c.commitMove();
+      expect(c.edgeVersion.value, greaterThan(0));
+      expect(c.index['dlg_01']!.x, 490);
+    });
   });
 }

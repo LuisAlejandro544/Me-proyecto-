@@ -6,10 +6,13 @@ import 'package:me_proyecto/core/theme/app_theme.dart';
 import 'package:me_proyecto/features/graph/models/vn_models.dart';
 
 /// Tarjeta arrastrable de un nodo del canvas.
-class DraggableNode extends StatefulWidget {
+/// Sin estado propio: la posición la publica el controlador y las
+/// conexiones siguen en vivo durante el arrastre.
+class DraggableNode extends StatelessWidget {
   /// Crea la tarjeta con sus callbacks de gesto.
   const new({
     required this.node,
+    required this.onMove,
     required this.onDragEnd,
     required this.onDelete,
     super.key,
@@ -18,50 +21,35 @@ class DraggableNode extends StatefulWidget {
   /// Nodo a dibujar (contenido; la posición la publica el controlador).
   final VnNode node;
 
-  /// Se llama UNA vez al soltar el arrastre con el delta total.
-  final void Function(double dx, double dy) onDragEnd;
+  /// Se llama en cada tick del arrastre; las aristas siguen en vivo.
+  final void Function(double dx, double dy) onMove;
+
+  /// Se llama al soltar el arrastre (repintado final de aristas).
+  final VoidCallback onDragEnd;
 
   /// Se llama con long-press para borrar el nodo.
   final VoidCallback onDelete;
 
   @override
-  State<DraggableNode> createState() => _DraggableNodeState();
-}
-
-class _DraggableNodeState extends State<DraggableNode> {
-  Offset drag = Offset.zero;
-
-  @override
   Widget build(BuildContext context) {
-    final node = widget.node;
     final border = node.type == VnNodeType.start
         ? AppColors.ok
         : node.id == 'dlg_l'
         ? AppColors.danger
         : AppColors.cyan;
     return GestureDetector(
-      // Solo repinta ESTE nodo durante el arrastre; el resto y las
-      // aristas se actualizan una vez al soltar (onPanEnd).
-      onPanUpdate: (d) => setState(() => drag += d.delta),
-      onPanEnd: (_) {
-        final dx = drag.dx;
-        final dy = drag.dy;
-        setState(() => drag = Offset.zero);
-        if (dx != 0 || dy != 0) widget.onDragEnd(dx, dy);
-      },
-      onLongPress: widget.onDelete,
-      child: Transform.translate(
-        offset: drag,
-        child: Container(
-          width: node.type == VnNodeType.start ? 110 : 190,
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: border, width: 1.4),
-          ),
-          child: _NodeBody(node: node),
+      onPanUpdate: (d) => onMove(d.delta.dx, d.delta.dy),
+      onPanEnd: (_) => onDragEnd(),
+      onLongPress: onDelete,
+      child: Container(
+        width: node.type == VnNodeType.start ? 110 : 190,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: border, width: 1.4),
         ),
+        child: _NodeBody(node: node),
       ),
     );
   }
