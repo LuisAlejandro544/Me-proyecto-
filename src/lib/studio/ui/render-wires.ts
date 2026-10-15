@@ -119,8 +119,8 @@ export function renderWires(opts) {
     g.setAttribute('class', 'vn-wire-group' + (ctx.selectedWireId === wire.id ? ' wire-selected' : ''));
     g.dataset.wireId = wire.id;
 
-    // Outer soft glow path (sin filtro gaussiano en táctil: el blur por
-    // cable es lo que más GPU come en móvil; se deja halo simple).
+    // Outer soft glow path (never a hover target itself; sin filtro gaussiano
+    // en táctil: el blur por cable es lo que más GPU come en móvil).
     const glowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     glowPath.setAttribute('d', d);
     glowPath.setAttribute('class', 'vn-wire-glow');
@@ -130,14 +130,23 @@ export function renderWires(opts) {
     glowPath.setAttribute('stroke-opacity', coarse ? '0.18' : '0.32');
     if (!coarse) glowPath.setAttribute('filter', glowFilter);
 
-    // Core neon wire path
+    // Core neon wire path (static geometry: no hover morph => no flicker)
     const corePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     corePath.setAttribute('d', d);
-    corePath.setAttribute('class', 'vn-wire-core transition-all');
+    corePath.setAttribute('class', 'vn-wire-core');
     corePath.setAttribute('fill', 'none');
     corePath.setAttribute('stroke', strokeColor);
     corePath.setAttribute('stroke-width', '3');
     corePath.setAttribute('stroke-linecap', 'round');
+
+    // Hover highlight overlay (opacity-only: cheap composite, stable hit target)
+    const hiPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    hiPath.setAttribute('d', d);
+    hiPath.setAttribute('class', 'vn-wire-hi');
+    hiPath.setAttribute('fill', 'none');
+    hiPath.setAttribute('stroke', strokeColor);
+    hiPath.setAttribute('stroke-width', '6');
+    hiPath.setAttribute('stroke-linecap', 'round');
 
     // Invisible thicker hit area for clicking wire to toggle color or delete
     const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -149,6 +158,7 @@ export function renderWires(opts) {
 
     g.appendChild(glowPath);
     g.appendChild(corePath);
+    g.appendChild(hiPath);
     g.appendChild(hitPath);
 
     const selectWire = (e) => {

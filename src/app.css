@@ -183,13 +183,23 @@
       cursor: pointer;
       border: 2px solid #e2e8f0;
     }
-    /* SVG Wire animations & hover */
+    /* SVG Wire animations & hover (opacity-only highlight: no geometry/filter
+       morph under the cursor, so no flicker loop) */
     .vn-wire-group {
       cursor: pointer;
     }
-    .vn-wire-group:hover .vn-wire-core {
-      stroke-width: 4.5px;
-      filter: brightness(1.25);
+    .vn-wire-group .vn-wire-glow,
+    .vn-wire-group .vn-wire-core {
+      pointer-events: none;
+    }
+    .vn-wire-group .vn-wire-hi {
+      opacity: 0;
+      transition: opacity 0.12s ease;
+      pointer-events: none;
+    }
+    .vn-wire-group:hover .vn-wire-hi,
+    .vn-wire-group.wire-selected .vn-wire-hi {
+      opacity: 0.85;
     }
     /* Editable text inputs inside nodes */
     .editable-text {
