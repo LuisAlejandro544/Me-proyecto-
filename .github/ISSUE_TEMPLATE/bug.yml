@@ -1,0 +1,25 @@
+name: 🐞 Bug
+description: Algo no funciona como debería
+labels: [bug]
+body:
+  - type: textarea
+    id: que
+    attributes:
+      label: ¿Qué pasa?
+      description: Qué esperabas vs qué viste (adjunta captura si puedes)
+    validations:
+      required: true
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Pasos para reproducir
+      value: "1. Abrir...\n2. Tocar...\n3. Ver error"
+    validations:
+      required: true
+  - type: dropdown
+    id: donde
+    attributes:
+      label: ¿Dónde pasa?
+      options: [Web, Tauri desktop, APK Android]
+    validations:
+      required: true

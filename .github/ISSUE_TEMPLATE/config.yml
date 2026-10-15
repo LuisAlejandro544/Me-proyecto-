@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Pedirle a OpenCode (agente)
+    url: https://github.com/LuisAlejandro544/Me-proyecto-/issues/new
+    about: Abre un issue normal y escribe /oc + tu pedido en el título o el cuerpo

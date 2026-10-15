@@ -23,3 +23,4 @@ Idioma del repo: español en respuestas al usuario.
 - Verificar siempre con `npm run build` + `npm run check` antes de dar por hecho un cambio.
 - NO commitear: `node_modules/`, `dist/`, `src-tauri/target/`, `src-tauri/gen/`, `package-lock.json`, `src-tauri/Cargo.lock`, sets de iconos Android/iOS/Store (ver `.gitignore`).
 - Commits cortos en español. PRs contra `main` con descripción breve + cómo se verificó.
+- Docs en `docs/` (arquitectura, ADRs, contribuir, publicar) y `CHANGELOG.md` (`[Unreleased]`).

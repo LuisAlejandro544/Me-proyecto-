@@ -1,6 +1,11 @@
 # My Novel — Visual Novel Node Studio (Web + TS + Svelte → Tauri + Capacitor)
 
+![web-check](https://github.com/LuisAlejandro544/Me-proyecto-/actions/workflows/web-check.yml/badge.svg)
+![license](https://img.shields.io/github/license/LuisAlejandro544/Me-proyecto-)
+
 Migración del monolito `my_novel_visual_novel_node_studio.html` (2111 líneas) a stack moderno sin perder funciones.
+
+> Docs: `docs/ARCHITECTURE.md` · `docs/DECISIONS.md` · `docs/CONTRIBUTING.md` · `docs/RELEASING.md` · `CHANGELOG.md`
 
 ## Origen
 - `my_novel_visual_novel_node_studio.html` → se conserva como referencia legacy.

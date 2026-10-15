@@ -1,0 +1,17 @@
+name: ✨ Idea / mejora
+description: Nueva función o mejora
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: ¿Qué quieres?
+      description: Descríbelo como si se lo pidieras a una persona
+    validations:
+      required: true
+  - type: textarea
+    id: para-que
+    attributes:
+      label: "¿Para qué sirve? (quién lo usa: laptop / celular)"
+    validations:
+      required: false
