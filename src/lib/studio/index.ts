@@ -15,6 +15,7 @@ import { showToast } from './ui/toast';
 import { renderWires } from './ui/render-wires';
 import { setZoom } from './ui/transform';
 import { checkSharedPlayModeOnBoot, openShareModal } from './ui/share';
+import { checkForUpdates, checkForUpdatesOnBoot } from './ui/updater';
 import { deleteNode } from './ui/node-editor';
 
     
@@ -53,6 +54,11 @@ export function initStudio() {
       document.getElementById('btnExportHtml').addEventListener('click', exportStandaloneHtml);
       document.getElementById('btnExportExe').addEventListener('click', openExeExportModal);
       document.getElementById('btnTopSettings').addEventListener('click', () => openWorkspaceTab('settings'));
+      document.getElementById('btnCheckUpdates')?.addEventListener('click', () => {
+        playSynthSfx('click');
+        showToast('Buscando actualizaciones… 🔍');
+        checkForUpdates({ silent: false, manual: true });
+      });
 
       // Undo / Redo
       document.getElementById('btnUndo').addEventListener('click', () => {
@@ -152,6 +158,8 @@ export function initStudio() {
   });
   // Si la URL trae un nivel compartido (#nivel=…), entra en modo jugar a pantalla completa.
   checkSharedPlayModeOnBoot();
+  // Auto-actualizaciones: escanea el último GitHub Release en segundo plano.
+  checkForUpdatesOnBoot();
 }
 
 if (typeof window !== 'undefined') {
