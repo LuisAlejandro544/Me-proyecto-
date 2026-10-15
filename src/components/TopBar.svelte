@@ -107,6 +107,13 @@
         <span>Web (.html)</span>
       </button>
 
+      <button id="btnExportLinux" class="hidden min-[560px]:flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#1a2b1f] hover:bg-[#243d2a] border border-emerald-400/60 shadow-[0_0_12px_rgba(52,211,153,0.2)] text-xs font-medium text-emerald-200 transition min-h-[44px]">
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+          <path d="M12 2a7 7 0 00-4.9 12c-.6.5-1.1 1.2-1.1 2 0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2 0-.8-.5-1.5-1.1-2A7 7 0 0012 2zm-1.2 13.5a1.2 1.2 0 11-2.4 0 1.2 1.2 0 012.4 0zm4.8 0a1.2 1.2 0 11-2.4 0 1.2 1.2 0 012.4 0zM12 8.5c-1 0-1.8.6-2.2 1.4l1.1.6c.2-.4.6-.6 1.1-.6s.9.2 1.1.6l1.1-.6C13.8 9.1 13 8.5 12 8.5z"/>
+        </svg>
+        <span>Linux</span>
+      </button>
+
       <button id="btnCheckUpdates" title="Buscar actualizaciones" aria-label="Buscar actualizaciones" class="relative p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/70 transition min-w-[40px] min-h-[44px]">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
