@@ -28,7 +28,7 @@ jobs:
           if [ -n "${{ inputs.tag }}" ]; then echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT";
           else echo "tag=v$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"; fi
       - run: bash scripts/package-web.sh release
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: web-${{ steps.tag.outputs.tag }}
           path: release/*.zip

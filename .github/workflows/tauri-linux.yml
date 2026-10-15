@@ -25,7 +25,7 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         with:
           args: --bundles deb,appimage
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux-bundles
           path: src-tauri/target/release/bundle/
