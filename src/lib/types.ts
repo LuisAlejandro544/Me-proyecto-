@@ -85,6 +85,8 @@ export interface VNWire {
 
 export interface VNState {
   projectName: string;
+  /** Nodo donde empieza la partida (elegible en el editor; fallback: nodes[0]). */
+  startNodeId?: string;
   zoom: number;
   panX: number;
   panY: number;

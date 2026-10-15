@@ -12,21 +12,25 @@ export function renderNodes() {
 
   ctx.state.nodes.forEach(node => {
     const el = document.createElement('div');
-    el.className = `vn-node ${node.type === 'choice' ? 'vn-node-choice' : ''} ${ctx.selectedNodeId === node.id ? 'selected' : ''}`;
+    const isStart = (ctx.state as { startNodeId?: string }).startNodeId === node.id;
+    el.className = `vn-node ${node.type === 'choice' ? 'vn-node-choice' : ''} ${ctx.selectedNodeId === node.id ? 'selected' : ''} ${isStart ? 'vn-start-node' : ''}`;
     el.style.left = `${node.x}px`;
     el.style.top = `${node.y}px`;
     el.style.width = `${node.width || 240}px`;
     el.dataset.nodeId = node.id;
 
-    // Barra de acciones del nodo (táctil): editar ✏️ y eliminar 🗑.
+    // Barra de acciones del nodo (táctil): editar ✏️, inicio ▶ y eliminar 🗑.
     // Siempre visible en móvil; en escritorio aparece al seleccionar / hover.
     const toolbar = `
       <div class="vn-node-toolbar" role="toolbar" aria-label="Acciones del nodo">
         <button data-action="edit-node" data-node="${node.id}" title="Editar nodo (pregunta, personaje…)" aria-label="Editar nodo"
           class="vn-node-btn vn-node-btn-edit">✏️</button>
+        <button data-action="set-start" data-node="${node.id}" title="Marcar como nodo inicial de la partida" aria-label="Marcar como nodo inicial"
+          class="vn-node-btn vn-node-btn-start ${isStart ? 'vn-node-btn-start-active' : ''}">${isStart ? '🟢' : '▶'}</button>
         <button data-action="delete-node" data-node="${node.id}" title="Eliminar nodo" aria-label="Eliminar nodo"
           class="vn-node-btn vn-node-btn-delete">🗑</button>
       </div>
+      ${isStart ? `<div class="vn-start-badge" title="La partida empieza aquí">▶ INICIO</div>` : ''}
     `;
 
     // 1. BANNER SCENE NODE (e.g., "Start Scene 1" in Image 1)

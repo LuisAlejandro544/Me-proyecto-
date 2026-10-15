@@ -7,6 +7,7 @@ import { renderNodes } from './render-nodes';
 import { applyTransform } from './transform';
 import { renderPlaytestStep } from './playtest';
 import { showToast } from './toast';
+import { getStartNodeId, normalizeState } from '../storage';
 
 export type SharePermission = 'jugar';
 
@@ -79,6 +80,7 @@ export function parseShareHash(hash = location.hash): null | { permiso: SharePer
   try {
     const payload = JSON.parse(fromB64Url(m[1]));
     if (!payload?.state?.nodes) return null;
+    try { normalizeState(payload.state); } catch {}
     return { permiso: payload.permiso === 'jugar' ? 'jugar' : 'jugar', state: payload.state, proyecto: payload.proyecto || 'Nivel compartido' };
   } catch {
     return null;
@@ -124,7 +126,7 @@ export function openShareModal() {
         </label>
         <label class="block">
           <span class="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Tu enlace compartible</span>
-          <textarea id="shareUrl" rows="3" readonly class="w-full rounded-xl bg-[#0f1428] border border-cyan-500/40 p-3 text-xs text-cyan-200 font-mono break-all">${escapeHtml(url)}</textarea>
+          <textarea id="shareUrl" rows="3" readonly onfocus="this.select()" inputmode="url" autocomplete="off" spellcheck="false" class="w-full rounded-xl bg-[#0f1428] border border-cyan-500/40 p-3 text-xs text-cyan-200 font-mono break-all">${escapeHtml(url)}</textarea>
         </label>
         ${tooLong ? `<p class="text-[11px] text-amber-300">⚠️ El nivel es muy grande (${(url.length / 1024).toFixed(1)} KB de URL; los vídeos pesan mucho). Algunos navegadores recortan enlaces de más de ~8 KB. Usa «📦 Descargar .html jugable» para compartirlo como archivo.</p>` : ''}
         <div class="text-[11px] text-slate-500">Incluye ${ctx.state.nodes.length} nodo(s) y ${ctx.state.wires.length} conexión(es).</div>
@@ -176,7 +178,7 @@ export function downloadPlayableHtml() {
   try {
     const payload = { v: 1, permiso: 'jugar', proyecto: ctx.state.projectName, state: ctx.state };
     const json = JSON.stringify(payload).replace(/</g, '\\u003c');
-    const html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>' + payload.proyecto.replace(/</g, '') + ' — Nivel jugable</title><style>body{margin:0;font-family:system-ui;background:#0b0f1f;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh} .s{width:min(960px,96vw);background:#101528;border:2px solid #00f2fe;border-radius:18px;padding:20px} video,img{max-width:100%;border-radius:12px} button{background:#00f2fe;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;margin:4px} .c{display:flex;flex-direction:column;gap:8px;margin-top:10px}</style></head><body><div class="s"><h2 id="t"></h2><div id="m"></div><p id="d"></p><div id="c" class="c"></div></div><script>const P=' + json + ';let cur=P.state.nodes[0]?.id;function go(id){const n=P.state.nodes.find(x=>x.id===id)||P.state.nodes[0];if(!n)return;cur=n.id;document.getElementById("t").textContent=n.badge||n.headerBar||n.title||"Escena";document.getElementById("d").textContent=n.dialogue||n.title||"";const m=document.getElementById("m");m.innerHTML="";const outs=P.state.wires.filter(w=>w.fromNode===n.id);const c=document.getElementById("c");c.innerHTML="";if(n.videoAssetId){const v=document.createElement("video");v.controls=true;v.playsInline=true;v.src=n.videoAssetId;const a=P.state; c.appendChild(v);} if(n.type==="choice"&&n.options){n.options.forEach(o=>{const w=outs.find(x=>x.fromPort==="out_"+o.id);const b=document.createElement("button");b.textContent=o.label;b.onclick=()=>w?go(w.toNode):alert("Fin de rama");c.appendChild(b);});}else if(outs.length){const b=document.createElement("button");b.textContent="Continuar →";b.onclick=()=>go(outs[0].toNode);c.appendChild(b);}}go(cur);<\/script></body></html>';
+    const html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>' + payload.proyecto.replace(/</g, '') + ' — Nivel jugable</title><style>body{margin:0;font-family:system-ui;background:#0b0f1f;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh} .s{width:min(960px,96vw);background:#101528;border:2px solid #00f2fe;border-radius:18px;padding:20px} video,img{max-width:100%;border-radius:12px} button{background:#00f2fe;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;margin:4px} .c{display:flex;flex-direction:column;gap:8px;margin-top:10px}</style></head><body><div class="s"><h2 id="t"></h2><div id="m"></div><p id="d"></p><div id="c" class="c"></div></div><script>const P=' + json + ';let cur=(P.state.startNodeId&&P.state.nodes.some(function(n){return n.id===P.state.startNodeId;}))?P.state.startNodeId:P.state.nodes[0]?.id;function go(id){const n=P.state.nodes.find(x=>x.id===id)||P.state.nodes[0];if(!n)return;cur=n.id;document.getElementById("t").textContent=n.badge||n.headerBar||n.title||"Escena";document.getElementById("d").textContent=n.dialogue||n.title||"";const m=document.getElementById("m");m.innerHTML="";const outs=P.state.wires.filter(w=>w.fromNode===n.id);const c=document.getElementById("c");c.innerHTML="";if(n.videoAssetId){const v=document.createElement("video");v.controls=true;v.playsInline=true;v.src=n.videoAssetId;const a=P.state; c.appendChild(v);} if(n.type==="choice"&&n.options){n.options.forEach(o=>{const w=outs.find(x=>x.fromPort==="out_"+o.id);const b=document.createElement("button");b.textContent=o.label;b.onclick=()=>w?go(w.toNode):alert("Fin de rama");c.appendChild(b);});}else if(outs.length){const b=document.createElement("button");b.textContent="Continuar →";b.onclick=()=>go(outs[0].toNode);c.appendChild(b);}}go(cur);<\/script></body></html>';
     const blob = new Blob([html], { type: 'text/html' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -211,7 +213,7 @@ export async function enterSharedPlayMode(
 
   // Aplica el estado compartido en memoria (sin tocar el proyecto del editor salvo en demo).
   ctx.state = JSON.parse(JSON.stringify(shared.state));
-  ctx.selectedNodeId = ctx.state.nodes[0]?.id ?? '';
+  ctx.selectedNodeId = getStartNodeId(ctx.state);
   setLoading(true, `Cargando personajes (${ctx.state.nodes.length} nodos)…`, 55);
   await sleep(300);
   try {
@@ -242,7 +244,8 @@ export async function enterSharedPlayMode(
       }
     };
   }
-  if (ctx.state.nodes[0]) renderPlaytestStep(ctx.state.nodes[0].id);
+  const __startId = getStartNodeId(ctx.state);
+  if (__startId) renderPlaytestStep(__startId);
   if (badge) badge.textContent = `${shared.proyecto} · modo invitado`;
   setLoading(true, '¡Listo! 🎬', 100);
   await sleep(280);

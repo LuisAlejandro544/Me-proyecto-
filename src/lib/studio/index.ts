@@ -7,6 +7,7 @@ import { renderNodes } from './ui/render-nodes';
 import { loadPreset } from './ui/load-preset';
 import { startPlaytest } from './ui/playtest';
 import { closePlaytest } from './ui/playtest';
+import { renderPlaytestStep } from './ui/playtest';
 import { exportStandaloneHtml } from './ui/exporter';
 import { openExeExportModal } from './ui/exporter';
 import { openWorkspaceTab } from './ui/workspace';
@@ -17,9 +18,48 @@ import { setZoom } from './ui/transform';
 import { checkSharedPlayModeOnBoot, openShareModal } from './ui/share';
 import { checkForUpdates, checkForUpdatesOnBoot } from './ui/updater';
 import { deleteNode } from './ui/node-editor';
+import {
+  getActiveSlot,
+  getStartNodeId,
+  loadSlots,
+  normalizeState,
+  renameProject,
+  saveSessionNow,
+  saveSlot,
+  scheduleAutosave,
+  syncProjectLabel,
+} from './storage';
 
     
 let __studioInited = false;
+// Solo se autogurada al salir si el usuario llegó a entrar al editor
+// (evita que el preset por defecto pise su última sesión al recargar en el menú).
+let __editorActive = false;
+
+/** Repinta el editor al volverlo visible (el menú lo mantiene oculto con display:none). */
+export function enterEditor() {
+  __editorActive = true;
+  try { normalizeState(ctx.state); } catch {}
+  syncProjectLabel();
+  refreshSlotSaveButtons();
+  try { applyTransform(); } catch {}
+  try { renderNodes(); } catch {}
+}
+
+/** Etiquetas de los botones «Slot N» del desplegable (✓ en el activo + nombre). */
+export function refreshSlotSaveButtons() {
+  try {
+    const slots = loadSlots();
+    const active = getActiveSlot();
+    document.querySelectorAll('.slot-save-btn').forEach((btn) => {
+      const i = Number(btn.dataset.slotSave ?? btn.dataset.slot);
+      const s = slots[i];
+      const mark = active === i ? '✓ ' : '';
+      btn.textContent = s ? `${mark}Slot ${i + 1}: ${s.name.slice(0, 12)}` : `${mark}Slot ${i + 1}`;
+      btn.title = s ? `Guardar aquí (ahora: «${s.name}»)` : 'Guardar la historia actual en este slot';
+    });
+  } catch {}
+}
 
 export function getStudioState() {
   try { return typeof ctx.state !== 'undefined' ? ctx.state : null; } catch { return null; }
@@ -35,8 +75,48 @@ export function initStudio() {
       projBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         projMenu.classList.toggle('hidden');
+        if (!projMenu.classList.contains('hidden')) {
+          refreshSlotSaveButtons();
+          const nameInput = document.getElementById('projectNameInput') as HTMLInputElement | null;
+          if (nameInput && document.activeElement !== nameInput) nameInput.value = ctx.state.projectName || '';
+        }
       });
       document.addEventListener('click', () => projMenu.classList.add('hidden'));
+
+      // Nombre de la historia (se guarda en local al editar).
+      const nameInput = document.getElementById('projectNameInput') as HTMLInputElement | null;
+      nameInput?.addEventListener('click', (e) => e.stopPropagation());
+      nameInput?.addEventListener('change', () => {
+        __editorActive = true;
+        renameProject(nameInput.value);
+        projMenu.classList.add('hidden');
+      });
+
+      // Guardar la historia actual en uno de los 3 slots locales.
+      document.querySelectorAll('.slot-save-btn').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const i = Number((btn as HTMLElement).dataset.slotSave ?? (btn as HTMLElement).dataset.slot);
+          if (!Number.isInteger(i) || i < 0 || i > 2) return;
+          __editorActive = true;
+          saveSlot(i);
+          refreshSlotSaveButtons();
+          showToast(`💾 Guardado en slot ${i + 1} (este dispositivo)`);
+        });
+      });
+
+      // Volver al menú principal (guarda la sesión para «Continuar»).
+      document.getElementById('btnGoHome')?.addEventListener('click', () => {
+        playSynthSfx('click');
+        try { saveSessionNow(); } catch {}
+        window.dispatchEvent(new CustomEvent('vn:go-home'));
+      });
+      // Seguridad: si cierra/recarga dentro del editor, la sesión queda para continuar.
+      window.addEventListener('beforeunload', () => {
+        if (__editorActive) {
+          try { saveSessionNow(); } catch {}
+        }
+      });
 
       document.querySelectorAll('.preset-option').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -66,12 +146,16 @@ export function initStudio() {
           showToast('Nada que deshacer');
           return;
         }
-        ctx.redoStack.push(JSON.parse(JSON.stringify({ nodes: ctx.state.nodes, wires: ctx.state.wires, variables: ctx.state.variables })));
+        ctx.redoStack.push(JSON.parse(JSON.stringify({ nodes: ctx.state.nodes, wires: ctx.state.wires, variables: ctx.state.variables, startNodeId: ctx.state.startNodeId, projectName: ctx.state.projectName })));
         const prev = ctx.historyStack.pop();
         ctx.state.nodes = prev.nodes;
         ctx.state.wires = prev.wires;
         ctx.state.variables = prev.variables;
+        if (typeof prev.startNodeId !== 'undefined') ctx.state.startNodeId = prev.startNodeId;
+        if (typeof prev.projectName === 'string') ctx.state.projectName = prev.projectName;
         playSynthSfx('click');
+        syncProjectLabel();
+        scheduleAutosave();
         renderNodes();
         showToast('Última acción deshecha');
       });
@@ -81,12 +165,16 @@ export function initStudio() {
           showToast('Nada que rehacer');
           return;
         }
-        ctx.historyStack.push(JSON.parse(JSON.stringify({ nodes: ctx.state.nodes, wires: ctx.state.wires, variables: ctx.state.variables })));
+        ctx.historyStack.push(JSON.parse(JSON.stringify({ nodes: ctx.state.nodes, wires: ctx.state.wires, variables: ctx.state.variables, startNodeId: ctx.state.startNodeId, projectName: ctx.state.projectName })));
         const next = ctx.redoStack.pop();
         ctx.state.nodes = next.nodes;
         ctx.state.wires = next.wires;
         ctx.state.variables = next.variables;
+        if (typeof next.startNodeId !== 'undefined') ctx.state.startNodeId = next.startNodeId;
+        if (typeof next.projectName === 'string') ctx.state.projectName = next.projectName;
         playSynthSfx('click');
+        syncProjectLabel();
+        scheduleAutosave();
         renderNodes();
         showToast('Acción rehecha');
       });
@@ -134,7 +222,8 @@ export function initStudio() {
       // Playtest modal controls
       document.getElementById('btnClosePlaytest').addEventListener('click', closePlaytest);
       document.getElementById('btnVnRestart').addEventListener('click', () => {
-        if (ctx.state.nodes[0]) renderPlaytestStep(ctx.state.nodes[0].id);
+        const startId = getStartNodeId();
+        if (startId) renderPlaytestStep(startId);
       });
       document.getElementById('btnVnToggleAudio').addEventListener('click', (e) => {
         ctx.sfxEnabled = !ctx.sfxEnabled;
@@ -142,6 +231,9 @@ export function initStudio() {
       });
 
       // Initial render
+  try { normalizeState(ctx.state); } catch {}
+  syncProjectLabel();
+  refreshSlotSaveButtons();
   wireCanvasPanZoom();
   applyTransform();
   renderNodes();
@@ -163,7 +255,7 @@ export function initStudio() {
 }
 
 if (typeof window !== 'undefined') {
-  (window as any).__studio = { initStudio, getStudioState };
+  (window as any).__studio = { initStudio, getStudioState, enterEditor, refreshSlotSaveButtons };
 }
 
 // Public zoom API (also used by automated visual tests).

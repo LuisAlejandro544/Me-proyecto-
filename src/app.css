@@ -343,6 +343,42 @@
     .vn-node-btn:active { transform: scale(0.94); }
     .vn-node-btn-edit:hover { border-color: rgba(0, 242, 254, 0.7); }
     .vn-node-btn-delete:hover { border-color: rgba(255, 117, 107, 0.8); }
+    .vn-node-btn-start:hover { border-color: rgba(52, 211, 153, 0.8); }
+    .vn-node-btn-start-active {
+      border-color: rgba(52, 211, 153, 0.9);
+      background: rgba(6, 40, 26, 0.95);
+      box-shadow: 0 0 12px rgba(52, 211, 153, 0.45), 0 4px 14px rgba(0, 0, 0, 0.5);
+    }
+    /* Insignia del nodo inicial: la partida (Jugar / enlace) empieza aquí */
+    .vn-start-badge {
+      position: absolute;
+      top: -14px;
+      left: 10px;
+      z-index: 46;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: #a7f3d0;
+      background: rgba(6, 40, 26, 0.95);
+      border: 1px solid rgba(52, 211, 153, 0.7);
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.35);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .vn-node.vn-start-node {
+      border-color: rgba(52, 211, 153, 0.55);
+    }
+    /* Fila de acciones del header en móvil: segunda fila con scroll, sin solapes */
+    .topbar-actions { scrollbar-width: none; }
+    .topbar-actions::-webkit-scrollbar { display: none; }
+    /* La URL compartible debe poder seleccionarse también en táctil */
+    #shareUrl {
+      user-select: text;
+      -webkit-user-select: text;
+      touch-action: auto;
+    }
     .editable-field, .editable-option {
       cursor: text;
       border-radius: 6px;

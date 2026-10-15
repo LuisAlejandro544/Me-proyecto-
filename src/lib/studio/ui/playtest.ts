@@ -7,6 +7,7 @@ import { playSynthSfx } from '../domain/audio';
 import { escapeHtml } from '../domain/geometry';
 import { showToast } from './toast';
 import { findCustomAsset, resolveCharacter } from '../../assets';
+import { getStartNodeId } from '../storage';
 
 function stopPlaytestMedia() {
   try {
@@ -54,7 +55,7 @@ export function startPlaytest() {
   document.body.classList.add('vn-playing');
   tryLandscapeLock();
   wirePlaytestChrome();
-  const startNode = ctx.state.nodes[0];
+  const startNode = ctx.state.nodes.find((n) => n.id === getStartNodeId()) ?? ctx.state.nodes[0];
   if (startNode) {
     renderPlaytestStep(startNode.id);
   } else {

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 ### Added
+- Menú principal (`components/MainMenu.svelte`): al entrar se muestra «Mis Historias» con Continuar donde la dejé (autosave `vn_autosave_v1`) + 3 slots en almacenamiento local (`vn_slots_v1`); nombre personalizable por historia/slot e historia nueva (en blanco o presets Sora/Aoi); botón 🏠 `#btnGoHome` para volver al menú (guarda sesión) y `#projectNameInput` + `.slot-save-btn` en el desplegable del editor
+- Nodo inicial de partida (`VNState.startNodeId`): botón ▶/🟢 en la toolbar de cada nodo + insignia «▶ INICIO» + botón en el editor completo; Jugar, Reiniciar, enlace compartido y `.html` jugable empiezan ahí (fallback al primer nodo)
+### Added
 - Auto-actualizaciones: workflow `Auto-update` (solo al publicar un release o manual, nunca por push/PR) adjunta al release el .zip web de toda la app + .zip del código + `update.json`; la app escanea `releases/latest`, compara versión y muestra la pantalla «Nueva actualización disponible» (`#updateModal`) con Descargar .zip / Recargar / Ver release, botón `#btnCheckUpdates` (+ `#updateDot`) y tarjeta en Ajustes con repo editable
 ### Changed
 - Chrome a componentes Svelte (TopBar, CanvasChrome, BottomNav, modales, toast); ids intactos, paridad verificada
@@ -23,6 +26,7 @@
 - Lienzo rápido en móvil: zoom por GPU (`transform: scale`, sin CSS `zoom`); pan/pinch/zoom ya no reconstruyen cables (escalan solos), el drag de nodos solo actualiza el `d` de sus cables (`updateWirePaths`), rueda coalescada en un rAF, minimapa diferido y sin blur/glow durante el gesto (`body.vn-gesturing`); filtros gaussianos desactivados en táctil
 - Interfaz completa traducida al español (cabecera, lienzo, pestañas, paneles, previsualización, exportaciones y presets de ejemplo)
 ### Fixed
+- Móvil: la cabecera ya no solapa el título con Compartir (acciones en segunda fila con scroll en <640px, `order-*` + `.topbar-actions`); título hasta `38vw`, desplegable acotado a `100vw-1rem`, targets de 44px y URL compartible seleccionable (`onfocus select` + `user-select:text` en `#shareUrl`)
 - Zoom borroso/lento en móvil: antes layout-zoom (CSS `zoom` + rebuild de cables por frame); ahora `transform: scale` por GPU con cables dentro del mundo (nítidos 35%–200% a 60fps)
 - Conectores: puertos re-centrados a `-9px` en el borde, `overflow: visible` y `z-index` 40 (los de `choice` ya no quedan a `-21px` ni se cortan); entrada añadida en `avatar_scene`/`banner_scene` y salida en `character_selector`
 - Nodos escena/elección: `choice` con entrada única real (`in_main`) y puntos izquierdos decorativos (ya no son conectores dentro de la píldora); salidas `out_*` centradas en el borde (`-23px` por el `p-3.5`) y cabecera con hueco para ✏️/🗑; `banner_scene`/`avatar_scene` con salidas repartidas en % del borde (adiós `yOffset` fijo en la esquina); cables viejos `in_<opt>` redirigidos a `in_main` (`geometry.ts`)
