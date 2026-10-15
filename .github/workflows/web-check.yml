@@ -1,0 +1,22 @@
+name: Web check (build + svelte-check)
+
+# Valida los PRs que abre el agente OpenCode (/oc) y pushes a main.
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["**.md", "my_novel_visual_novel_node_studio.html"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  web-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - run: npm run check
