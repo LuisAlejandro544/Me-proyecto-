@@ -23,6 +23,8 @@ export interface CustomAsset {
   dataUrl: string;
   size: number;
   createdAt: number;
+  /** Etiquetas libres para organizar la carpeta (minúsculas, sin espacios). */
+  tags: string[];
 }
 
 const STORAGE_KEY = 'vn_custom_assets_v1';
@@ -34,14 +36,34 @@ export const IMAGE_ACCEPT = 'image/*,.png,.jpg,.jpeg,.webp,.gif';
 export const VIDEO_ACCEPT = 'video/*,.mp4,.webm,.mov';
 export const AUDIO_ACCEPT = 'audio/*,.mp3,.wav,.ogg,.m4a';
 
+/** Normaliza etiquetas: minúsculas, sin espacios, máx 24 chars, máx 12 por asset. */
+export function normalizeTags(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const t of raw) {
+    const clean = String(t ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9áéíóúñü_-]/gi, '')
+      .slice(0, 24);
+    if (!clean || out.includes(clean)) continue;
+    out.push(clean);
+    if (out.length >= 12) break;
+  }
+  return out;
+}
+
 function safeParse(raw: string | null): CustomAsset[] {
   if (!raw) return [];
   try {
     const arr = JSON.parse(raw);
     if (!Array.isArray(arr)) return [];
-    return arr.filter(
-      (a) => a && typeof a.id === 'string' && typeof a.dataUrl === 'string'
-    );
+    return arr
+      .filter(
+        (a) => a && typeof a.id === 'string' && typeof a.dataUrl === 'string'
+      )
+      .map((a) => ({ ...a, tags: normalizeTags(a.tags) }));
   } catch {
     return [];
   }
@@ -138,7 +160,8 @@ export async function addAssetFiles(files: FileList | File[]): Promise<ImportRes
         mime: mimeOf(file.name, file.type),
         dataUrl,
         size: file.size,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        tags: []
       });
       agregados += 1;
     } catch {
@@ -284,7 +307,8 @@ async function importViaTauri(): Promise<ImportResult> {
         mime,
         dataUrl: `data:${mime};base64,${btoa(binary)}`,
         size: bin.byteLength,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        tags: []
       });
       agregados += 1;
     } catch {
@@ -329,7 +353,8 @@ async function importViaCapacitorGallery(limit = 10): Promise<ImportResult | nul
           mime: 'image/jpeg',
           dataUrl,
           size: 0,
-          createdAt: Date.now()
+          createdAt: Date.now(),
+          tags: []
         });
         agregados += 1;
       } catch {
@@ -439,7 +464,8 @@ export async function takePhotoAsAsset(): Promise<ImportResult> {
       mime: `image/${photo.format ?? 'jpeg'}`,
       dataUrl: `data:image/${photo.format ?? 'jpeg'};base64,${photo.base64String}`,
       size: 0,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      tags: []
     });
     persist(actuales);
     return { agregados: 1, rechazados: [] };
@@ -456,4 +482,49 @@ export function getVideoAssets(): CustomAsset[] {
 
 export function getAudioAssets(): CustomAsset[] {
   return getCustomAssets().filter((a) => a.kind === 'audio');
+}
+
+/** Guarda un dataURL ya generado (p. ej. composición del editor) como imagen. */
+export function saveCustomAssetFromDataUrl(
+  dataUrl: string,
+  name: string,
+  tags: string[] = []
+): CustomAsset | null {
+  if (!dataUrl || !dataUrl.startsWith('data:image/')) return null;
+  const clean = (name ?? '').trim().replace(/\s+/g, ' ').slice(0, 60) || 'Composición';
+  const actuales = getCustomAssets();
+  const asset: CustomAsset = {
+    id: `custom_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`,
+    name: clean,
+    kind: 'imagen',
+    mime: 'image/png',
+    dataUrl,
+    size: Math.round(dataUrl.length * 0.75),
+    createdAt: Date.now(),
+    tags: normalizeTags(tags)
+  };
+  actuales.push(asset);
+  persist(actuales);
+  return asset;
+}
+
+/** Sustituye las etiquetas de un asset (máx 12, normalizadas). */
+export function setAssetTags(id: string, tags: string[]): boolean {
+  const actuales = getCustomAssets();
+  const target = actuales.find((a) => a.id === id);
+  if (!target) return false;
+  target.tags = normalizeTags(tags);
+  persist(actuales);
+  return true;
+}
+
+/** Todas las etiquetas usadas en la carpeta, ordenadas por frecuencia. */
+export function getAllAssetTags(): { tag: string; count: number }[] {
+  const freq = new Map<string, number>();
+  for (const a of getCustomAssets()) {
+    for (const t of normalizeTags(a.tags)) freq.set(t, (freq.get(t) ?? 0) + 1);
+  }
+  return [...freq.entries()]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
 }

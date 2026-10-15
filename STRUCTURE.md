@@ -9,9 +9,10 @@ Me-proyecto-/
 ├── src/
 │   ├── main.ts               punto de entrada Vite
 │   ├── app.css               estilos portados + puertos + toolbar + móvil + share-play + playtest-horizontal
-│   ├── App.svelte            shell mínimo → menú principal o StudioShell
+│   ├── App.svelte            shell mínimo → menú principal o StudioShell (+ CompositionStudio a pantalla completa)
 │   ├── components/
 │   │   ├── MainMenu.svelte     #mainMenu (continuar/autosave + 3 slots locales + nombre)
+│   │   ├── CompositionStudio.svelte  editor de escenas (#composerScreen: #btnComposerBack/#btnComposerNew/#btnComposerSave; fondo + sprites → PNG a Recursos)
 │   │   └── StudioShell.svelte  chrome completo (ids INTACTOS, no renombrar)
 │   │       ├── header        #btnGoHome #btnResetView #btnProjectDropdown #currentProjectLabel
 │   │       │                 #projectNameInput .slot-save-btn[data-slot-save]
@@ -27,7 +28,7 @@ Me-proyecto-/
 │   │       │   ├── #nodesLayer  (tarjetas .vn-node generadas por render-nodes.ts)
 │   │       │   ├── #btnZoomOutPill #pillZoomLabel #btnCenterCanvas #btnFitGraph
 │   │       │   └── #btnFabAddNode + #minimapSvg #btnMinimapZoomOut/In
-│   │       ├── footer.nav      .nav-tab-btn[data-tab=nodes|assets|timeline|characters|playtest|settings]
+│   │       ├── footer.nav      .nav-tab-btn[data-tab=nodes|assets|compositor|timeline|characters|playtest|settings]
 │   │       ├── #drawerModal   #drawerModalTitle #drawerModalBody #btnCloseDrawer
 │   │       ├── #playtestModal #vnPlaytestCard.vn-playtest-landscape #vnStageBg
 │   │       │                 #vnCurrentNodeBadge #btnVnRestart #btnVnToggleAudio
@@ -41,7 +42,8 @@ Me-proyecto-/
 │   └── lib/
 │       ├── types.ts          VNNode (+video/audio/sound) VNWire VNState (+startNodeId) GraphSnapshot DragState SfxKind
 │       ├── platform.ts       isTauri/isCapacitor + saveHtmlExport (dialog/fs, Filesystem/Share)
-│       ├── assets.ts         galería (fotos+vídeos)/cámara/archivos (imagen+vídeo+audio) + catálogos
+│       ├── assets.ts         galería (fotos+vídeos)/cámara/archivos (imagen+vídeo+audio) + catálogos + etiquetas (tags/normalizeTags/setAssetTags/getAllAssetTags/saveCustomAssetFromDataUrl)
+│       ├── compositions.ts   Composition/CompositionLayer (fondo+sprites) + persistencia + renderCompositionToDataUrl (PNG 1280×720)
 │       └── studio/
 │           ├── index.ts        initStudio() idempotente + wiring de botones + Supr + share-boot + enterEditor()
 │           ├── context.ts      ctx único { state, selectedNodeId, selectedWireId,
@@ -100,6 +102,8 @@ Me-proyecto-/
 | Cambiar gestos canvas | `ui/viewport.ts` + `ui/transform.ts` (GPU: translate + scale; `body.vn-gesturing` apaga blur/glow) |
 | Cambiar compartir/jugar | `ui/share.ts` + `StudioShell.svelte` (`#btnShareLevel`, `#shareLoading`, `#playtestModal`) + `app.css` (`shared-play-mode`) |
 | Añadir pestaña inferior | `StudioShell.svelte` (footer) + `ui/workspace.ts` (`openWorkspaceTab`) |
+| Nueva pantalla completa (no popup) | `components/*.svelte` montado en `App.svelte` + evento `vn:open-*`/`vn:close-*` + `data-tab` en el footer (ver `CompositionStudio.svelte`) |
+| Etiquetar assets | `lib/assets.ts` (`tags`, `setAssetTags`, `getAllAssetTags`) + chips `[data-tag-filter]` y botón `[data-edit-tags]` en `ui/workspace.ts` |
 | Cambiar export nativo | `lib/platform.ts` + `ui/exporter.ts` |
 | Cambiar auto-update | `ui/updater.ts` + `components/UpdateModal.svelte` (`#updateModal`) + workflow `auto-update.yml` (solo `release: published` + `workflow_dispatch`; ver `docs/RELEASING.md`) |
 | Añadir personaje base | `studio/data/assets.ts` + `lib/assets.ts` |

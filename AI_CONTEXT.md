@@ -25,6 +25,9 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
 ## Mapa mental rápido
 
 - Entrada: `src/main.ts` → `App.svelte` → `StudioShell.svelte` (`onMount(initStudio)`).
+  `App.svelte` además monta `CompositionStudio.svelte` a pantalla completa con
+  los eventos `vn:open-composer` / `vn:close-composer` (la pestaña `compositor`
+  del footer NO abre el drawer, dispara el evento desde `openWorkspaceTab`).
 - Estado: `context.ts` → `ctx.state: VNState { projectName, zoom, panX, panY,
   variables, nodes, wires }`.
 - Nodos (`ui/render-nodes.ts`): `banner_scene`, `choice`, `compact_scene`,
@@ -54,6 +57,12 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
   `#vnVideoPlayer`/`#vnAudioPlayer` + `#btnVnFullscreen`/`closePlaytest()`;
   assets con vídeo: `lib/assets.ts` (`imagen|video|audio`).
 - Plataforma: `lib/platform.ts`; assets: `lib/assets.ts` + `studio/data/assets.ts`.
+  Los assets llevan `tags: string[]` (`normalizeTags`/`setAssetTags`/
+  `getAllAssetTags`); la carpeta filtra por chips `[data-tag-filter]` y edita
+  con `[data-edit-tags]`.
+- Composición: `lib/compositions.ts` (`Composition` fondo + `layers`, `renderCompositionToDataUrl` a PNG 1280×720) +
+  `components/CompositionStudio.svelte` (`#composerScreen`, pantalla completa
+  independiente) → guarda con `saveCustomAssetFromDataUrl` (con etiquetas).
 - Auto-update: `ui/updater.ts` (`fetchLatestRelease`/`checkForUpdates` contra
   `releases/latest`, respeta omitir/recordar-mañana en `localStorage`) +
   `components/UpdateModal.svelte` (`#updateModal`) + botón `#btnCheckUpdates`

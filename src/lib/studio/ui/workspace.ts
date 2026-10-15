@@ -11,19 +11,23 @@ import { showToast } from './toast';
 import { getCurrentVersion, getUpdateRepo, setUpdateRepo, checkForUpdates } from './updater';
 import {
   assetSizeLabel,
+  getAllAssetTags,
   getCustomAssets,
+  normalizeTags,
   pickAudioFiles,
   pickFilesAsAssets,
   pickGalleryImages,
   pickGalleryVideos,
   removeCustomAsset,
   renameCustomAsset,
+  setAssetTags,
   takePhotoAsAsset
 } from '../../assets';
 
 /** Memoria de la carpeta para no perder búsqueda/filtro al re-renderizar. */
 let lastAssetsQuery = '';
 let lastAssetsFilter: 'todos' | 'imagen' | 'video' | 'audio' = 'todos';
+let lastAssetsTag = '';
 let lastTab = 'nodes';
 
 /** Transición de entrada cada vez que se cambia de apartado. */
@@ -183,6 +187,41 @@ function wireFolderActions(reopen: () => void, scope: 'assets' | 'characters') {
     };
   });
 
+  // Etiquetas (delegado): ✏️ → input inline → guardar.
+  bodyEl.querySelectorAll('[data-edit-tags]').forEach((btn) => {
+    (btn as HTMLElement).onclick = (e) => {
+      e.stopPropagation();
+      const id = (btn as HTMLElement).dataset.editTags;
+      const box = bodyEl.querySelector(`[data-tags-box="${id}"]`);
+      if (!box) return;
+      const current = getCustomAssets().find((a) => a.id === id)?.tags ?? [];
+      box.innerHTML = `
+        <span class="flex items-center gap-1.5 w-full" data-tags-edit>
+          <input data-tags-input value="${escapeHtml(current.join(', '))}" maxlength="120" placeholder="fondo, noche…"
+            class="flex-1 min-w-0 px-2 py-1 rounded-lg bg-slate-900 border border-fuchsia-400/60 text-[11px] text-white outline-none" />
+          <button data-tags-save class="px-2 py-1 rounded-lg bg-fuchsia-500 text-white text-xs font-bold">✓</button>
+        </span>`;
+      const input = box.querySelector('[data-tags-input]') as HTMLInputElement | null;
+      input?.focus();
+      const save = () => {
+        const tags = normalizeTags((input?.value ?? '').split(','));
+        setAssetTags(id, tags);
+        showToast(tags.length ? `Etiquetas: ${tags.map((t) => `#${t}`).join(' ')} 🏷` : 'Etiquetas borradas 🏷');
+        reopen();
+      };
+      box.querySelector('[data-tags-save]')?.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        save();
+      });
+      input?.addEventListener('keydown', (ev) => {
+        ev.stopPropagation();
+        if (ev.key === 'Enter') save();
+        if (ev.key === 'Escape') reopen();
+      });
+      input?.addEventListener('click', (ev) => ev.stopPropagation());
+    };
+  });
+
   bodyEl.querySelectorAll('[data-remove-custom]').forEach((btn) => {
     (btn as HTMLElement).onclick = (e) => {
       e.stopPropagation();
@@ -207,6 +246,16 @@ export function openWorkspaceTab(tabName) {
   if (tabName === 'playtest') {
     startPlaytest();
     animateTabSwitch(tabName);
+    return;
+  }
+
+  // Editor de composición: pantalla completa independiente (no es un drawer).
+  if (tabName === 'compositor' || tabName === 'composer') {
+    try {
+      document.getElementById('drawerModal')?.classList.add('hidden');
+    } catch {}
+    animateTabSwitch('compositor');
+    window.dispatchEvent(new CustomEvent('vn:open-composer'));
     return;
   }
 
@@ -257,10 +306,16 @@ export function openWorkspaceTab(tabName) {
     titleEl.textContent = '📁 Carpeta de recursos';
     const catalog = allCharacterAssets();
     const all = getCustomAssets();
+    const allTags = getAllAssetTags();
     const q = lastAssetsQuery.toLowerCase();
+    const tagQ = lastAssetsTag.toLowerCase();
     const customs = all.filter((a) => {
       if (lastAssetsFilter !== 'todos' && a.kind !== lastAssetsFilter) return false;
-      if (q && !a.name.toLowerCase().includes(q)) return false;
+      if (tagQ && !(a.tags ?? []).some((t) => t.toLowerCase() === tagQ)) return false;
+      if (q) {
+        const hay = `${a.name} ${(a.tags ?? []).join(' ')}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
       return true;
     });
     const totalKB = all.reduce((s, a) => s + (a.size || 0), 0);
@@ -276,7 +331,7 @@ export function openWorkspaceTab(tabName) {
         </div>
         <div class="p-3.5 space-y-2.5">
           <div class="flex flex-col sm:flex-row gap-2">
-            <input id="assetSearch" value="${escapeHtml(lastAssetsQuery)}" placeholder="🔍 Buscar en la carpeta…"
+            <input id="assetSearch" value="${escapeHtml(lastAssetsQuery)}" placeholder="🔍 Buscar por nombre o #etiqueta…"
               class="flex-1 px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-700 text-xs text-white outline-none focus:border-cyan-400/70" />
             <select id="assetFilter" class="px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-700 text-xs text-white outline-none">
               <option value="todos" ${lastAssetsFilter === 'todos' ? 'selected' : ''}>Todos</option>
@@ -285,6 +340,14 @@ export function openWorkspaceTab(tabName) {
               <option value="audio" ${lastAssetsFilter === 'audio' ? 'selected' : ''}>🎵 Audios</option>
             </select>
           </div>
+          ${allTags.length ? `
+          <div class="flex flex-wrap items-center gap-1.5 pt-1">
+            <span class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">🏷 Etiquetas:</span>
+            <button data-tag-filter="" class="px-2.5 py-1 rounded-full text-[11px] font-semibold border transition min-h-[32px] ${!lastAssetsTag ? 'bg-fuchsia-500 text-white border-fuchsia-400' : 'bg-slate-800 text-slate-300 border-slate-600'}">Todas</button>
+            ${allTags.map((t) => `
+              <button data-tag-filter="${escapeHtml(t.tag)}" class="px-2.5 py-1 rounded-full text-[11px] font-semibold border transition min-h-[32px] ${lastAssetsTag === t.tag ? 'bg-fuchsia-500 text-white border-fuchsia-400' : 'bg-slate-800 text-slate-300 border-slate-600'}">#${escapeHtml(t.tag)} · ${t.count}</button>
+            `).join('')}
+          </div>` : ''}
           <div class="flex flex-wrap gap-2">
             <button id="btnAddMoreFiles" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-xs font-bold text-slate-950 transition active:scale-95 min-h-[44px]">
               ➕ Añadir más (archivos)
@@ -306,7 +369,7 @@ export function openWorkspaceTab(tabName) {
         </div>
       </div>
       ${customs.length ? `
-      <p class="text-xs text-slate-400 pt-3">Contenido de la carpeta — ✏️ renombra, 🗑 elimina o pulsa para asignar al nodo seleccionado.</p>
+      <p class="text-xs text-slate-400 pt-3">Contenido de la carpeta — ✏️ renombra, 🏷 etiqueta, 🗑 elimina o pulsa para asignar al nodo seleccionado.</p>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
         ${customs.map(c => `
           <div data-asset-card="${c.id}" data-assign-char="${c.id}"
@@ -314,8 +377,12 @@ export function openWorkspaceTab(tabName) {
             ${assetPreviewHtml(c)}
             <div data-asset-name class="mt-2 text-xs font-bold text-white truncate px-1">${escapeHtml(c.name)}</div>
             <div class="text-[10px] text-slate-400">${c.kind === 'imagen' ? '🖼 Imagen' : c.kind === 'video' ? '🎬 Vídeo' : '🎵 Audio'} · ${assetSizeLabel(c.size)}</div>
+            <div data-tags-box="${c.id}" class="mt-1.5 flex flex-wrap items-center justify-center gap-1 px-1">
+              ${(c.tags ?? []).map((t) => `<button data-tag-filter="${escapeHtml(t)}" class="px-1.5 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-fuchsia-200 text-[10px] font-semibold">#${escapeHtml(t)}</button>`).join('') || `<span class="text-[10px] text-slate-500">sin etiquetas</span>`}
+            </div>
             <div class="mt-1.5 flex items-center justify-center gap-1.5">
               <button data-rename-asset="${c.id}" title="Cambiar nombre" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 border border-slate-600 text-[11px] transition min-w-[44px] min-h-[36px]">✏️</button>
+              <button data-edit-tags="${c.id}" title="Editar etiquetas" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-fuchsia-500 hover:text-white border border-slate-600 text-[11px] transition min-w-[44px] min-h-[36px]">🏷</button>
               <button data-remove-custom="${c.id}" title="Eliminar de la carpeta" class="px-2 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500 hover:text-white border border-rose-500/40 text-[11px] transition min-w-[44px] min-h-[36px]">🗑</button>
             </div>
           </div>
@@ -353,6 +420,13 @@ export function openWorkspaceTab(tabName) {
     filter?.addEventListener('change', () => {
       lastAssetsFilter = filter.value as 'todos' | 'imagen' | 'video' | 'audio';
       openWorkspaceTab('assets');
+    });
+    bodyEl.querySelectorAll('[data-tag-filter]').forEach((btn) => {
+      (btn as HTMLElement).onclick = (e) => {
+        e.stopPropagation();
+        lastAssetsTag = (btn as HTMLElement).dataset.tagFilter ?? '';
+        openWorkspaceTab('assets');
+      };
     });
 
     wireFolderActions(() => openWorkspaceTab('assets'), 'assets');

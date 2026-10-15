@@ -23,7 +23,18 @@
       </div>
     </button>
 
-    <!-- Tab 3: Timeline & Variables -->
+    <!-- Tab 3: Compositor -->
+    <button data-tab="compositor" class="nav-tab-btn group relative flex items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-white font-medium text-xs sm:text-sm transition shrink-0">
+      <svg class="w-5 h-5 text-fuchsia-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+      <div class="text-left">
+        <div>Componer</div>
+        <div class="hidden md:block text-[10px] text-slate-500 font-normal">Fondo + sprites</div>
+      </div>
+    </button>
+
+    <!-- Tab 4: Timeline & Variables -->
     <button data-tab="timeline" class="nav-tab-btn group relative flex items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-white font-medium text-xs sm:text-sm transition shrink-0">
       <svg class="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
