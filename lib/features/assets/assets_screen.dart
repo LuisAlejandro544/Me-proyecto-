@@ -70,9 +70,10 @@ class _AssetsScreenState extends State<AssetsScreen> {
       builder: (_) => _AssetDialog(initial: a),
     );
     if (result == null) return;
-    assets.rename(a.id, result.name);
-    assets.setTags(a.id, result.tags);
-    assets.setNote(a.id, result.note);
+    assets
+      ..rename(a.id, result.name)
+      ..setTags(a.id, result.tags)
+      ..setNote(a.id, result.note);
     _snack('Asset actualizado');
   }
 
@@ -82,7 +83,10 @@ class _AssetsScreenState extends State<AssetsScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppColors.surface,
-          title: const Text('Borrar asset', style: TextStyle(color: Colors.white)),
+          title: const Text(
+            'Borrar asset',
+            style: TextStyle(color: Colors.white),
+          ),
           content: Text(
             '¿Borrar "${a.name}"? Los nodos lo usarán más adelante, '
             'por ahora solo sale de la librería.',
@@ -99,7 +103,10 @@ class _AssetsScreenState extends State<AssetsScreen> {
                 Navigator.pop(ctx);
                 _snack('Asset borrado');
               },
-              child: const Text('Borrar', style: TextStyle(color: AppColors.danger)),
+              child: const Text(
+                'Borrar',
+                style: TextStyle(color: AppColors.danger),
+              ),
             ),
           ],
         ),
@@ -114,7 +121,10 @@ class _AssetsScreenState extends State<AssetsScreen> {
         context: context,
         builder: (_) => AlertDialog(
           backgroundColor: AppColors.surface,
-          title: const Text('Assets exportados', style: TextStyle(color: Colors.white)),
+          title: const Text(
+            'Assets exportados',
+            style: TextStyle(color: Colors.white),
+          ),
           content: SizedBox(
             width: 500,
             height: 300,
@@ -186,9 +196,8 @@ class _AssetsScreenState extends State<AssetsScreen> {
                   _FilterChip(
                     label: t.label,
                     selected: assets.filter == t,
-                    onTap: () => assets.setFilter(
-                      assets.filter == t ? null : t,
-                    ),
+                    onTap: () =>
+                        assets.setFilter(assets.filter == t ? null : t),
                   ),
               ],
             ),
@@ -231,22 +240,14 @@ class _AssetsScreenState extends State<AssetsScreen> {
 
 /// Borrador del diálogo de alta/edición.
 class _AssetDraft {
-  const _AssetDraft({
-    required this.name,
-    required this.tags,
-    required this.note,
-  });
+  const new({required this.name, required this.tags, required this.note});
   final String name;
   final Set<AssetTag> tags;
   final String note;
 }
 
 class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
+  const new({required this.label, required this.selected, required this.onTap});
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -265,7 +266,7 @@ class _FilterChip extends StatelessWidget {
 }
 
 class _AssetCard extends StatelessWidget {
-  const _AssetCard({
+  const new({
     required this.asset,
     required this.onEdit,
     required this.onDelete,
@@ -316,7 +317,10 @@ class _AssetCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppColors.cyan),
                       ),
-                      child: Text(t.label, style: const TextStyle(fontSize: 11)),
+                      child: Text(
+                        t.label,
+                        style: const TextStyle(fontSize: 11),
+                      ),
                     ),
               ],
             ),
@@ -359,7 +363,7 @@ class _AssetCard extends StatelessWidget {
 }
 
 class _AssetDialog extends StatefulWidget {
-  const _AssetDialog({this.initial});
+  const new({this.initial});
   final UserAsset? initial;
 
   @override

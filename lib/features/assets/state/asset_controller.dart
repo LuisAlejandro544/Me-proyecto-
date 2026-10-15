@@ -9,11 +9,10 @@ import 'package:me_proyecto/features/assets/models/asset_models.dart';
 /// Único dueño mutable de los assets del usuario.
 class AssetController extends ChangeNotifier {
   /// Crea el controlador con los [initial] dados.
-  AssetController([List<UserAsset>? initial])
-    : _assets = List.of(initial ?? const []);
+  new([List<UserAsset>? initial]) : _assets = List.of(initial ?? const []);
 
   /// Librería de ejemplo para estrenar el apartado.
-  factory AssetController.demo() => AssetController([
+  factory demo() => AssetController([
     const UserAsset(
       id: 'asset_bosque',
       name: 'Bosque noche',
@@ -138,9 +137,7 @@ class AssetController extends ChangeNotifier {
         if (e is Map<String, Object?>) {
           next.add(UserAsset.fromJson(e));
         } else if (e is Map) {
-          next.add(
-            UserAsset.fromJson(e.map((k, v) => MapEntry('$k', v))),
-          );
+          next.add(UserAsset.fromJson(e.map((k, v) => MapEntry('$k', v))));
         } else {
           return false;
         }

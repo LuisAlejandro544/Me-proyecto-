@@ -7,16 +7,8 @@ import 'package:me_proyecto/features/assets/state/asset_controller.dart';
 void main() {
   group('UserAsset', () {
     test('deberia_comparar_por_valor_y_copiar', () {
-      const a = UserAsset(
-        id: 'a1',
-        name: 'Bosque',
-        tags: {AssetTag.fondo},
-      );
-      const b = UserAsset(
-        id: 'a1',
-        name: 'Bosque',
-        tags: {AssetTag.fondo},
-      );
+      const a = UserAsset(id: 'a1', name: 'Bosque', tags: {AssetTag.fondo});
+      const b = UserAsset(id: 'a1', name: 'Bosque', tags: {AssetTag.fondo});
       expect(a, b);
       expect(a.copyWith(name: 'Otro'), isNot(b));
     });
@@ -33,7 +25,7 @@ void main() {
     });
 
     test('deberia_tolerar_tags_desconocidos', () {
-      final a = UserAsset.fromJson({
+      final a = UserAsset.fromJson(const {
         'id': 'x',
         'name': 'Raro',
         'tags': ['fondo', 'inexistente'],
@@ -73,8 +65,9 @@ void main() {
       c.setFilter(AssetTag.fondo);
       expect(c.visible.length, 1);
       expect(c.visible.single.name, 'Bosque noche');
-      c.setFilter(null);
-      c.setQuery('yui');
+      c
+        ..setFilter(null)
+        ..setQuery('yui');
       expect(c.visible.length, 1);
       c.setQuery('');
       expect(c.visible.length, 3);

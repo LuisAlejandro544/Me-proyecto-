@@ -3,6 +3,8 @@
 // Fase 1: solo librería (CRUD + etiquetas + export JSON).
 // Fase 2 (futura): placement en nodos referenciando [UserAsset.id].
 import 'package:flutter/foundation.dart';
+import 'package:me_proyecto/features/graph/graph.dart' show VnNode;
+import 'package:me_proyecto/features/graph/models/vn_models.dart' show VnNode;
 
 /// Etiqueta de un asset. Sirve para filtrar y para el futuro placement
 /// en nodos (ej. fondo -> escena, personaje -> sprite).
@@ -23,7 +25,7 @@ enum AssetTag {
   otro,
 }
 
-/// Etiqueta visible en español para [tag].
+/// Etiqueta visible en español para cada valor de la enumeración.
 extension AssetTagLabel on AssetTag {
   /// Texto corto para chips y diálogos.
   String get label => switch (this) {
@@ -35,8 +37,8 @@ extension AssetTagLabel on AssetTag {
   };
 }
 
-/// Parsea una etiqueta desde su [label] o nombre. Devuelve [AssetTag.otro]
-/// si no coincide (migración tolerante).
+/// Parsea una etiqueta desde texto. Devuelve otro si no coincide
+/// (migración tolerante).
 AssetTag assetTagFromString(String s) {
   final v = s.trim().toLowerCase();
   for (final t in AssetTag.values) {
@@ -60,6 +62,24 @@ class UserAsset {
     this.tags = const {},
     this.note = '',
   });
+
+  /// Reconstruye desde JSON. Tolerante: tags desconocidos -> [AssetTag.otro],
+  /// campos ausentes -> valores por defecto.
+  factory fromJson(Map<String, Object?> json) {
+    final rawTags = json['tags'];
+    final tags = <AssetTag>{};
+    if (rawTags is List) {
+      for (final e in rawTags) {
+        if (e is String) tags.add(assetTagFromString(e));
+      }
+    }
+    return UserAsset(
+      id: '${json['id'] ?? 'asset_x'}',
+      name: '${json['name'] ?? 'Sin nombre'}',
+      tags: tags,
+      note: '${json['note'] ?? ''}',
+    );
+  }
 
   /// Identificador único estable (futura clave de placement en nodos).
   final String id;
@@ -96,24 +116,6 @@ class UserAsset {
     'note': note,
   };
 
-  /// Reconstruye desde JSON. Tolerante: tags desconocidos -> [AssetTag.otro],
-  /// campos ausentes -> valores por defecto.
-  factory UserAsset.fromJson(Map<String, Object?> json) {
-    final rawTags = json['tags'];
-    final tags = <AssetTag>{};
-    if (rawTags is List) {
-      for (final e in rawTags) {
-        if (e is String) tags.add(assetTagFromString(e));
-      }
-    }
-    return UserAsset(
-      id: '${json['id'] ?? 'asset_x'}',
-      name: '${json['name'] ?? 'Sin nombre'}',
-      tags: tags,
-      note: '${json['note'] ?? ''}',
-    );
-  }
-
   @override
   bool operator ==(Object other) =>
       other is UserAsset &&
@@ -123,5 +125,6 @@ class UserAsset {
       setEquals(other.tags, tags);
 
   @override
-  int get hashCode => Object.hash(id, name, note, Object.hashAllUnordered(tags));
+  int get hashCode =>
+      Object.hash(id, name, note, Object.hashAllUnordered(tags));
 }
