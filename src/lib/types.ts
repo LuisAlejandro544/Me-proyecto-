@@ -72,3 +72,34 @@ export interface VNState {
   nodes: VNNode[];
   wires: VNWire[];
 }
+
+// Snapshot pushed on every mutating action (undo/redo).
+export interface GraphSnapshot {
+  nodes: VNNode[];
+  wires: VNWire[];
+  variables: VNState['variables'];
+}
+
+export type DragMode = 'node' | 'wire' | 'pan' | 'pinch';
+
+// Pointer-drag session. Only `mode` is always present; the rest depends on it.
+export interface DragState {
+  mode: DragMode;
+  pointerId?: number;
+  moved?: boolean;
+  // node drag
+  nodeId?: string;
+  origX?: number;
+  origY?: number;
+  // pan baseline (screen px)
+  startX?: number;
+  startY?: number;
+  origPanX?: number;
+  origPanY?: number;
+  // wire drag
+  fromNode?: string;
+  fromPort?: string;
+  color?: PortColor;
+}
+
+export type SfxKind = 'click' | 'connect' | 'choice';
