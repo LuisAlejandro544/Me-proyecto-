@@ -36,14 +36,20 @@ paralelo `android` (APK split + Web), `linux` (bundle) y `windows` (Release).
 Artefactos: `app-release-apks`, `web-build`, `linux-bundle`, `windows-release`.
 Se dispara con push a `main` o manual en Actions > Run workflow.
 
-## Estructura
+## Estructura (ver `docs/ARCHITECTURE.md`)
 ```
-lib/main.dart               # entrada multiplataforma
-lib/models/vn_models.dart   # VnProject, VnNode, VnEdge + demo
-lib/editor/editor_screen.dart # canvas grid + nodos drag + zoom Fit
-lib/player/player_screen.dart # Play Preview jugable
-lib/export/html_exporter.dart # genera .html autocontenido
-.github/workflows/build-android.yml # CI: analyze+test+APK+Web
+lib/main.dart                          # bootstrap mínimo
+lib/app/app.dart                       # MaterialApp + tema
+lib/core/theme/app_theme.dart          # AppColors (cero hex en UI)
+lib/core/perf/fps_chip.dart            # medidor fps (1 rebuild/seg)
+lib/features/graph/graph.dart          # barrel del feature
+lib/features/graph/models/             # datos puros, sin Flutter
+lib/features/graph/state/             # GraphController (índice O(1))
+lib/features/graph/editor/            # editor + nodos + painters
+lib/features/graph/player/            # Play Preview
+lib/features/graph/export/            # HTML autocontenido
+scripts/build.sh                       # compila APK/Linux/Windows/Web
+.github/workflows/build-android.yml    # CI: check + android + linux + windows
 ```
 
 ## Test

@@ -1,10 +1,11 @@
-// Test humo del editor: verifica que el canvas demo carga.
-// Cubre Happy path mínimo sin integraciones externas.
+// Tests: widget del editor + unidad del modelo y del controlador.
+// Sin integraciones externas: corren offline en CI y en local.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:me_proyecto/main.dart';
-import 'package:me_proyecto/models/vn_models.dart';
-import 'package:me_proyecto/export/html_exporter.dart';
+import 'package:me_proyecto/app/app.dart';
+import 'package:me_proyecto/features/graph/models/vn_models.dart';
+import 'package:me_proyecto/features/graph/state/graph_controller.dart';
+import 'package:me_proyecto/features/graph/export/html_exporter.dart';
 
 void main() {
   testWidgets('deberia_mostrar_proyecto_demo_en_editor', (tester) async {
@@ -44,5 +45,37 @@ void main() {
       expect(ids.contains(e.fromId), true);
       expect(ids.contains(e.toId), true);
     }
+  });
+
+  group('GraphController', () {
+    test('deberia_indexar_demo_y_mover_nodo', () {
+      final c = GraphController.demo();
+      addTearDown(c.dispose);
+      expect(c.index.length, 6);
+      final n = c.index['dlg_01']!;
+      c.moveNode(n, 10, 20);
+      expect(n.x, 490);
+      expect(c.posOf['dlg_01']!.value, const Offset(490, 220));
+    });
+
+    test('deberia_agregar_y_borrar_sin_huerfanos', () {
+      final c = GraphController.demo();
+      addTearDown(c.dispose);
+      c.addNode(VnNodeType.dialogue);
+      expect(c.index.length, 7);
+      final n = c.project.nodes.last;
+      c.deleteNode(n);
+      expect(c.index.length, 6);
+      expect(c.posOf.containsKey(n.id), false);
+    });
+
+    test('deberia_cargar_estres_500_de_una_vez', () {
+      final c = GraphController.demo();
+      addTearDown(c.dispose);
+      c.stress500();
+      expect(c.project.nodes.length, 500);
+      expect(c.index.length, 500);
+      expect(c.posOf.length, 500);
+    });
   });
 }

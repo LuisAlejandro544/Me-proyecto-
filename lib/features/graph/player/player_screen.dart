@@ -1,6 +1,8 @@
 // Pantalla Play Preview: recorre el grafo como novela visual jugable.
-// Funciona igual en Android y PC (Linux/Windows/Web).
+// Funciona igual en Android y PC (Linux/Windows/Web). Usa AppColors.
 import 'package:flutter/material.dart';
+
+import '../../../core/theme/app_theme.dart';
 import '../models/vn_models.dart';
 
 class PlayerScreen extends StatefulWidget {
@@ -28,19 +30,16 @@ class _PlayerScreenState extends State<PlayerScreen> {
   Widget build(BuildContext context) {
     final n = cur;
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
-        title: Text('Play - ${widget.project.title}'),
-      ),
+      backgroundColor: AppColors.bg,
+      appBar: AppBar(title: Text('Play - ${widget.project.title}')),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 560),
           child: Card(
-            color: const Color(0xFF1E293B),
+            color: AppColors.surface,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: Color(0xFF22D3EE)),
+              side: const BorderSide(color: AppColors.cyan),
             ),
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -59,15 +58,20 @@ class _PlayerScreenState extends State<PlayerScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Elige:', style: TextStyle(color: Colors.white, fontSize: 18)),
+            const Text(
+              'Elige:',
+              style: TextStyle(color: Colors.white, fontSize: 18),
+            ),
             const SizedBox(height: 12),
             for (final o in n.options)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: o.isDanger ? const Color(0xFFF87171) : const Color(0xFF22D3EE),
-                    foregroundColor: const Color(0xFF0F172A),
+                    backgroundColor: o.isDanger
+                        ? AppColors.danger
+                        : AppColors.cyan,
+                    foregroundColor: AppColors.bg,
                   ),
                   onPressed: () => _go(o.nextId),
                   child: Text(o.label),
@@ -83,16 +87,31 @@ class _PlayerScreenState extends State<PlayerScreen> {
             // Avatar placeholder estilo Yui sin assets con copyright.
             Row(
               children: [
-                const CircleAvatar(
-                  backgroundColor: Color(0xFFF9A8D4),
-                  child: Text('Y', style: TextStyle(color: Colors.black)),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    color: AppColors.pink,
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text('Y', style: TextStyle(color: Colors.black)),
                 ),
                 const SizedBox(width: 12),
-                Text(n.speaker, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                Text(
+                  n.speaker,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
-            Text('"${n.text}"', style: const TextStyle(color: Colors.white, fontSize: 17)),
+            Text(
+              '"${n.text}"',
+              style: const TextStyle(color: Colors.white, fontSize: 17),
+            ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => _go(_nextOf(n.id)),
@@ -104,9 +123,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.person, size: 72, color: Color(0xFFF9A8D4)),
-            Text('Sprite: ${n.speaker} (${n.pose})',
-                style: const TextStyle(color: Colors.white)),
+            const Icon(Icons.person, size: 72, color: AppColors.pink),
+            Text(
+              'Sprite: ${n.speaker} (${n.pose})',
+              style: const TextStyle(color: Colors.white),
+            ),
             Text(n.enterFrom, style: const TextStyle(color: Colors.white54)),
             const SizedBox(height: 12),
             ElevatedButton(
@@ -120,8 +141,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(n.type == VnNodeType.start ? 'Inicio' : 'Sonido',
-                style: const TextStyle(color: Colors.white, fontSize: 18)),
+            Text(
+              n.type == VnNodeType.start ? 'Inicio' : 'Sonido',
+              style: const TextStyle(color: Colors.white, fontSize: 18),
+            ),
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: () => _go(_nextOf(n.id)),
