@@ -50,4 +50,10 @@ src-tauri/icons/android/
 src-tauri/icons/ios/
 src-tauri/icons/Square*.png
 src-tauri/icons/StoreLogo.png
+# Capacitor / Android nativo (se commitea android/, no sus salidas)
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/release/
 release/

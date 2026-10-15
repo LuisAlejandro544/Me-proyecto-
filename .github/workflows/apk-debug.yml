@@ -1,0 +1,48 @@
+name: APK debug Android (manual, desde el celular)
+
+# Luis: GitHub app > repo > Actions > "APK debug Android" > Run workflow.
+# Compila el APK debug en la nube y lo publica en Releases (tag android-debug).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk-debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - run: npx cap sync android
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v3
+      - name: Compilar APK debug
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+      - name: Renombrar APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk my-novel-studio-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk-debug
+          path: my-novel-studio-debug.apk
+      - name: Publicar en Releases (tag android-debug)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view android-debug >/dev/null 2>&1 || \
+            gh release create android-debug --prerelease \
+              --title "APK debug Android (último)" \
+              --notes "APK debug para instalación directa (sideload). Se actualiza en cada ejecución manual."
+          gh release upload android-debug my-novel-studio-debug.apk --clobber
