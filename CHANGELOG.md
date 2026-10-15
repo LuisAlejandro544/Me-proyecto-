@@ -3,7 +3,6 @@
 ## [Unreleased]
 ### Added
 - Shell nativo C++ en `cpp/` (webview, sin Qt); retira `qt/`
-### Added
 - Importación de recursos (imágenes/audio) desde galería o administrador de archivos en web, PC (diálogo nativo Tauri) y móvil (galería/cámara Capacitor + respaldo a selector del sistema); módulo `src/lib/assets.ts` con persistencia local
 - Editor completo de nodos (`ui/node-editor.ts`): pregunta/diálogo, hablante y color, personaje y expresión, escala/posición y opciones de `choice` (añadir/quitar), con duplicar y eliminar
 - Eliminación de nodos: botón 🗑 por nodo + tecla `Supr`/`Retroceso`, borra sus cables y admite Deshacer
@@ -11,9 +10,10 @@
 - Docs raíz: `ROADMAP.md`, `STRUCTURE.md`, `AI_CONTEXT.md`, `README_AI.md`; `README.md` y `AGENTS.md` actualizados
 ### Changed
 - `src/lib/studio.ts` monolítico → `src/lib/studio/{data,domain,ui}/` + `context.ts` (paridad verificada); chrome a `components/StudioShell.svelte`
+- Lienzo rápido en móvil: zoom por GPU (`transform: scale`, sin CSS `zoom`); pan/pinch/zoom ya no reconstruyen cables (escalan solos), el drag de nodos solo actualiza el `d` de sus cables (`updateWirePaths`), rueda coalescada en un rAF, minimapa diferido y sin blur/glow durante el gesto (`body.vn-gesturing`); filtros gaussianos desactivados en táctil
 - Interfaz completa traducida al español (cabecera, lienzo, pestañas, paneles, previsualización, exportaciones y presets de ejemplo)
 ### Fixed
-- Zoom borroso: layout-zoom (`#panLayer` traslada, `#canvasWorld` con CSS `zoom`); nítido 35%–200%
+- Zoom borroso/lento en móvil: antes layout-zoom (CSS `zoom` + rebuild de cables por frame); ahora `transform: scale` por GPU con cables dentro del mundo (nítidos 35%–200% a 60fps)
 - Conectores: puertos re-centrados a `-9px` en el borde, `overflow: visible` y `z-index` 40 (los de `choice` ya no quedan a `-21px` ni se cortan); entrada añadida en `avatar_scene`/`banner_scene` y salida en `character_selector`
 - Móvil: cabecera compacta con truncado, pie con scroll horizontal (Personajes visible), modales `92dvh` + safe-area, toast sobre el pie, puertos de 18px en táctil y doble-toque para editar textos
 

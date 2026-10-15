@@ -99,4 +99,6 @@ trabajar con IA.
 - `App.svelte onMount(initStudio)` reemplaza `DOMContentLoaded`.
   `initStudio()` es idempotente (guard `__studioInited`); el wiring de pan/zoom vive
   en `wireCanvasPanZoom()` y debe correr con el DOM montado, nunca en el import.
-- Zoom nítido por layout (`#panLayer` traslada, `#canvasWorld` usa CSS `zoom`).
+- Zoom por GPU (`#panLayer` traslada, `#canvasWorld` escala con `transform`):
+  pan/pinch/zoom solo tocan el compositor (60fps en móvil); los cables SVG escalan
+  solos y solo se tocan al arrastrar nodos (`updateWirePaths`) o cambiar el grafo.

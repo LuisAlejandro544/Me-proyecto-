@@ -4,7 +4,7 @@ import { ctx } from '../context';
 import { playSynthSfx } from '../domain/audio';
 import { buildBezierPath } from '../domain/geometry';
 import { pushHistory } from '../domain/history';
-import { renderWires } from './render-wires';
+import { renderWires, scheduleMinimap, updateWirePaths } from './render-wires';
 import { showToast } from './toast';
 import { applyTransform } from './transform';
 
@@ -25,9 +25,18 @@ let panState = null;
 let panVelocity = { x: 0, y: 0 };
 let lastPanMoveT = 0;
 let inertiaRaf = 0;
-// rAF-throttled render flags (avoids rebuilding SVG on every pointermove).
+// rAF-throttled flags: un solo applyTransform / updateWirePaths por frame.
+// Los cables viven dentro de #canvasWorld y escalan solos con el transform,
+// así que pan/pinch/zoom NO reconstruyen cables (era el coste principal).
 let panRaf = 0;
-let wiresRaf = 0;
+let wireRefreshRaf = 0;
+let wireRefreshNodeId = null;
+// Rect del viewport cacheado durante el gesto (evita getBoundingClientRect
+// por cada pointermove, que fuerza layout en móvil).
+let vpRectCache = null;
+// Rueda/trackpad coalescada en un solo rAF.
+let wheelRaf = 0;
+let wheelPending = null;
 // Double-tap detection (zoom in on empty canvas).
 let lastTapT = 0;
 let lastTapX = 0;
@@ -37,25 +46,47 @@ function clampZoom(z) {
   return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
 }
 
+function setGesturing(on) {
+  try {
+    document.body.classList.toggle('vn-gesturing', !!on);
+  } catch {}
+}
+
+function refreshVpRect() {
+  try {
+    vpRectCache = viewport.getBoundingClientRect();
+  } catch {
+    vpRectCache = null;
+  }
+  return vpRectCache;
+}
+
+function getVpRect() {
+  return vpRectCache || refreshVpRect();
+}
+
 function screenToWorld(clientX, clientY) {
-  const worldEl = document.getElementById('canvasWorld');
-  const worldRect = worldEl.getBoundingClientRect();
+  const r = getVpRect();
+  const left = r ? r.left : 0;
+  const top = r ? r.top : 0;
   return {
-    x: (clientX - worldRect.left) / ctx.state.zoom,
-    y: (clientY - worldRect.top) / ctx.state.zoom
+    x: (clientX - left - ctx.state.panX) / ctx.state.zoom,
+    y: (clientY - top - ctx.state.panY) / ctx.state.zoom
   };
 }
 
 function zoomAtPoint(newZoom, anchorClientX, anchorClientY) {
-  const vpRect = viewport.getBoundingClientRect();
+  const r = getVpRect();
+  const left = r ? r.left : 0;
+  const top = r ? r.top : 0;
   // World point currently under the anchor.
-  const worldX = (anchorClientX - vpRect.left - ctx.state.panX) / ctx.state.zoom;
-  const worldY = (anchorClientY - vpRect.top - ctx.state.panY) / ctx.state.zoom;
+  const worldX = (anchorClientX - left - ctx.state.panX) / ctx.state.zoom;
+  const worldY = (anchorClientY - top - ctx.state.panY) / ctx.state.zoom;
   ctx.state.zoom = Math.round(clampZoom(newZoom) * 100) / 100;
-  ctx.state.panX = anchorClientX - vpRect.left - worldX * ctx.state.zoom;
-  ctx.state.panY = anchorClientY - vpRect.top - worldY * ctx.state.zoom;
+  ctx.state.panX = anchorClientX - left - worldX * ctx.state.zoom;
+  ctx.state.panY = anchorClientY - top - worldY * ctx.state.zoom;
   scheduleApplyTransform();
-  scheduleRenderWires();
+  // Sin renderWires: el mundo escala por GPU y los cables van dentro.
 }
 
 function scheduleApplyTransform() {
@@ -66,11 +97,20 @@ function scheduleApplyTransform() {
   });
 }
 
-function scheduleRenderWires() {
-  if (wiresRaf) return;
-  wiresRaf = requestAnimationFrame(() => {
-    wiresRaf = 0;
-    renderWires();
+function scheduleWireRefresh(nodeId) {
+  // Al arrastrar un nodo solo se toca el atributo `d` de sus cables.
+  if (nodeId !== undefined) {
+    if (wireRefreshNodeId !== null && wireRefreshNodeId !== nodeId) wireRefreshNodeId = null;
+    else wireRefreshNodeId = nodeId;
+  } else {
+    wireRefreshNodeId = null;
+  }
+  if (wireRefreshRaf) return;
+  wireRefreshRaf = requestAnimationFrame(() => {
+    wireRefreshRaf = 0;
+    const only = wireRefreshNodeId;
+    wireRefreshNodeId = null;
+    updateWirePaths(only);
   });
 }
 
@@ -88,15 +128,20 @@ function startInertia() {
   const vy = panVelocity.y;
   const speed = Math.hypot(vx, vy);
   // Only glide on flicks; ignore tiny drifts (mouse pans included).
-  if (speed < 4) return;
+  if (speed < 4) {
+    setGesturing(false);
+    return;
+  }
   let curVx = vx;
   let curVy = vy;
   const decay = 0.94;
+  setGesturing(true);
   const step = () => {
     curVx *= decay;
     curVy *= decay;
     if (Math.hypot(curVx, curVy) < 0.4) {
       inertiaRaf = 0;
+      setGesturing(false);
       return;
     }
     ctx.state.panX += curVx / 60;
@@ -118,6 +163,20 @@ function pinchMidpoint() {
   return { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
 }
 
+function beginPinch() {
+  const mid = pinchMidpoint();
+  pinchState = {
+    startDist: Math.max(pinchDistance(), 1),
+    startZoom: ctx.state.zoom,
+    startPanX: ctx.state.panX,
+    startPanY: ctx.state.panY,
+    startMidX: mid.x,
+    startMidY: mid.y
+  };
+  panState = null;
+  ctx.dragState = { mode: 'pinch' };
+}
+
 viewport.addEventListener('pointerdown', (e) => {
   // Ignore right-click / pen eraser pans.
   if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -125,6 +184,8 @@ viewport.addEventListener('pointerdown', (e) => {
   if (e.target.closest('.vn-node') || e.target.closest('button') || e.target.closest('select') || e.target.closest('input') || e.target.closest('a')) return;
   e.preventDefault();
   stopInertia();
+  setGesturing(true);
+  refreshVpRect();
   try { viewport.setPointerCapture(e.pointerId); } catch {}
   activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
@@ -151,17 +212,7 @@ viewport.addEventListener('pointerdown', (e) => {
     };
   } else if (activePointers.size === 2) {
     // Switch to pinch: cancel single-finger pan baseline.
-    const mid = pinchMidpoint();
-    pinchState = {
-      startDist: Math.max(pinchDistance(), 1),
-      startZoom: ctx.state.zoom,
-      startPanX: ctx.state.panX,
-      startPanY: ctx.state.panY,
-      startMidX: mid.x,
-      startMidY: mid.y
-    };
-    panState = null;
-    ctx.dragState = { mode: 'pinch' };
+    beginPinch();
   }
 });
 
@@ -185,14 +236,15 @@ window.addEventListener('pointermove', (e) => {
     const mid = pinchMidpoint();
     const newZoom = clampZoom(pinchState.startZoom * (dist / pinchState.startDist));
     // Keep the world point under the initial midpoint stable, then follow fingers.
-    const vpRect = viewport.getBoundingClientRect();
-    const worldX = (pinchState.startMidX - vpRect.left - pinchState.startPanX) / pinchState.startZoom;
-    const worldY = (pinchState.startMidY - vpRect.top - pinchState.startPanY) / pinchState.startZoom;
+    const r = getVpRect();
+    const left = r ? r.left : 0;
+    const top = r ? r.top : 0;
+    const worldX = (pinchState.startMidX - left - pinchState.startPanX) / pinchState.startZoom;
+    const worldY = (pinchState.startMidY - top - pinchState.startPanY) / pinchState.startZoom;
     ctx.state.zoom = Math.round(newZoom * 100) / 100;
-    ctx.state.panX = mid.x - vpRect.left - worldX * ctx.state.zoom;
-    ctx.state.panY = mid.y - vpRect.top - worldY * ctx.state.zoom;
+    ctx.state.panX = mid.x - left - worldX * ctx.state.zoom;
+    ctx.state.panY = mid.y - top - worldY * ctx.state.zoom;
     scheduleApplyTransform();
-    scheduleRenderWires();
     return;
   }
 
@@ -216,7 +268,8 @@ window.addEventListener('pointermove', (e) => {
         el.style.left = `${node.x}px`;
         el.style.top = `${node.y}px`;
       }
-      scheduleRenderWires();
+      // Vía rápida: solo `d` de los cables de este nodo, sin rebuild ni minimapa.
+      scheduleWireRefresh(node.id);
     }
   } else if (ctx.dragState.mode === 'pan' && panState) {
     if (activePointers.size > 1) return;
@@ -262,17 +315,9 @@ window.addEventListener('pointerdown', (e) => {
     activePointers.set(ctx.dragState.pointerId, { x: ctx.dragState.startX, y: ctx.dragState.startY });
   }
   if (activePointers.size >= 2) {
-    const mid = pinchMidpoint();
-    pinchState = {
-      startDist: Math.max(pinchDistance(), 1),
-      startZoom: ctx.state.zoom,
-      startPanX: ctx.state.panX,
-      startPanY: ctx.state.panY,
-      startMidX: mid.x,
-      startMidY: mid.y
-    };
-    panState = null;
-    ctx.dragState = { mode: 'pinch' };
+    refreshVpRect();
+    setGesturing(true);
+    beginPinch();
   }
 }, { passive: true });
 
@@ -296,6 +341,7 @@ function endPointer(e) {
     }
     // Pinch ended: settle back to single-finger pan if one finger remains.
     pinchState = null;
+    applyTransform();
     if (activePointers.size === 1) {
       const remaining = [...activePointers.values()][0];
       panState = {
@@ -320,12 +366,18 @@ function endPointer(e) {
     }
     ctx.dragState = null;
     panState = null;
-    scheduleRenderWires();
+    vpRectCache = null;
+    setGesturing(false);
+    // Pan/zoom no mueven nodos: nada que recalcular (ni cables ni minimapa).
     return;
   }
 
   if (!ctx.dragState) {
     panState = null;
+    if (activePointers.size === 0) {
+      vpRectCache = null;
+      setGesturing(false);
+    }
     return;
   }
 
@@ -378,23 +430,56 @@ function endPointer(e) {
     // Flick => inertia glide; slow drag => stop dead.
     const idleMs = performance.now() - lastPanMoveT;
     if (idleMs > 90) panVelocity = { x: 0, y: 0 };
-    if (panState && panState.moved) startInertia();
+    if (panState && panState.moved) {
+      startInertia();
+      if (!inertiaRaf) setGesturing(false);
+      ctx.dragState = null;
+      panState = null;
+      if (activePointers.size === 0) vpRectCache = null;
+      return;
+    }
   }
 
+  const endedMode = ctx.dragState.mode;
+  const endedNodeId = ctx.dragState.nodeId;
   ctx.dragState = null;
   panState = null;
+  if (activePointers.size === 0) {
+    vpRectCache = null;
+    setGesturing(false);
+  }
+  if (endedMode === 'node' && endedNodeId) {
+    // Sincroniza exacto al soltar y actualiza el minimapa una sola vez.
+    updateWirePaths(endedNodeId);
+    scheduleMinimap();
+  }
 }
 
 window.addEventListener('pointerup', endPointer);
 window.addEventListener('pointercancel', endPointer);
 
-// Wheel Zoom (anchored at cursor so trackpads feel precise)
+// Wheel Zoom (anchored at cursor so trackpads feel precise).
+// Coalescado en un rAF: el pinch de trackpad emite decenas de eventos por
+// segundo y cada uno hacía layout + rebuild de cables.
 viewport.addEventListener('wheel', (e) => {
   e.preventDefault();
   stopInertia();
-  // Pinch-to-zoom on trackpads reports ctrlKey + small deltas.
+  refreshVpRect();
   const isTrackpadPinch = e.ctrlKey || e.metaKey;
-  const step = isTrackpadPinch ? -e.deltaY * 0.005 : (e.deltaY < 0 ? 0.07 : -0.07);
-  zoomAtPoint(ctx.state.zoom + step, e.clientX, e.clientY);
+  const step = isTrackpadPinch
+    ? ctx.state.zoom * (Math.exp(-e.deltaY * 0.01) - 1)
+    : (e.deltaY < 0 ? 0.07 : -0.07);
+  if (!wheelPending) wheelPending = { zoom: ctx.state.zoom, x: e.clientX, y: e.clientY };
+  wheelPending.zoom = clampZoom(wheelPending.zoom + step);
+  wheelPending.x = e.clientX;
+  wheelPending.y = e.clientY;
+  if (wheelRaf) return;
+  wheelRaf = requestAnimationFrame(() => {
+    wheelRaf = 0;
+    const p = wheelPending;
+    wheelPending = null;
+    if (!p) return;
+    zoomAtPoint(p.zoom, p.x, p.y);
+  });
 }, { passive: false });
 }

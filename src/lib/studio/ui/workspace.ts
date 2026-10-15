@@ -9,12 +9,53 @@ import { startPlaytest } from './playtest';
 import { renderNodes } from './render-nodes';
 import { showToast } from './toast';
 import {
+  assetSizeLabel,
   getCustomAssets,
-  pickAssetsFromDevice,
+  pickFilesAsAssets,
+  pickGalleryImages,
   removeCustomAsset,
+  renameCustomAsset,
   takePhotoAsAsset
 } from '../../assets';
-import { isCapacitor } from '../../platform';
+
+/** Memoria de la carpeta para no perder búsqueda/filtro al re-renderizar. */
+let lastAssetsQuery = '';
+let lastAssetsFilter: 'todos' | 'imagen' | 'audio' = 'todos';
+let lastTab = 'nodes';
+
+/** Transición de entrada cada vez que se cambia de apartado. */
+function animateTabSwitch(tabName: string) {
+  const bodyEl = document.getElementById('drawerModalBody');
+  if (!bodyEl) {
+    lastTab = tabName;
+    return;
+  }
+  bodyEl.classList.remove('vn-tab-enter');
+  void (bodyEl as HTMLElement).offsetWidth;
+  bodyEl.classList.add('vn-tab-enter');
+  bodyEl.querySelectorAll('.vn-anim-card').forEach((el, i) => {
+    (el as HTMLElement).style.animationDelay = `${Math.min(i * 45, 450)}ms`;
+  });
+  document.querySelectorAll('.nav-tab-btn').forEach((b) => {
+    b.classList.remove('nav-tab-pop');
+    if ((b as HTMLElement).dataset.tab === tabName) {
+      void (b as HTMLElement).offsetWidth;
+      b.classList.add('nav-tab-pop');
+    }
+  });
+  lastTab = tabName;
+}
+
+function handleImportResult(res: { agregados: number; rechazados: string[] }, okMsg: string, reopen: () => void) {
+  if (res.agregados > 0) {
+    showToast(`${okMsg}: ${res.agregados} recurso(s) 🎉`);
+    reopen();
+  } else if (res.rechazados.length) {
+    showToast(res.rechazados[0]);
+  } else {
+    showToast('No se eligió ningún archivo');
+  }
+}
 
 /** Catálogo combinado: personajes incluidos + recursos importados por el usuario. */
 export function allCharacterAssets() {
@@ -34,6 +75,105 @@ export function allCharacterAssets() {
   return { ...CHARACTER_ASSETS, ...customs };
 }
 
+function assetPreviewHtml(a: { kind: string; dataUrl: string; name: string }): string {
+  if (a.kind === 'imagen') {
+    return `<img src="${a.dataUrl}" loading="lazy" class="w-full h-24 rounded-lg object-cover border border-white/15" alt="${escapeHtml(a.name)}" />`;
+  }
+  return `<div class="w-full h-24 rounded-lg bg-gradient-to-br from-violet-600/40 to-cyan-500/30 border border-white/15 flex flex-col items-center justify-center gap-1 text-2xl">🎵<span class="text-[10px] text-slate-300 font-semibold">Audio</span></div>`;
+}
+
+function wireFolderActions(reopen: () => void, scope: 'assets' | 'characters') {
+  const bodyEl = document.getElementById('drawerModalBody');
+  if (!bodyEl) return;
+
+  const btnFiles = bodyEl.querySelector('#btnAddMoreFiles');
+  if (btnFiles) {
+    (btnFiles as HTMLElement).onclick = async () => {
+      showToast(scope === 'assets' ? 'Abriendo archivos…' : 'Abriendo archivos de imagen…');
+      const res = await pickFilesAsAssets(scope === 'assets' ? undefined : 'image/*,.png,.jpg,.jpeg,.webp,.gif');
+      handleImportResult(res, 'Añadido a la carpeta', reopen);
+    };
+  }
+  const btnGallery = bodyEl.querySelector('#btnAddMoreGallery');
+  if (btnGallery) {
+    (btnGallery as HTMLElement).onclick = async () => {
+      showToast('Abriendo galería…');
+      const res = await pickGalleryImages(10);
+      if (res.agregados > 0) {
+        handleImportResult(res, 'Añadido a la carpeta', reopen);
+      } else {
+        // En móvil el usuario puede preferir Archivos tras cancelar galería.
+        showToast('Galería sin selección — prueba con «Archivos»');
+      }
+    };
+  }
+  const btnCamera = bodyEl.querySelector('#btnAddMoreCamera');
+  if (btnCamera) {
+    (btnCamera as HTMLElement).onclick = async () => {
+      const res = await takePhotoAsAsset();
+      if (res.agregados > 0) {
+        showToast('Foto guardada en la carpeta 📷');
+        reopen();
+      } else {
+        showToast('No se tomó ninguna foto');
+      }
+    };
+  }
+
+  // Renombrar (delegado): ✏️ → input inline → guardar/cancelar.
+  bodyEl.querySelectorAll('[data-rename-asset]').forEach((btn) => {
+    (btn as HTMLElement).onclick = (e) => {
+      e.stopPropagation();
+      const id = (btn as HTMLElement).dataset.renameAsset;
+      const card = bodyEl.querySelector(`[data-asset-card="${id}"]`);
+      const label = card?.querySelector('[data-asset-name]');
+      if (!card || !label) return;
+      const current = getCustomAssets().find((a) => a.id === id)?.name ?? '';
+      label.innerHTML = `
+        <span class="flex items-center gap-1.5" data-rename-box>
+          <input data-rename-input value="${escapeHtml(current)}" maxlength="60"
+            class="flex-1 min-w-0 px-2 py-1 rounded-lg bg-slate-900 border border-cyan-400/60 text-xs text-white outline-none" />
+          <button data-rename-save class="px-2 py-1 rounded-lg bg-cyan-500 text-slate-950 text-xs font-bold">✓</button>
+          <button data-rename-cancel class="px-2 py-1 rounded-lg bg-slate-700 text-slate-200 text-xs font-bold">✕</button>
+        </span>`;
+      const input = label.querySelector('[data-rename-input]') as HTMLInputElement | null;
+      input?.focus();
+      input?.select();
+      const save = () => {
+        const ok = renameCustomAsset(id, input?.value ?? '');
+        showToast(ok ? `Renombrado a «${(input?.value ?? '').trim()}» ✏️` : 'El nombre no puede quedar vacío');
+        if (ok) reopen();
+      };
+      label.querySelector('[data-rename-save]')?.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        save();
+      });
+      label.querySelector('[data-rename-cancel]')?.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        reopen();
+      });
+      input?.addEventListener('keydown', (ev) => {
+        ev.stopPropagation();
+        if (ev.key === 'Enter') save();
+        if (ev.key === 'Escape') reopen();
+      });
+      input?.addEventListener('click', (ev) => ev.stopPropagation());
+    };
+  });
+
+  bodyEl.querySelectorAll('[data-remove-custom]').forEach((btn) => {
+    (btn as HTMLElement).onclick = (e) => {
+      e.stopPropagation();
+      const id = (btn as HTMLElement).dataset.removeCustom;
+      const name = getCustomAssets().find((a) => a.id === id)?.name ?? 'recurso';
+      if (!confirm(`¿Eliminar «${name}» de la carpeta?`)) return;
+      removeCustomAsset(id);
+      showToast('Recurso eliminado 🗑');
+      reopen();
+    };
+  });
+}
+
 export function openWorkspaceTab(tabName) {
   playSynthSfx('click');
   document.querySelectorAll('.nav-tab-btn').forEach(btn => {
@@ -44,6 +184,7 @@ export function openWorkspaceTab(tabName) {
 
   if (tabName === 'playtest') {
     startPlaytest();
+    animateTabSwitch(tabName);
     return;
   }
 
@@ -55,19 +196,19 @@ export function openWorkspaceTab(tabName) {
     titleEl.textContent = 'Añadir nodo nuevo al grafo';
     bodyEl.innerHTML = `
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <button data-new-node="banner_scene" class="p-4 rounded-xl bg-[#1e2646] hover:bg-[#263159] border border-cyan-400/30 text-left transition">
+        <button data-new-node="banner_scene" class="vn-anim-card p-4 rounded-xl bg-[#1e2646] hover:bg-[#263159] border border-cyan-400/30 text-left transition hover:-translate-y-0.5">
           <div class="font-bold text-cyan-300 mb-1">🎬 Nodo de escena con pancarta</div>
           <div class="text-xs text-slate-400">Ilustración de escena 16:9 con puertos de hablante y diálogo.</div>
         </button>
-        <button data-new-node="choice" class="p-4 rounded-xl bg-[#1e2646] hover:bg-[#263159] border border-rose-400/30 text-left transition">
+        <button data-new-node="choice" class="vn-anim-card p-4 rounded-xl bg-[#1e2646] hover:bg-[#263159] border border-rose-400/30 text-left transition hover:-translate-y-0.5">
           <div class="font-bold text-rose-300 mb-1">🔀 Nodo de decisión / elección</div>
           <div class="text-xs text-slate-400">Decisiones del jugador con ramificaciones color coral y cian.</div>
         </button>
-        <button data-new-node="branch_scene" class="p-4 rounded-xl bg-[#1e2646] hover:bg-[#263159] border border-indigo-400/30 text-left transition">
+        <button data-new-node="branch_scene" class="vn-anim-card p-4 rounded-xl bg-[#1e2646] hover:bg-[#263159] border border-indigo-400/30 text-left transition hover:-translate-y-0.5">
           <div class="font-bold text-indigo-300 mb-1">💬 Nodo de diálogo con avatar</div>
           <div class="text-xs text-slate-400">Tarjeta compacta con miniatura para respuestas con ramificaciones.</div>
         </button>
-        <button data-new-node="character_selector" class="p-4 rounded-xl bg-[#1e2646] hover:bg-[#263159] border border-emerald-400/30 text-left transition">
+        <button data-new-node="character_selector" class="vn-anim-card p-4 rounded-xl bg-[#1e2646] hover:bg-[#263159] border border-emerald-400/30 text-left transition hover:-translate-y-0.5">
           <div class="font-bold text-emerald-300 mb-1">🎭 Nodo selector de personaje</div>
           <div class="text-xs text-slate-400">Carrusel de avatares, lista de expresiones y deslizadores de tamaño y posición.</div>
         </button>
@@ -81,73 +222,110 @@ export function openWorkspaceTab(tabName) {
         modal.classList.add('hidden');
       };
     });
+    animateTabSwitch(tabName);
   } else if (tabName === 'assets') {
-    titleEl.textContent = 'Recursos del proyecto y sprites de personajes';
+    titleEl.textContent = '📁 Carpeta de recursos';
     const catalog = allCharacterAssets();
-    const customs = getCustomAssets();
+    const all = getCustomAssets();
+    const q = lastAssetsQuery.toLowerCase();
+    const customs = all.filter((a) => {
+      if (lastAssetsFilter !== 'todos' && a.kind !== lastAssetsFilter) return false;
+      if (q && !a.name.toLowerCase().includes(q)) return false;
+      return true;
+    });
+    const totalKB = all.reduce((s, a) => s + (a.size || 0), 0);
     bodyEl.innerHTML = `
-      <div class="p-3.5 rounded-xl bg-[#101528] border border-cyan-500/30 space-y-2.5">
-        <div class="font-semibold text-white text-sm">📥 Importar tus imágenes y audios</div>
-        <p class="text-xs text-slate-400">En web, PC y móvil se abre tu galería o tu administrador de archivos. En móvil también puedes usar la cámara.</p>
-        <div class="flex flex-wrap gap-2">
-          <button id="btnImportAssets" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-xs font-bold text-slate-950 transition">
-            🖼️ Importar desde galería / archivos
-          </button>
-          ${isCapacitor() ? `<button id="btnTakePhoto" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-xs font-bold text-slate-950 transition">📷 Tomar foto</button>` : ''}
+      <div class="vn-anim-card rounded-2xl overflow-hidden border border-amber-400/30 bg-gradient-to-b from-[#1a1430] to-[#101528]">
+        <div class="flex items-center gap-3 px-4 py-3 bg-white/[0.03] border-b border-white/10">
+          <div class="text-3xl">📁</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-bold text-white truncate">/ Recursos <span class="text-slate-400 font-normal">· ${all.length} archivo(s)</span></div>
+            <div class="text-[11px] text-slate-400">Carpeta del proyecto · ~${(totalKB / 1024).toFixed(1)} KB guardados · pulsa ➕ para añadir más sin salir</div>
+          </div>
+          <span class="text-[10px] px-2 py-1 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30 shrink-0">${customs.length}/${all.length} visibles</span>
         </div>
-        ${customs.length ? `<div class="text-[11px] text-slate-400">Tienes ${customs.length} recurso(s) importado(s). Pulsa uno para asignarlo al nodo seleccionado.</div>` : `<div class="text-[11px] text-slate-400">Aún no hay recursos importados. Los que importes aparecen aquí y en «Personajes».</div>`}
+        <div class="p-3.5 space-y-2.5">
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input id="assetSearch" value="${escapeHtml(lastAssetsQuery)}" placeholder="🔍 Buscar en la carpeta…"
+              class="flex-1 px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-700 text-xs text-white outline-none focus:border-cyan-400/70" />
+            <select id="assetFilter" class="px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-700 text-xs text-white outline-none">
+              <option value="todos" ${lastAssetsFilter === 'todos' ? 'selected' : ''}>Todos</option>
+              <option value="imagen" ${lastAssetsFilter === 'imagen' ? 'selected' : ''}>🖼 Imágenes</option>
+              <option value="audio" ${lastAssetsFilter === 'audio' ? 'selected' : ''}>🎵 Audios</option>
+            </select>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="btnAddMoreFiles" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-xs font-bold text-slate-950 transition active:scale-95 min-h-[44px]">
+              ➕ Añadir más (archivos)
+            </button>
+            <button id="btnAddMoreGallery" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-xs font-bold text-white transition active:scale-95 min-h-[44px]">
+              🖼️ Galería
+            </button>
+            <button id="btnAddMoreCamera" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-xs font-bold text-slate-950 transition active:scale-95 min-h-[44px]">
+              📷 Cámara
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400">En móvil: <b>Galería</b> abre tus fotos, <b>Archivos</b> abre el administrador y <b>Cámara</b> toma una foto. En web/PC se abre el explorador de archivos.</p>
+        </div>
       </div>
-      <p class="text-xs text-slate-400 pt-1">Pulsa cualquier recurso para asignarlo al nodo seleccionado.</p>
+      ${customs.length ? `
+      <p class="text-xs text-slate-400 pt-3">Contenido de la carpeta — ✏️ renombra, 🗑 elimina o pulsa para asignar al nodo seleccionado.</p>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
+        ${customs.map(c => `
+          <div data-asset-card="${c.id}" data-assign-char="${c.id}"
+            class="vn-anim-card group relative p-2.5 rounded-xl bg-[#1d2442] hover:bg-[#27315a] border border-slate-700 hover:border-cyan-400/50 cursor-pointer text-center transition hover:-translate-y-0.5">
+            ${assetPreviewHtml(c)}
+            <div data-asset-name class="mt-2 text-xs font-bold text-white truncate px-1">${escapeHtml(c.name)}</div>
+            <div class="text-[10px] text-slate-400">${c.kind === 'imagen' ? '🖼 Imagen' : '🎵 Audio'} · ${assetSizeLabel(c.size)}</div>
+            <div class="mt-1.5 flex items-center justify-center gap-1.5">
+              <button data-rename-asset="${c.id}" title="Cambiar nombre" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 border border-slate-600 text-[11px] transition min-w-[44px] min-h-[36px]">✏️</button>
+              <button data-remove-custom="${c.id}" title="Eliminar de la carpeta" class="px-2 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500 hover:text-white border border-rose-500/40 text-[11px] transition min-w-[44px] min-h-[36px]">🗑</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>` : `
+      <div class="vn-anim-card mt-3 p-6 rounded-2xl border border-dashed border-slate-600 text-center">
+        <div class="text-4xl mb-2">📂</div>
+        <div class="text-sm font-bold text-white">Carpeta vacía</div>
+        <p class="text-xs text-slate-400 mt-1">Usa ➕ Añadir más, 🖼️ Galería o 📷 Cámara para llenarla. Puedes seguir añadiendo más dentro de esta misma carpeta.</p>
+      </div>`}
+      <p class="text-xs text-slate-400 pt-3">Sprites incluidos (solo lectura):</p>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        ${Object.values(catalog).map(c => `
-          <div data-assign-char="${c.id}" class="relative p-2.5 rounded-xl bg-[#1d2442] hover:bg-[#27315a] border border-slate-700 cursor-pointer text-center transition">
-            ${c.custom ? `<button data-remove-custom="${c.id}" title="Eliminar recurso" class="absolute top-1 right-1 w-6 h-6 rounded-full bg-rose-500/90 text-white text-xs font-bold leading-none">×</button>` : ''}
-            <img src="${c.avatar}" class="w-20 h-20 mx-auto rounded-xl object-cover mb-2 border border-white/15" />
-            <div class="text-xs font-bold text-white">${escapeHtml(c.name)}</div>
-            <div class="text-[10px] text-cyan-300">${c.expressions.length} ${c.expressions.length === 1 ? 'expresión' : 'expresiones'}${c.custom ? ' • tuyo' : ''}</div>
+        ${Object.values(catalog).filter((c: any) => !c.custom).map((c: any) => `
+          <div data-assign-char="${c.id}" class="vn-anim-card relative p-2.5 rounded-xl bg-[#1d2442] hover:bg-[#27315a] border border-slate-700/60 cursor-pointer text-center transition hover:-translate-y-0.5">
+            <img src="${c.avatar}" loading="lazy" class="w-20 h-20 mx-auto rounded-xl object-cover mb-2 border border-white/15" />
+            <div class="text-xs font-bold text-white truncate">${escapeHtml(c.name)}</div>
+            <div class="text-[10px] text-cyan-300">${c.expressions.length} expresiones</div>
           </div>
         `).join('')}
       </div>
     `;
     modal.classList.remove('hidden');
+    animateTabSwitch(tabName);
 
-    document.getElementById('btnImportAssets').onclick = async () => {
-      showToast('Abriendo tu galería / archivos…');
-      const res = await pickAssetsFromDevice();
-      if (res.agregados > 0) {
-        showToast(`Importado(s) ${res.agregados} recurso(s) 🎉`);
-        openWorkspaceTab('assets');
-      } else if (res.rechazados.length) {
-        showToast(res.rechazados[0]);
-      } else {
-        showToast('No se eligió ningún archivo');
-      }
-    };
-    const photoBtn = document.getElementById('btnTakePhoto');
-    if (photoBtn) {
-      photoBtn.onclick = async () => {
-        const res = await takePhotoAsAsset();
-        if (res.agregados > 0) {
-          showToast('Foto guardada como recurso 📷');
-          openWorkspaceTab('assets');
-        } else {
-          showToast('No se tomó ninguna foto');
-        }
-      };
-    }
-    bodyEl.querySelectorAll('[data-remove-custom]').forEach(btn => {
-      btn.onclick = (e) => {
-        e.stopPropagation();
-        removeCustomAsset(btn.dataset.removeCustom);
-        showToast('Recurso eliminado');
-        openWorkspaceTab('assets');
-      };
+    const search = document.getElementById('assetSearch') as HTMLInputElement | null;
+    const filter = document.getElementById('assetFilter') as HTMLSelectElement | null;
+    search?.addEventListener('input', () => {
+      lastAssetsQuery = search.value;
+      const pos = search.selectionStart ?? search.value.length;
+      openWorkspaceTab('assets');
+      const again = document.getElementById('assetSearch') as HTMLInputElement | null;
+      again?.focus();
+      try { again?.setSelectionRange(pos, pos); } catch {}
     });
+    filter?.addEventListener('change', () => {
+      lastAssetsFilter = filter.value as 'todos' | 'imagen' | 'audio';
+      openWorkspaceTab('assets');
+    });
+
+    wireFolderActions(() => openWorkspaceTab('assets'), 'assets');
     bodyEl.querySelectorAll('[data-assign-char]').forEach(card => {
-      card.onclick = () => {
+      (card as HTMLElement).onclick = () => {
+        // Si el clic vino de renombrar/eliminar, ese botón ya hizo stopPropagation.
         const node = ctx.state.nodes.find(n => n.id === ctx.selectedNodeId);
-        const cId = card.dataset.assignChar;
+        const cId = (card as HTMLElement).dataset.assignChar;
         const catalogNow = allCharacterAssets();
+        const customsNow = getCustomAssets();
         if (node && catalogNow[cId]) {
           pushHistory();
           node.characterId = cId;
@@ -155,6 +333,18 @@ export function openWorkspaceTab(tabName) {
           node.speaker = catalogNow[cId].name;
           renderNodes();
           showToast(`«${catalogNow[cId].name}» asignado al nodo seleccionado`);
+        } else if (cId && customsNow.find((a) => a.id === cId && a.kind === 'audio')) {
+          const a = customsNow.find((x) => x.id === cId);
+          if (node) {
+            pushHistory();
+            node.audioAssetId = a.id;
+            node.audioName = a.name;
+            renderNodes();
+            showToast(`🎵 «${a.name}» asignado como audio del nodo`);
+          } else {
+            showToast('Selecciona primero un nodo para asignarle el audio');
+            return;
+          }
         }
         modal.classList.add('hidden');
       };
@@ -166,7 +356,7 @@ export function openWorkspaceTab(tabName) {
         <div class="text-xs text-slate-400">Controla banderas, puntos de afecto y objetos del inventario entre ramas:</div>
         <div id="varsListContainer" class="space-y-2">
           ${Object.entries(ctx.state.variables || {}).map(([k, v]) => `
-            <div class="flex items-center justify-between px-3.5 py-2 rounded-xl bg-[#101528] border border-slate-700">
+            <div class="vn-anim-card flex items-center justify-between px-3.5 py-2 rounded-xl bg-[#101528] border border-slate-700">
               <span class="font-mono text-xs text-cyan-300">${escapeHtml(k)}</span>
               <input data-var-key="${escapeHtml(k)}" value="${escapeHtml(String(v))}" class="w-28 px-2 py-1 rounded bg-slate-800 text-xs text-right text-white border border-slate-600" />
             </div>
@@ -175,11 +365,12 @@ export function openWorkspaceTab(tabName) {
         <div class="flex gap-2 pt-2">
           <input id="newVarName" placeholder="nombre_variable" class="flex-1 px-3 py-2 rounded-xl bg-[#101528] border border-slate-700 text-xs text-white" />
           <input id="newVarVal" placeholder="true / 10" class="w-28 px-3 py-2 rounded-xl bg-[#101528] border border-slate-700 text-xs text-white" />
-          <button id="btnAddVar" class="px-4 py-2 rounded-xl bg-cyan-500 text-xs font-bold text-slate-950">+ Añadir</button>
+          <button id="btnAddVar" class="px-4 py-2 rounded-xl bg-cyan-500 text-xs font-bold text-slate-950 min-h-[44px]">+ Añadir</button>
         </div>
       </div>
     `;
     modal.classList.remove('hidden');
+    animateTabSwitch(tabName);
     bodyEl.querySelectorAll('[data-var-key]').forEach(inp => {
       inp.onchange = () => {
         ctx.state.variables[inp.dataset.varKey] = inp.value;
@@ -199,82 +390,61 @@ export function openWorkspaceTab(tabName) {
     const catalog = allCharacterAssets();
     const customs = getCustomAssets().filter(a => a.kind === 'imagen');
     bodyEl.innerHTML = `
-      <div class="p-3.5 rounded-xl bg-[#101528] border border-cyan-500/30 flex flex-wrap items-center justify-between gap-2">
-        <div class="text-xs text-slate-300">¿Quieres usar tus propias fotos como sprites?</div>
-        <div class="flex gap-2">
-          <button id="btnImportCharAssets" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-xs font-bold text-slate-950 transition">🖼️ Importar</button>
-          ${isCapacitor() ? `<button id="btnTakeCharPhoto" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-xs font-bold text-slate-950 transition">📷 Cámara</button>` : ''}
+      <div class="vn-anim-card p-3.5 rounded-xl bg-[#101528] border border-cyan-500/30 flex flex-wrap items-center justify-between gap-2">
+        <div class="text-xs text-slate-300">¿Quieres usar tus propias fotos como sprites? Añade más sin salir de esta carpeta.</div>
+        <div class="flex flex-wrap gap-2">
+          <button id="btnAddMoreFiles" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-xs font-bold text-slate-950 transition min-h-[44px]">➕ Archivos</button>
+          <button id="btnAddMoreGallery" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-xs font-bold text-white transition min-h-[44px]">🖼️ Galería</button>
+          <button id="btnAddMoreCamera" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-xs font-bold text-slate-950 transition min-h-[44px]">📷 Cámara</button>
         </div>
       </div>
-      <div class="space-y-3 pt-1">
+      <div class="space-y-3 pt-2">
         ${Object.values(catalog).map(c => `
-          <div class="flex items-center gap-3.5 p-3 rounded-xl bg-[#101528] border border-slate-700/80">
-            <img src="${c.avatar}" class="w-14 h-14 rounded-xl object-cover border border-white/20" />
-            <div class="flex-1">
-              <div class="font-bold text-sm" style="color:${c.color}">${escapeHtml(c.name)}${c.custom ? ' (tuyo)' : ''}</div>
+          <div data-asset-card="${c.id}" class="vn-anim-card flex items-center gap-3.5 p-3 rounded-xl bg-[#101528] border border-slate-700/80 hover:border-cyan-400/40 transition">
+            <img src="${c.avatar}" loading="lazy" class="w-14 h-14 rounded-xl object-cover border border-white/20 shrink-0" />
+            <div class="flex-1 min-w-0">
+              <div data-asset-name class="font-bold text-sm truncate" style="color:${c.color}">${escapeHtml(c.name)}${c.custom ? ' (tuyo)' : ''}</div>
               <div class="text-xs text-slate-400">Poses disponibles: ${c.expressions.join(' • ')}</div>
             </div>
-            ${c.custom ? `<button data-remove-custom="${c.id}" class="px-3 py-1.5 rounded-lg bg-rose-500/20 border border-rose-500/40 text-xs font-semibold text-rose-300">Eliminar</button>` : ''}
+            ${c.custom ? `
+              <div class="flex gap-1.5 shrink-0">
+                <button data-rename-asset="${c.id}" title="Cambiar nombre" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-cyan-500 hover:text-slate-950 text-xs font-semibold text-slate-200 transition min-h-[44px]">✏️</button>
+                <button data-remove-custom="${c.id}" title="Eliminar" class="px-3 py-1.5 rounded-lg bg-rose-500/20 border border-rose-500/40 hover:bg-rose-500 hover:text-white text-xs font-semibold text-rose-300 transition min-h-[44px]">🗑</button>
+              </div>` : ''}
           </div>
         `).join('')}
-        ${customs.length ? '' : `<p class="text-[11px] text-slate-500">Consejo: en el móvil la galería se abre directamente; en PC se abre el administrador de archivos.</p>`}
+        ${customs.length ? '' : `<p class="text-[11px] text-slate-500">Consejo: en el móvil tienes Galería + Archivos + Cámara; en PC se abre el administrador de archivos.</p>`}
       </div>
     `;
     modal.classList.remove('hidden');
-    document.getElementById('btnImportCharAssets').onclick = async () => {
-      showToast('Abriendo tu galería / archivos…');
-      const res = await pickAssetsFromDevice({ accept: 'image/*', multiple: true });
-      if (res.agregados > 0) {
-        showToast(`Importado(s) ${res.agregados} personaje(s) 🎉`);
-        openWorkspaceTab('characters');
-      } else if (res.rechazados.length) {
-        showToast(res.rechazados[0]);
-      } else {
-        showToast('No se eligió ningún archivo');
-      }
-    };
-    const takeBtn = document.getElementById('btnTakeCharPhoto');
-    if (takeBtn) {
-      takeBtn.onclick = async () => {
-        const res = await takePhotoAsAsset();
-        if (res.agregados > 0) {
-          showToast('Foto guardada como personaje 📷');
-          openWorkspaceTab('characters');
-        }
-      };
-    }
-    bodyEl.querySelectorAll('[data-remove-custom]').forEach(btn => {
-      btn.onclick = () => {
-        removeCustomAsset(btn.dataset.removeCustom);
-        showToast('Recurso eliminado');
-        openWorkspaceTab('characters');
-      };
-    });
+    animateTabSwitch(tabName);
+    wireFolderActions(() => openWorkspaceTab('characters'), 'characters');
   } else if (tabName === 'settings') {
     titleEl.textContent = 'Ajustes globales y sintetizador de audio';
     bodyEl.innerHTML = `
       <div class="space-y-4">
-        <div class="flex items-center justify-between p-3.5 rounded-xl bg-[#101528] border border-slate-700">
+        <div class="vn-anim-card flex items-center justify-between p-3.5 rounded-xl bg-[#101528] border border-slate-700">
           <div>
             <div class="font-semibold text-white text-sm">Efectos de sonido de la interfaz y la novela</div>
             <div class="text-xs text-slate-400">Timbres Web Audio al conectar nodos o elegir opciones</div>
           </div>
-          <button id="btnModalToggleSfx" class="px-4 py-1.5 rounded-lg text-xs font-bold ${ctx.sfxEnabled ? 'bg-emerald-500 text-slate-950' : 'bg-slate-700 text-slate-300'}">
+          <button id="btnModalToggleSfx" class="px-4 py-1.5 rounded-lg text-xs font-bold min-h-[44px] ${ctx.sfxEnabled ? 'bg-emerald-500 text-slate-950' : 'bg-slate-700 text-slate-300'}">
             ${ctx.sfxEnabled ? 'Activado' : 'Silenciado'}
           </button>
         </div>
-        <div class="flex items-center justify-between p-3.5 rounded-xl bg-[#101528] border border-slate-700">
+        <div class="vn-anim-card flex items-center justify-between p-3.5 rounded-xl bg-[#101528] border border-slate-700">
           <div>
             <div class="font-semibold text-white text-sm">Exportar proyecto como JSON</div>
             <div class="text-xs text-slate-400">Guarda tu grafo de nodos y variables como JSON</div>
           </div>
-          <button id="btnDownloadJson" class="px-4 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-xs font-bold text-white">
+          <button id="btnDownloadJson" class="px-4 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-xs font-bold text-white min-h-[44px]">
             Descargar .json
           </button>
         </div>
       </div>
     `;
     modal.classList.remove('hidden');
+    animateTabSwitch(tabName);
     document.getElementById('btnModalToggleSfx').onclick = () => {
       ctx.sfxEnabled = !ctx.sfxEnabled;
       openWorkspaceTab('settings');

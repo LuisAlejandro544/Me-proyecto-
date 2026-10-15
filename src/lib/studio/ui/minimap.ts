@@ -6,6 +6,10 @@ import { buildBezierPath } from '../domain/geometry';
 export function renderMinimap() {
   const svg = document.getElementById('minimapSvg');
   if (!svg) return;
+  // En móvil el minimapa está oculto (hidden sm:flex): no gastar CPU.
+  try {
+    if (!svg.offsetParent && window.innerWidth < 640) return;
+  } catch {}
   let html = '';
 
   // Draw wires in minimap

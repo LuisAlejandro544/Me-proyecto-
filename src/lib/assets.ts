@@ -141,6 +141,25 @@ export function removeCustomAsset(id: string): void {
   persist(getCustomAssets().filter((a) => a.id !== id));
 }
 
+/** Renombra un recurso de la carpeta sin tocar su contenido. */
+export function renameCustomAsset(id: string, newName: string): boolean {
+  const clean = (newName ?? '').trim().replace(/\s+/g, ' ').slice(0, 60);
+  if (!clean) return false;
+  const actuales = getCustomAssets();
+  const target = actuales.find((a) => a.id === id);
+  if (!target) return false;
+  target.name = clean;
+  persist(actuales);
+  return true;
+}
+
+export function assetSizeLabel(size: number): string {
+  if (!size || size <= 0) return '—';
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+}
+
 export function findCustomAsset(id: string | undefined | null): CustomAsset | undefined {
   if (!id) return undefined;
   return getCustomAssets().find((a) => a.id === id);
@@ -262,7 +281,7 @@ async function importViaTauri(): Promise<ImportResult> {
   return { agregados, rechazados };
 }
 
-async function importViaCapacitorGallery(limit = 5): Promise<ImportResult | null> {
+async function importViaCapacitorGallery(limit = 10): Promise<ImportResult | null> {
   try {
     const { Camera } = await import('@capacitor/camera');
     const res = await Camera.pickImages({ quality: 90, limit });
@@ -270,7 +289,8 @@ async function importViaCapacitorGallery(limit = 5): Promise<ImportResult | null
     if (photos.length === 0) return { agregados: 0, rechazados: [] };
     const actuales = getCustomAssets();
     let agregados = 0;
-    for (const photo of photos) {
+    for (let i = 0; i < photos.length; i++) {
+      const photo = photos[i];
       try {
         const anyPhoto = photo as unknown as { base64String?: string; webPath?: string; format?: string };
         let dataUrl: string | null = null;
@@ -290,7 +310,7 @@ async function importViaCapacitorGallery(limit = 5): Promise<ImportResult | null
         if (!dataUrl) continue;
         actuales.push({
           id: `custom_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`,
-          name: 'Foto de galería',
+          name: `Foto de galería ${actuales.length + 1}`,
           kind: 'imagen',
           mime: 'image/jpeg',
           dataUrl,
@@ -310,16 +330,51 @@ async function importViaCapacitorGallery(limit = 5): Promise<ImportResult | null
   }
 }
 
+/** Galería nativa del móvil (Camera.pickImages) con respaldo al selector web. */
+export async function pickGalleryImages(limit = 10): Promise<ImportResult> {
+  if (isCapacitor()) {
+    const gallery = await importViaCapacitorGallery(limit);
+    if (gallery) return gallery;
+  }
+  const files = await openSystemFilePicker('image/*,.png,.jpg,.jpeg,.webp,.gif', true);
+  if (!files) return { agregados: 0, rechazados: [] };
+  return addAssetFiles(Array.from(files));
+}
+
+/** Administrador de archivos del sistema (en móvil abre Archivos, no solo galería). */
+export async function pickFilesAsAssets(
+  accept: string = ASSET_ACCEPT,
+  multiple = true
+): Promise<ImportResult> {
+  if (isTauri()) {
+    try {
+      return await importViaTauri();
+    } catch {
+      // Cae al selector web si el diálogo nativo falla.
+    }
+  }
+  const files = await openSystemFilePicker(accept, multiple);
+  if (!files) return { agregados: 0, rechazados: [] };
+  return addAssetFiles(Array.from(files));
+}
+
 /**
  * Punto de entrada multiplataforma: abre la galería (móvil) o el
  * administrador de archivos (web/PC) y guarda lo elegido como dataURL.
+ * En móvil con imágenes se prefiere la galería nativa; para audio o
+ * para «Archivos» usa siempre el selector del sistema.
  */
 export async function pickAssetsFromDevice(options?: {
   accept?: string;
   multiple?: boolean;
+  source?: 'auto' | 'gallery' | 'files';
 }): Promise<ImportResult> {
   const accept = options?.accept ?? ASSET_ACCEPT;
   const multiple = options?.multiple ?? true;
+  const source = options?.source ?? 'auto';
+
+  if (source === 'gallery') return pickGalleryImages();
+  if (source === 'files') return pickFilesAsAssets(accept, multiple);
 
   if (isTauri()) {
     try {
@@ -329,15 +384,15 @@ export async function pickAssetsFromDevice(options?: {
     }
   }
 
-  if (isCapacitor() && accept.includes('image')) {
+  if (isCapacitor() && accept.includes('image') && !accept.includes('audio')) {
     const gallery = await importViaCapacitorGallery();
+    if (gallery && (gallery.agregados > 0 || gallery.rechazados.length > 0)) return gallery;
+    // Si el usuario canceló la galería, no forzamos el selector de archivos:
+    // devolvemos vacío y la UI decide si ofrecer «Archivos».
     if (gallery) return gallery;
-    // Sin plugin de cámara: el input abre igualmente galería/archivos.
   }
 
-  const files = await openSystemFilePicker(accept, multiple);
-  if (!files) return { agregados: 0, rechazados: [] };
-  return addAssetFiles(Array.from(files));
+  return pickFilesAsAssets(accept, multiple);
 }
 
 /** Abre la cámara del móvil para tomar una foto y guardarla como recurso. */

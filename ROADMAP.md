@@ -1,8 +1,9 @@
 # Roadmap — Visual Novel Node Studio
 
 > Estado a 2026-10-15. Hecho reciente: editor completo de nodos (✏️/🗑 + Supr),
-> puertos re-centrados y visibles, pulido móvil y compartir por URL (permiso
-> «Solo jugar» + pantallas de carga + jugar a pantalla completa).
+> puertos re-centrados y visibles, lienzo rápido por GPU en móvil (pan/pinch/zoom
+> a 60fps), pulido móvil y compartir por URL (permiso «Solo jugar» + pantallas
+> de carga + jugar a pantalla completa).
 
 ## Ahora (v0.2) — compartir y pulir
 
@@ -18,6 +19,9 @@
 - [x] Compartir: botón **Compartir**, selector de permiso (solo `jugar` por ahora),
   copiar URL (`#nivel=` base64url), pantallas de carga con progreso y modo invitado
   a pantalla completa.
+- [x] Lienzo rápido en móvil: zoom por GPU (`transform: scale`), pan/pinch/zoom sin
+  rebuild de cables, drag con `updateWirePaths`, minimapa diferido y sin
+  blur/glow durante el gesto.
 - [ ] Pruebas visuales del modo invitado en Android (WebView) y iOS (Safari).
 - [ ] Aviso de URL larga con opción «descargar `.html` en su lugar» cuando supere 8 KB.
 

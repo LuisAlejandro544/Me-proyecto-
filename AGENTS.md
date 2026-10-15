@@ -19,7 +19,8 @@ Idioma del repo: español en respuestas al usuario.
   - `ui/node-editor.ts` — `openNodeEditor` / `deleteNode` / `duplicateNode`
   - `ui/share.ts` — URL `#nivel=` (permiso `jugar`) + carga + `shared-play-mode`
   - `ui/render-wires.ts` + `domain/geometry.ts` — cables y posiciones de puertos
-  - `ui/viewport.ts` + `ui/transform.ts` — pan/pinch/zoom (pan en `#panLayer`, zoom CSS en `#canvasWorld`)
+    (`renderWires` solo al cambiar el grafo; `updateWirePaths` en drag; nada en pan/zoom)
+  - `ui/viewport.ts` + `ui/transform.ts` — pan/pinch/zoom GPU (pan en `#panLayer`, scale en `#canvasWorld`, `body.vn-gesturing` en el gesto)
 - `src/lib/types.ts` — tipos `VNNode`, `VNWire`, `VNState` (usar en código nuevo)
 - `src/lib/assets.ts` — `getCharacterCatalog` / `resolveCharacter` + import galería/cámara
 - `src/lib/platform.ts` — export nativo (Tauri `dialog`/`fs`, Capacitor `Filesystem`/`Share`)
