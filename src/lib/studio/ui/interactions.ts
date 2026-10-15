@@ -10,13 +10,16 @@ import { renderNodes } from './render-nodes';
 import { showToast } from './toast';
 
 export function attachNodeInteractions() {
-  // Node selection & drag start
+  // Node selection & drag start (touch: single-finger drag, capture pointer for fluid move)
   document.querySelectorAll('.vn-node').forEach(nodeEl => {
     nodeEl.addEventListener('pointerdown', (e) => {
       if (e.target.closest('.vn-port') || e.target.closest('button') || e.target.closest('select') || e.target.closest('input')) {
         return;
       }
+      // Ignore second finger landing on a node while already dragging/panning.
+      if (ctx.dragState && (ctx.dragState.mode === 'node' || ctx.dragState.mode === 'wire' || ctx.dragState.mode === 'pan' || ctx.dragState.mode === 'pinch')) return;
       e.stopPropagation();
+      try { nodeEl.setPointerCapture(e.pointerId); } catch {}
       const nodeId = nodeEl.dataset.nodeId;
       ctx.selectedNodeId = nodeId;
       document.querySelectorAll('.vn-node').forEach(n => n.classList.toggle('selected', n.dataset.nodeId === nodeId));
@@ -27,6 +30,7 @@ export function attachNodeInteractions() {
       ctx.dragState = {
         mode: 'node',
         nodeId,
+        pointerId: e.pointerId,
         startX: e.clientX,
         startY: e.clientY,
         origX: node.x,
@@ -41,6 +45,8 @@ export function attachNodeInteractions() {
     portEl.addEventListener('pointerdown', (e) => {
       e.stopPropagation();
       e.preventDefault();
+      if (ctx.dragState) return;
+      try { portEl.setPointerCapture(e.pointerId); } catch {}
       const nodeId = portEl.dataset.nodeId;
       const portId = portEl.dataset.portId;
       const color = portEl.dataset.portColor || 'cyan';
@@ -48,6 +54,7 @@ export function attachNodeInteractions() {
 
       ctx.dragState = {
         mode: 'wire',
+        pointerId: e.pointerId,
         fromNode: nodeId,
         fromPort: portId,
         color,
