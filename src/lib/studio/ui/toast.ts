@@ -23,9 +23,4 @@ export function showToast(msg) {
       banner.classList.remove('toast-hide');
     }, 380);
   }, 2000);
-
-  // Puentea al pill Svelte inferior si existe.
-  try {
-    if (typeof (globalThis as any).__toast === 'function') (globalThis as any).__toast(msg);
-  } catch {}
 }

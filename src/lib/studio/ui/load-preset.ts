@@ -54,6 +54,10 @@ export function loadPreset(presetKey) {
   }
 
   document.getElementById('currentProjectLabel').textContent = ctx.state.projectName;
+  // Limpia selección de cable/popover del preset anterior (eran del otro grafo).
+  ctx.selectedWireId = null;
+  document.querySelectorAll('.vn-wire-group.wire-selected').forEach((g) => g.classList.remove('wire-selected'));
+  document.getElementById('wirePopover')?.classList.add('wire-pop-hidden');
   applyTransform();
   renderNodes();
 }

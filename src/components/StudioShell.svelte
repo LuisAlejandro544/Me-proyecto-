@@ -1,48 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { initStudio } from '../lib/studio';
-  import { saveHtmlExport } from '../lib/platform';
-
-  let toast = '';
-  let toastLeaving = false;
-  let __toastTimer: any = null;
-  let __toastFade: any = null;
-  function showSvelteToast(msg: string) {
-    toast = msg;
-    toastLeaving = false;
-    clearTimeout(__toastTimer);
-    clearTimeout(__toastFade);
-    __toastTimer = setTimeout(() => {
-      toastLeaving = true;
-      __toastFade = setTimeout(() => {
-        toast = '';
-        toastLeaving = false;
-      }, 360);
-    }, 2000);
-  }
-  (globalThis as any).__toast = showSvelteToast;
 
   onMount(() => {
     initStudio();
-    // Bridge legacy showToast() to Svelte toast when available
-    try {
-      const banner = document.getElementById('toastBanner');
-      if (banner) {
-        const obs = new MutationObserver(() => {
-          const m = document.getElementById('toastMessage');
-          if (m && m.textContent && m.textContent !== toast) showSvelteToast(m.textContent);
-        });
-        obs.observe(banner, { attributes: true, childList: true, subtree: true });
-      }
-    } catch {}
   });
-
-  async function onExportHtml() {
-    // Prefer legacy in-canvas export (download), fallback to Tauri/Capacitor share
-    const btn = document.getElementById('btnExportHtml');
-    if (btn) (btn as HTMLButtonElement).click();
-    else await saveHtmlExport();
-  }
 </script>
 
 <!-- Ported body markup (ids preserved so lib/studio.ts keeps working) -->
@@ -161,7 +123,7 @@
       <span class="hidden md:inline-block text-[11px] text-slate-400 px-2 border-l border-slate-700/70 whitespace-nowrap">
         Arrastra nodos o puertos • Doble clic en un texto para editar
       </span>
-      <span class="md:hidden text-[11px] text-slate-400 px-2 border-l border-slate-700/70 whitespace-nowrap">
+      <span class="md:hidden text-[11px] text-slate-400 px-2 border-l border-slate-700/70 whitespace-nowrap truncate max-w-[36vw]">
         Toca ✏️ para editar • Arrastra puertos para conectar
       </span>
     </div>
@@ -404,9 +366,3 @@
     <span id="toastMessage">¡Guardado!</span>
   </div>
 </div>
-{#if toast}
-  <button onclick={() => { toast = ''; toastLeaving = false; }} class="svelte-toast-pill fixed bottom-20 left-1/2 -translate-x-1/2 z-[80] px-4 py-2 rounded-full bg-cyan-500/95 text-slate-950 text-sm font-semibold shadow-2xl flex items-center gap-2 max-w-[92vw] {toastLeaving ? 'toast-leaving' : ''}">
-    <span class="w-2 h-2 rounded-full bg-slate-950/70 shrink-0"></span>
-    <span class="truncate">{toast}</span>
-  </button>
-{/if}
