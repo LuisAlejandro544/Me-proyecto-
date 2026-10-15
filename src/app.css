@@ -36,6 +36,16 @@
       background-size: 24px 24px, 48px 48px, 48px 48px;
       background-position: 0 0, 0 0, 0 0;
     }
+    /* ---- Mobile canvas gestures: let JS own all touch (pan + pinch) ---- */
+    #canvasViewport {
+      touch-action: none;
+      overscroll-behavior: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    #canvasWorld {
+      will-change: transform;
+    }
     /* Node Glass Card */
     .vn-node {
       position: absolute;
@@ -47,6 +57,7 @@
       transition: box-shadow 0.15s ease, border-color 0.15s ease;
       cursor: grab;
       z-index: 10;
+      touch-action: none;
     }
     .vn-node:active {
       cursor: grabbing;
@@ -70,6 +81,27 @@
       cursor: crosshair;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       z-index: 30;
+      touch-action: none;
+    }
+    /* Bigger invisible hit area so ports are easy to grab on touch */
+    .vn-port::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 30px;
+      height: 30px;
+      transform: translate(-50%, -50%);
+    }
+    @media (pointer: coarse) {
+      .vn-port {
+        width: 18px;
+        height: 18px;
+      }
+      .vn-port::after {
+        width: 40px;
+        height: 40px;
+      }
     }
     .vn-port:hover {
       transform: scale(1.35);

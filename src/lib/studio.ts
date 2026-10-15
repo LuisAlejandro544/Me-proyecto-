@@ -651,13 +651,16 @@
     let dragState = null;
 
     function attachNodeInteractions() {
-      // Node selection & drag start
+      // Node selection & drag start (touch: single-finger drag, capture pointer for fluid move)
       document.querySelectorAll('.vn-node').forEach(nodeEl => {
         nodeEl.addEventListener('pointerdown', (e) => {
           if (e.target.closest('.vn-port') || e.target.closest('button') || e.target.closest('select') || e.target.closest('input')) {
             return;
           }
+          // Ignore second finger landing on a node while already dragging/panning.
+          if (dragState && (dragState.mode === 'node' || dragState.mode === 'wire' || dragState.mode === 'pan' || dragState.mode === 'pinch')) return;
           e.stopPropagation();
+          try { nodeEl.setPointerCapture(e.pointerId); } catch {}
           const nodeId = nodeEl.dataset.nodeId;
           selectedNodeId = nodeId;
           document.querySelectorAll('.vn-node').forEach(n => n.classList.toggle('selected', n.dataset.nodeId === nodeId));
@@ -668,6 +671,7 @@
           dragState = {
             mode: 'node',
             nodeId,
+            pointerId: e.pointerId,
             startX: e.clientX,
             startY: e.clientY,
             origX: node.x,
@@ -682,6 +686,8 @@
         portEl.addEventListener('pointerdown', (e) => {
           e.stopPropagation();
           e.preventDefault();
+          if (dragState) return;
+          try { portEl.setPointerCapture(e.pointerId); } catch {}
           const nodeId = portEl.dataset.nodeId;
           const portId = portEl.dataset.portId;
           const color = portEl.dataset.portColor || 'cyan';
@@ -689,6 +695,7 @@
 
           dragState = {
             mode: 'wire',
+            pointerId: e.pointerId,
             fromNode: nodeId,
             fromPort: portId,
             color,
@@ -806,28 +813,206 @@
     }
 
     // Canvas Panning & Global Pointer Move/Up (deferred until initStudio: needs mounted DOM)
+    // Mobile-friendly: 1-finger pan with inertia, 2-finger pinch-zoom + pan,
+    // cursor-anchored wheel zoom, double-tap zoom, rAF-throttled rendering.
     function wireCanvasPanZoom() {
     const viewport = document.getElementById('canvasViewport');
     if (!viewport || viewport.dataset.wired) return;
     viewport.dataset.wired = '1';
-    viewport.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('.vn-node') || e.target.closest('button')) return;
-      dragState = {
-        mode: 'pan',
-        startX: e.clientX,
-        startY: e.clientY,
-        origPanX: state.panX,
-        origPanY: state.panY
+
+    const MIN_ZOOM = 0.35;
+    const MAX_ZOOM = 2.0;
+
+    // Active pointers for multitouch tracking.
+    const activePointers = new Map();
+    // Pinch gesture baseline captured when 2 pointers are down on empty canvas.
+    let pinchState = null;
+    // Single-finger pan baseline + velocity for inertia.
+    let panState = null;
+    let panVelocity = { x: 0, y: 0 };
+    let lastPanMoveT = 0;
+    let inertiaRaf = 0;
+    // rAF-throttled render flags (avoids rebuilding SVG on every pointermove).
+    let panRaf = 0;
+    let wiresRaf = 0;
+    // Double-tap detection (zoom in on empty canvas).
+    let lastTapT = 0;
+    let lastTapX = 0;
+    let lastTapY = 0;
+
+    function clampZoom(z) {
+      return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
+    }
+
+    function screenToWorld(clientX, clientY) {
+      const worldEl = document.getElementById('canvasWorld');
+      const worldRect = worldEl.getBoundingClientRect();
+      return {
+        x: (clientX - worldRect.left) / state.zoom,
+        y: (clientY - worldRect.top) / state.zoom
       };
+    }
+
+    function zoomAtPoint(newZoom, anchorClientX, anchorClientY) {
+      const vpRect = viewport.getBoundingClientRect();
+      // World point currently under the anchor.
+      const worldX = (anchorClientX - vpRect.left - state.panX) / state.zoom;
+      const worldY = (anchorClientY - vpRect.top - state.panY) / state.zoom;
+      state.zoom = Math.round(clampZoom(newZoom) * 100) / 100;
+      state.panX = anchorClientX - vpRect.left - worldX * state.zoom;
+      state.panY = anchorClientY - vpRect.top - worldY * state.zoom;
+      scheduleApplyTransform();
+      scheduleRenderWires();
+    }
+
+    function scheduleApplyTransform() {
+      if (panRaf) return;
+      panRaf = requestAnimationFrame(() => {
+        panRaf = 0;
+        applyTransform();
+      });
+    }
+
+    function scheduleRenderWires() {
+      if (wiresRaf) return;
+      wiresRaf = requestAnimationFrame(() => {
+        wiresRaf = 0;
+        renderWires();
+      });
+    }
+
+    function stopInertia() {
+      if (inertiaRaf) {
+        cancelAnimationFrame(inertiaRaf);
+        inertiaRaf = 0;
+      }
+      panVelocity = { x: 0, y: 0 };
+    }
+
+    function startInertia() {
+      stopInertia();
+      const vx = panVelocity.x;
+      const vy = panVelocity.y;
+      const speed = Math.hypot(vx, vy);
+      // Only glide on flicks; ignore tiny drifts (mouse pans included).
+      if (speed < 4) return;
+      let curVx = vx;
+      let curVy = vy;
+      const decay = 0.94;
+      const step = () => {
+        curVx *= decay;
+        curVy *= decay;
+        if (Math.hypot(curVx, curVy) < 0.4) {
+          inertiaRaf = 0;
+          return;
+        }
+        state.panX += curVx / 60;
+        state.panY += curVy / 60;
+        applyTransform();
+        inertiaRaf = requestAnimationFrame(step);
+      };
+      inertiaRaf = requestAnimationFrame(step);
+    }
+
+    function pinchDistance() {
+      const pts = [...activePointers.values()];
+      if (pts.length < 2) return 0;
+      return Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    }
+
+    function pinchMidpoint() {
+      const pts = [...activePointers.values()];
+      return { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+    }
+
+    viewport.addEventListener('pointerdown', (e) => {
+      // Ignore right-click / pen eraser pans.
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      // Let nodes / ports / controls handle their own gestures.
+      if (e.target.closest('.vn-node') || e.target.closest('button') || e.target.closest('select') || e.target.closest('input') || e.target.closest('a')) return;
+      e.preventDefault();
+      stopInertia();
+      try { viewport.setPointerCapture(e.pointerId); } catch {}
+      activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (activePointers.size === 1) {
+        // Candidate single-finger pan.
+        panState = {
+          startX: e.clientX,
+          startY: e.clientY,
+          origPanX: state.panX,
+          origPanY: state.panY,
+          lastX: e.clientX,
+          lastY: e.clientY,
+          lastT: performance.now(),
+          moved: false
+        };
+        lastPanMoveT = performance.now();
+        panVelocity = { x: 0, y: 0 };
+        dragState = {
+          mode: 'pan',
+          startX: e.clientX,
+          startY: e.clientY,
+          origPanX: state.panX,
+          origPanY: state.panY
+        };
+      } else if (activePointers.size === 2) {
+        // Switch to pinch: cancel single-finger pan baseline.
+        const mid = pinchMidpoint();
+        pinchState = {
+          startDist: Math.max(pinchDistance(), 1),
+          startZoom: state.zoom,
+          startPanX: state.panX,
+          startPanY: state.panY,
+          startMidX: mid.x,
+          startMidY: mid.y
+        };
+        panState = null;
+        dragState = { mode: 'pinch' };
+      }
+    });
+
+    // Prevent iOS Safari gesture zoom / double-tap page zoom on the canvas.
+    viewport.addEventListener('gesturestart', (e) => e.preventDefault());
+    viewport.addEventListener('gesturechange', (e) => e.preventDefault());
+    viewport.addEventListener('dblclick', (e) => e.preventDefault());
+    viewport.addEventListener('contextmenu', (e) => {
+      // Long-press menu breaks fluid touch panning.
+      if (e.target.closest && e.target.closest('#canvasViewport')) e.preventDefault();
     });
 
     window.addEventListener('pointermove', (e) => {
+      if (activePointers.has(e.pointerId)) {
+        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      }
+
+      // Two-finger pinch-zoom + pan (highest priority on canvas).
+      if (pinchState && activePointers.size >= 2) {
+        const dist = Math.max(pinchDistance(), 1);
+        const mid = pinchMidpoint();
+        const newZoom = clampZoom(pinchState.startZoom * (dist / pinchState.startDist));
+        // Keep the world point under the initial midpoint stable, then follow fingers.
+        const vpRect = viewport.getBoundingClientRect();
+        const worldX = (pinchState.startMidX - vpRect.left - pinchState.startPanX) / pinchState.startZoom;
+        const worldY = (pinchState.startMidY - vpRect.top - pinchState.startPanY) / pinchState.startZoom;
+        state.zoom = Math.round(newZoom * 100) / 100;
+        state.panX = mid.x - vpRect.left - worldX * state.zoom;
+        state.panY = mid.y - vpRect.top - worldY * state.zoom;
+        scheduleApplyTransform();
+        scheduleRenderWires();
+        return;
+      }
+
       if (!dragState) return;
 
       if (dragState.mode === 'node') {
+        // Only the originating pointer drives the node drag.
+        if (dragState.pointerId !== undefined && e.pointerId !== dragState.pointerId) return;
+        // Abort node drag if a second finger lands mid-drag (becomes pinch).
+        if (activePointers.size > 1) return;
         const dx = (e.clientX - dragState.startX) / state.zoom;
         const dy = (e.clientY - dragState.startY) / state.zoom;
-        if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragState.moved = true;
+        if (Math.abs(e.clientX - dragState.startX) > 3 || Math.abs(e.clientY - dragState.startY) > 3) dragState.moved = true;
 
         const node = state.nodes.find(n => n.id === dragState.nodeId);
         if (node) {
@@ -838,28 +1023,127 @@
             el.style.left = `${node.x}px`;
             el.style.top = `${node.y}px`;
           }
-          renderWires();
+          scheduleRenderWires();
         }
-      } else if (dragState.mode === 'pan') {
+      } else if (dragState.mode === 'pan' && panState) {
+        if (activePointers.size > 1) return;
+        const now = performance.now();
+        const dt = Math.max(now - panState.lastT, 1);
+        const instVx = ((e.clientX - panState.lastX) / dt) * 1000;
+        const instVy = ((e.clientY - panState.lastY) / dt) * 1000;
+        // Smooth velocity (low-pass) so inertia feels natural, not jumpy.
+        panVelocity.x = panVelocity.x * 0.7 + instVx * 0.3;
+        panVelocity.y = panVelocity.y * 0.7 + instVy * 0.3;
+        panState.lastX = e.clientX;
+        panState.lastY = e.clientY;
+        panState.lastT = now;
+        if (Math.abs(e.clientX - panState.startX) > 3 || Math.abs(e.clientY - panState.startY) > 3) panState.moved = true;
+        lastPanMoveT = now;
         state.panX = dragState.origPanX + (e.clientX - dragState.startX);
         state.panY = dragState.origPanY + (e.clientY - dragState.startY);
-        applyTransform();
+        scheduleApplyTransform();
       } else if (dragState.mode === 'wire') {
-        const worldEl = document.getElementById('canvasWorld');
-        const worldRect = worldEl.getBoundingClientRect();
-        const curX = (e.clientX - worldRect.left) / state.zoom;
-        const curY = (e.clientY - worldRect.top) / state.zoom;
+        if (dragState.pointerId !== undefined && e.pointerId !== dragState.pointerId) return;
+        const cur = screenToWorld(e.clientX, e.clientY);
         const tempWire = document.getElementById('tempDragWire');
-        tempWire.setAttribute('d', buildBezierPath(dragState.startX, dragState.startY, curX, curY));
+        if (tempWire) tempWire.setAttribute('d', buildBezierPath(dragState.startX, dragState.startY, cur.x, cur.y));
       }
-    });
+    }, { passive: true });
 
-    window.addEventListener('pointerup', (e) => {
-      if (!dragState) return;
+    // Second finger landing anywhere during a node/wire drag cancels it
+    // and hands control to the pinch gesture (avoids stuck drags on mobile).
+    window.addEventListener('pointerdown', (e) => {
+      if (!dragState || (dragState.mode !== 'node' && dragState.mode !== 'wire')) return;
+      if (dragState.pointerId !== undefined && e.pointerId === dragState.pointerId) return;
+      if (e.target && e.target.closest && (e.target.closest('button') || e.target.closest('select') || e.target.closest('input'))) return;
+      // Hide temp wire if we were connecting.
+      if (dragState.mode === 'wire') {
+        const tempWire = document.getElementById('tempDragWire');
+        if (tempWire) tempWire.classList.add('hidden');
+      }
+      activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      // Register the original drag pointer too so pinch math has both points.
+      // Original coords are approximated from the drag start + current pan.
+      if (dragState.pointerId !== undefined) {
+        // Use last known position: keep start point as proxy; pinch re-baselines on move.
+        activePointers.set(dragState.pointerId, { x: dragState.startX, y: dragState.startY });
+      }
+      if (activePointers.size >= 2) {
+        const mid = pinchMidpoint();
+        pinchState = {
+          startDist: Math.max(pinchDistance(), 1),
+          startZoom: state.zoom,
+          startPanX: state.panX,
+          startPanY: state.panY,
+          startMidX: mid.x,
+          startMidY: mid.y
+        };
+        panState = null;
+        dragState = { mode: 'pinch' };
+      }
+    }, { passive: true });
+
+    function endPointer(e) {
+      activePointers.delete(e.pointerId);
+      try { viewport.releasePointerCapture(e.pointerId); } catch {}
+
+      if (pinchState) {
+        if (activePointers.size >= 2) {
+          // Still pinching: re-baseline to avoid jumps.
+          const mid = pinchMidpoint();
+          pinchState = {
+            startDist: Math.max(pinchDistance(), 1),
+            startZoom: state.zoom,
+            startPanX: state.panX,
+            startPanY: state.panY,
+            startMidX: mid.x,
+            startMidY: mid.y
+          };
+          return;
+        }
+        // Pinch ended: settle back to single-finger pan if one finger remains.
+        pinchState = null;
+        if (activePointers.size === 1) {
+          const remaining = [...activePointers.values()][0];
+          panState = {
+            startX: remaining.x,
+            startY: remaining.y,
+            origPanX: state.panX,
+            origPanY: state.panY,
+            lastX: remaining.x,
+            lastY: remaining.y,
+            lastT: performance.now(),
+            moved: false
+          };
+          dragState = {
+            mode: 'pan',
+            startX: remaining.x,
+            startY: remaining.y,
+            origPanX: state.panX,
+            origPanY: state.panY
+          };
+          panVelocity = { x: 0, y: 0 };
+          return;
+        }
+        dragState = null;
+        panState = null;
+        scheduleRenderWires();
+        return;
+      }
+
+      if (!dragState) {
+        panState = null;
+        return;
+      }
+
+      // Ignore pointerup from non-driving fingers during node/wire drags.
+      if ((dragState.mode === 'node' || dragState.mode === 'wire') && dragState.pointerId !== undefined && e.pointerId !== dragState.pointerId) {
+        return;
+      }
 
       if (dragState.mode === 'wire') {
         const tempWire = document.getElementById('tempDragWire');
-        tempWire.classList.add('hidden');
+        if (tempWire) tempWire.classList.add('hidden');
 
         const targetPort = document.elementFromPoint(e.clientX, e.clientY)?.closest('.vn-port');
         if (targetPort && targetPort.dataset.nodeId !== dragState.fromNode) {
@@ -878,32 +1162,67 @@
         }
       } else if (dragState.mode === 'node' && dragState.moved) {
         pushHistory();
+      } else if (dragState.mode === 'pan') {
+        // Double-tap on empty canvas = quick zoom in (mobile-friendly).
+        const now = performance.now();
+        const wasTap = panState && !panState.moved && (now - lastPanMoveT < 5000 || true);
+        if (wasTap && now - lastTapT < 320) {
+          const dx = e.clientX - lastTapX;
+          const dy = e.clientY - lastTapY;
+          if (Math.hypot(dx, dy) < 40) {
+            zoomAtPoint(state.zoom + 0.2, e.clientX, e.clientY);
+            lastTapT = 0;
+          } else {
+            lastTapT = now;
+            lastTapX = e.clientX;
+            lastTapY = e.clientY;
+          }
+        } else if (wasTap) {
+          lastTapT = now;
+          lastTapX = e.clientX;
+          lastTapY = e.clientY;
+        }
+        // Flick => inertia glide; slow drag => stop dead.
+        const idleMs = performance.now() - lastPanMoveT;
+        if (idleMs > 90) panVelocity = { x: 0, y: 0 };
+        if (panState && panState.moved) startInertia();
       }
 
       dragState = null;
-    });
+      panState = null;
+    }
 
-    // Wheel Zoom
+    window.addEventListener('pointerup', endPointer);
+    window.addEventListener('pointercancel', endPointer);
+
+    // Wheel Zoom (anchored at cursor so trackpads feel precise)
     viewport.addEventListener('wheel', (e) => {
       e.preventDefault();
-      const delta = e.deltaY < 0 ? 0.06 : -0.06;
-      setZoom(Math.min(1.5, Math.max(0.45, state.zoom + delta)));
+      stopInertia();
+      // Pinch-to-zoom on trackpads reports ctrlKey + small deltas.
+      const isTrackpadPinch = e.ctrlKey || e.metaKey;
+      const step = isTrackpadPinch ? -e.deltaY * 0.005 : (e.deltaY < 0 ? 0.07 : -0.07);
+      zoomAtPoint(state.zoom + step, e.clientX, e.clientY);
     }, { passive: false });
     }
 
     function setZoom(newZoom) {
-      state.zoom = Math.round(newZoom * 100) / 100;
+      state.zoom = Math.round(Math.min(2.0, Math.max(0.35, newZoom)) * 100) / 100;
       applyTransform();
       renderWires();
     }
 
     function applyTransform() {
       const world = document.getElementById('canvasWorld');
-      world.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
+      if (!world) return;
+      world.style.transform = `translate3d(${state.panX}px, ${state.panY}px, 0) scale(${state.zoom})`;
       const pct = `${Math.round(state.zoom * 100)}%`;
-      document.getElementById('topZoomLabel').textContent = pct;
-      document.getElementById('pillZoomLabel').textContent = pct;
-      document.getElementById('minimapZoomLabel').textContent = pct;
+      const top = document.getElementById('topZoomLabel');
+      const pill = document.getElementById('pillZoomLabel');
+      const mini = document.getElementById('minimapZoomLabel');
+      if (top) top.textContent = pct;
+      if (pill) pill.textContent = pct;
+      if (mini) mini.textContent = pct;
     }
 
     // =========================================================================
