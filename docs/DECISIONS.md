@@ -32,9 +32,9 @@ táctil no se usan filtros gaussianos. La matemática
 (`screenToWorld`, `zoomAtPoint`, drag ÷ zoom) no cambió.
 **Consecuencia:** nítido de 35% a 200% y 60fps en móvil; verificado con build + check.
 
-## ADR-007 — Shell C++ sin Qt, UI 100% web
-**Contexto:** se evaluó portar la UI a Qt Widgets y se descartó (curva + framework extra).
-**Decisión:** binario C++ (`cpp/`, librería `webview`) que hospeda `dist/`; cero rewrite de UI.
-**Raíz del blanco:** `file://` es origen `null` y todos los motores bloquean su CSS/JS por CORS
-(reproducido con errores exactos). Fix: `cpp/` sirve `dist/` por HTTP local
-(`serve.h` + cpp-httplib, verificado con `testserve` y captura del `dist` por HTTP).
+## ADR-007 — Solo TypeScript (C++/Qt descartados) [RETIRADO]
+**Contexto:** se evaluó port Qt Widgets y luego shell C++ (webview) que hospeda `dist/`.
+**Decisión:** retirar ambos (`qt/`, `cpp/` eliminados); el shell C++ solo duplicaba a Tauri
+con menos funciones y más mantenimiento. Stack único: TypeScript (Svelte → Tauri + Capacitor).
+**Nota técnica rescatada:** `file://` es origen `null` y bloquea CSS/JS por CORS;
+por eso el shell servía `dist/` por HTTP local. Tauri/Capacitor usan esquemas propios y no les afecta.

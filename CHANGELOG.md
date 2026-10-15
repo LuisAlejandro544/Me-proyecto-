@@ -1,8 +1,8 @@
 # Changelog — formato Keep a Changelog
 
 ## [Unreleased]
-### Added
-- Shell nativo C++ en `cpp/` (webview, sin Qt); retira `qt/`
+### Removed
+- Shell C++ (`cpp/`) y port Qt (`qt/` ya retirado): stack único TypeScript; Tauri cubre desktop
 - Importación de recursos (imágenes/audio) desde galería o administrador de archivos en web, PC (diálogo nativo Tauri) y móvil (galería/cámara Capacitor + respaldo a selector del sistema); módulo `src/lib/assets.ts` con persistencia local
 - Editor completo de nodos (`ui/node-editor.ts`): pregunta/diálogo, hablante y color, personaje y expresión, escala/posición y opciones de `choice` (añadir/quitar), con duplicar y eliminar
 - Eliminación de nodos: botón 🗑 por nodo + tecla `Supr`/`Retroceso`, borra sus cables y admite Deshacer

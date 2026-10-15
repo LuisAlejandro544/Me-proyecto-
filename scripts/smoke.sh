@@ -1,21 +1,15 @@
 #!/usr/bin/env bash
-# Smoke automatizado: web + C++ + carga headless (si hay Chromium).
+# Smoke automatizado: web + carga headless (si hay Chromium).
 # Uso: bash scripts/smoke.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
 FAIL=0
 
-echo "== 1/3 web =="
+echo "== 1/2 web =="
 npm run build >/dev/null 2>&1 && echo "build OK" || { echo "❌ build"; FAIL=1; }
 npm run check >/dev/null 2>&1 && echo "check OK" || { echo "❌ check"; FAIL=1; }
 
-echo "== 2/3 shell C++ =="
-if [ ! -f cpp/build/vnstudio ]; then
-  cmake -S cpp -B cpp/build -G Ninja >/dev/null 2>&1 || { echo "❌ cmake configure"; FAIL=1; }
-fi
-cmake --build cpp/build >/dev/null 2>&1 && echo "cpp OK" || { echo "❌ cpp"; FAIL=1; }
-
-echo "== 3/3 carga headless =="
+echo "== 2/2 carga headless =="
 CHROME="$(ls ~/.cache/ms-playwright/*/chrome-linux*/chrome 2>/dev/null | head -n 1)"
 if [ -z "$CHROME" ] || ! command -v npm >/dev/null; then
   echo "⊘ sin Chromium, se omite"

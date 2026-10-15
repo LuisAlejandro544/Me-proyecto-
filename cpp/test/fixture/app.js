@@ -1,1 +1,0 @@
-globalThis.probeJs = 'loaded';

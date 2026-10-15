@@ -2,15 +2,13 @@
 
 ## Automático (laptop): `bash scripts/smoke.sh`
 1. `npm run build` + `npm run check` (web en verde)
-2. Compila el shell C++ (`cmake --build cpp/build`)
-3. Si hay Chromium/Chrome: carga la app headless, cuenta nodos y falla si hay errores de consola
+2. Si hay Chromium/Chrome: carga la app headless, cuenta nodos y falla si hay errores de consola
 
 ## Manual por target
 | Target | Cómo | Esperado |
 |---|---|---|
 | Web | `npm run dev` → http://localhost:1420 | 4 nodos Sora, wires con glow, zoom 35–200% nítido |
 | Tauri | `npm run tauri:dev` | misma UI en ventana nativa |
-| C++ | `./cpp/build/vnstudio` (requiere `dist/`: corre `npm run build` antes) | misma UI en ventana nativa |
 | APK | Actions → "APK debug Android" → instalar | canvas táctil: pan 1 dedo, pinch-zoom, doble-tap |
 
 ## Casos a tocar a mano (todos los targets)
