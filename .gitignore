@@ -24,6 +24,13 @@ captures/
 .cxx/
 *.hprof
 
-# Sistema
-.DS_Store
-Thumbs.db
+# Flutter / Dart generados (preserva reglas OpenCode de arriba)
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+flutter_*.png
+flutter_*.jpg
