@@ -49,20 +49,20 @@
 <!-- Original <body> classes restored: flex column fills viewport, main flex-1 gets height -->
 <div class="flex flex-col h-screen w-screen overflow-hidden select-none">
 <!-- TOP HEADER BAR (Combines controls from both reference screenshots) -->
-  <header class="h-14 px-3 sm:px-5 bg-[#121629]/95 border-b border-slate-700/50 flex items-center justify-between gap-2 z-40 shrink-0 shadow-lg">
+  <header class="min-h-14 px-2 sm:px-5 py-1.5 bg-[#121629]/95 border-b border-slate-700/50 flex items-center justify-between gap-1.5 sm:gap-2 z-40 shrink-0 shadow-lg">
     <!-- Left: Back button + Project Selector -->
-    <div class="flex items-center gap-2 sm:gap-3">
-      <button id="btnResetView" title="Centrar la vista del lienzo" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/70 transition">
+    <div class="flex items-center gap-1 sm:gap-3 min-w-0 flex-1">
+      <button id="btnResetView" title="Centrar la vista del lienzo" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/70 transition shrink-0 min-w-[40px] min-h-[40px]">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
         </svg>
       </button>
 
-      <div class="relative">
-        <button id="btnProjectDropdown" class="flex items-center gap-1.5 text-sm sm:text-base font-medium text-slate-300 hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-slate-800/60 transition">
-          <span class="text-slate-400 font-normal">Proyecto:</span>
-          <span id="currentProjectLabel" class="font-bold text-white">Mi Novela</span>
-          <svg class="w-4 h-4 text-slate-400 ml-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <div class="relative min-w-0">
+        <button id="btnProjectDropdown" class="flex items-center gap-1 text-sm sm:text-base font-medium text-slate-300 hover:text-white px-1.5 sm:px-2.5 py-2 rounded-lg hover:bg-slate-800/60 transition min-w-0 min-h-[44px]">
+          <span class="hidden md:inline text-slate-400 font-normal shrink-0">Proyecto:</span>
+          <span id="currentProjectLabel" class="font-bold text-white truncate max-w-[28vw] sm:max-w-[220px]">Mi Novela</span>
+          <svg class="w-4 h-4 text-slate-400 ml-0.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
           </svg>
         </button>
@@ -94,10 +94,15 @@
     </div>
 
     <!-- Center: Preview / Play + Undo/Redo + Zoom % -->
-    <div class="flex items-center gap-2 sm:gap-3">
-      <button id="btnPlayPreviewTop" class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#232b4a] to-[#2c3558] hover:from-[#2d3860] hover:to-[#37426d] border border-cyan-400/40 shadow-[0_0_15px_rgba(0,242,254,0.18)] text-xs sm:text-sm font-medium text-white transition">
-        <svg class="w-3.5 h-3.5 text-cyan-400 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-        <span>Vista previa</span>
+    <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
+      <button id="btnShareLevel" title="Compartir nivel por enlace para jugar" class="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#1a2340] hover:bg-[#243059] border border-emerald-400/50 text-xs font-medium text-emerald-200 transition min-h-[40px]">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+        <span class="hidden sm:inline">Compartir</span>
+      </button>
+      <button id="btnPlayPreviewTop" class="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-full bg-gradient-to-r from-[#232b4a] to-[#2c3558] hover:from-[#2d3860] hover:to-[#37426d] border border-cyan-400/40 shadow-[0_0_15px_rgba(0,242,254,0.18)] text-xs sm:text-sm font-medium text-white transition min-h-[40px]">
+        <svg class="w-3.5 h-3.5 text-cyan-400 fill-current shrink-0" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <span class="hidden min-[420px]:inline">Vista previa</span>
+        <span class="min-[420px]:hidden">Jugar</span>
         <span class="hidden md:inline text-slate-400 font-normal">(Jugar)</span>
       </button>
 
@@ -116,24 +121,24 @@
     </div>
 
     <!-- Right: Export Win (.exe) & Web (.html) + Settings -->
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
       <span class="hidden lg:inline text-xs text-slate-400 mr-0.5">Exportar:</span>
 
-      <button id="btnExportExe" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#15233b] hover:bg-[#1c3050] border border-cyan-400/60 shadow-[0_0_12px_rgba(0,242,254,0.2)] text-xs font-medium text-cyan-200 transition">
+      <button id="btnExportExe" class="hidden min-[560px]:flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#15233b] hover:bg-[#1c3050] border border-cyan-400/60 shadow-[0_0_12px_rgba(0,242,254,0.2)] text-xs font-medium text-cyan-200 transition min-h-[40px]">
         <svg class="w-3.5 h-3.5 text-cyan-400 fill-current" viewBox="0 0 24 24">
           <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
         </svg>
         <span>Win (.exe)</span>
       </button>
 
-      <button id="btnExportHtml" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#2a1c27] hover:bg-[#3b2536] border border-rose-400/60 shadow-[0_0_12px_rgba(255,117,107,0.2)] text-xs font-medium text-rose-200 transition">
+      <button id="btnExportHtml" class="hidden min-[560px]:flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#2a1c27] hover:bg-[#3b2536] border border-rose-400/60 shadow-[0_0_12px_rgba(255,117,107,0.2)] text-xs font-medium text-rose-200 transition min-h-[40px]">
         <svg class="w-3.5 h-3.5 text-orange-400 fill-current" viewBox="0 0 24 24">
           <path d="M1.5 0h21l-1.91 21.563L11.977 24l-8.564-2.438L1.5 0zm7.031 9.75l-.232-2.718 10.059.003.23-2.622L5.412 4.41l.698 8.01h9.126l-.326 3.426-2.91.804-2.955-.81-.188-2.11H6.248l.33 4.171L12 19.351l5.379-1.443.744-8.157H8.531z"/>
         </svg>
         <span>Web (.html)</span>
       </button>
 
-      <button id="btnTopSettings" title="Ajustes globales" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/70 transition">
+      <button id="btnTopSettings" title="Ajustes globales" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/70 transition min-w-[40px] min-h-[40px]">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -146,15 +151,18 @@
   <main id="canvasViewport" class="relative flex-1 w-full overflow-hidden vn-canvas-bg cursor-grab active:cursor-grabbing">
 
     <!-- Quick Mode Switcher Pill (Top-Left floating helper to compare View 1 & View 2 effortlessly) -->
-    <div class="absolute top-3 left-3 z-30 flex items-center gap-1.5 bg-[#161c33]/90 backdrop-blur-md border border-slate-700/70 rounded-full p-1 shadow-lg">
-      <button id="pillPresetSora" class="px-3 py-1 rounded-full text-xs font-semibold transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">
+    <div class="absolute top-2 left-2 right-2 sm:right-auto z-30 flex items-center gap-1.5 bg-[#161c33]/90 backdrop-blur-md border border-slate-700/70 rounded-full p-1 shadow-lg overflow-x-auto max-w-[calc(100vw-1rem)]" style="scrollbar-width: none;">
+      <button id="pillPresetSora" class="px-3 py-2 rounded-full text-xs font-semibold transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shrink-0 min-h-[36px]">
         Escena 1: Sora (móvil)
       </button>
-      <button id="pillPresetAoi" class="px-3 py-1 rounded-full text-xs font-semibold transition text-slate-400 hover:text-white">
+      <button id="pillPresetAoi" class="px-3 py-2 rounded-full text-xs font-semibold transition text-slate-400 hover:text-white shrink-0 min-h-[36px]">
         Escena 2: Aoi (tableta)
       </button>
-      <span class="hidden md:inline-block text-[11px] text-slate-400 px-2 border-l border-slate-700/70">
+      <span class="hidden md:inline-block text-[11px] text-slate-400 px-2 border-l border-slate-700/70 whitespace-nowrap">
         Arrastra nodos o puertos • Doble clic en un texto para editar
+      </span>
+      <span class="md:hidden text-[11px] text-slate-400 px-2 border-l border-slate-700/70 whitespace-nowrap">
+        Toca ✏️ para editar • Arrastra puertos para conectar
       </span>
     </div>
 
@@ -231,9 +239,9 @@
   </main>
 
   <!-- BOTTOM NAVIGATION BAR (Combines Image 1 & Image 2 tabs seamlessly) -->
-  <footer class="h-16 bg-[#111526]/95 border-t border-slate-800/80 px-2 sm:px-6 flex items-center justify-around sm:justify-center sm:gap-6 md:gap-10 z-40 shrink-0">
+  <footer class="min-h-16 bg-[#111526]/95 border-t border-slate-800/80 px-2 sm:px-6 pt-1 flex items-stretch gap-1 z-40 shrink-0 overflow-x-auto overscroll-x-contain pb-[max(0.35rem,env(safe-area-inset-bottom))]" style="scrollbar-width: thin;">
     <!-- Tab 1: Nodes / Add Node -->
-    <button data-tab="nodes" class="nav-tab-btn group relative flex items-center gap-2 px-3 py-2 rounded-xl text-cyan-300 font-medium text-xs sm:text-sm transition">
+    <button data-tab="nodes" class="nav-tab-btn group relative flex items-center gap-2 px-3 py-2 rounded-xl text-cyan-300 font-medium text-xs sm:text-sm transition shrink-0">
       <div class="absolute -top-2.5 left-1/2 -translate-x-1/2 w-12 h-1 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 nav-indicator"></div>
       <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
@@ -245,7 +253,7 @@
     </button>
 
     <!-- Tab 2: Assets -->
-    <button data-tab="assets" class="nav-tab-btn group relative flex items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-white font-medium text-xs sm:text-sm transition">
+    <button data-tab="assets" class="nav-tab-btn group relative flex items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-white font-medium text-xs sm:text-sm transition shrink-0">
       <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
       </svg>
@@ -256,7 +264,7 @@
     </button>
 
     <!-- Tab 3: Timeline & Variables -->
-    <button data-tab="timeline" class="nav-tab-btn group relative flex items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-white font-medium text-xs sm:text-sm transition">
+    <button data-tab="timeline" class="nav-tab-btn group relative flex items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-white font-medium text-xs sm:text-sm transition shrink-0">
       <svg class="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
       </svg>
@@ -267,7 +275,7 @@
     </button>
 
     <!-- Tab 4: Characters -->
-    <button data-tab="characters" class="nav-tab-btn hidden sm:flex group relative items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-white font-medium text-xs sm:text-sm transition">
+    <button data-tab="characters" class="nav-tab-btn group relative flex items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-white font-medium text-xs sm:text-sm transition shrink-0">
       <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
       </svg>
@@ -278,7 +286,7 @@
     </button>
 
     <!-- Tab 5: Playtest -->
-    <button data-tab="playtest" class="nav-tab-btn group relative flex items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-white font-medium text-xs sm:text-sm transition">
+    <button data-tab="playtest" class="nav-tab-btn group relative flex items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-white font-medium text-xs sm:text-sm transition shrink-0">
       <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
         <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -290,7 +298,7 @@
     </button>
 
     <!-- Tab 6: Settings & Audio -->
-    <button data-tab="settings" class="nav-tab-btn group relative flex items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-white font-medium text-xs sm:text-sm transition">
+    <button data-tab="settings" class="nav-tab-btn group relative flex items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-white font-medium text-xs sm:text-sm transition shrink-0">
       <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -304,7 +312,7 @@
 
   <!-- MODAL AÑADIR NODO / PANEL -->
   <div id="drawerModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-    <div class="w-full sm:max-w-2xl bg-[#161c33] border border-slate-700/80 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[82vh] flex flex-col">
+    <div class="w-full sm:max-w-2xl bg-[#161c33] border border-slate-700/80 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[92dvh] flex flex-col mb-[env(safe-area-inset-bottom)] sm:mb-0">
       <div class="px-5 py-3.5 bg-[#111629] border-b border-slate-700/60 flex items-center justify-between">
         <h3 id="drawerModalTitle" class="text-base font-bold text-white flex items-center gap-2">Panel de trabajo</h3>
         <button id="btnCloseDrawer" title="Cerrar panel" aria-label="Cerrar panel" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
@@ -375,6 +383,19 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- PANTALLA DE CARGA DEL NIVEL COMPARTIDO -->
+  <div id="shareLoading" class="hidden fixed inset-0 z-[90] bg-[#0b0f1f] flex-col items-center justify-center gap-5 p-8 text-center">
+    <div class="share-loader-spin" aria-hidden="true"></div>
+    <div>
+      <div class="text-lg font-bold text-white">Cargando tu nivel…</div>
+      <div id="shareLoadingMsg" class="text-sm text-slate-400 mt-1">Conectando con la historia</div>
+    </div>
+    <div class="w-full max-w-xs h-2 rounded-full bg-slate-800 overflow-hidden">
+      <div id="shareLoadingBar" class="h-full w-[5%] rounded-full bg-gradient-to-r from-cyan-400 to-indigo-500"></div>
+    </div>
+    <div id="shareLoadingGame" class="text-xs text-slate-500">Preparando escenario a pantalla completa</div>
   </div>
 
   <!-- NOTIFICACIÓN FLOTANTE -->

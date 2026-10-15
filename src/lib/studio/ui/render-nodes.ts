@@ -18,11 +18,29 @@ export function renderNodes() {
     el.style.width = `${node.width || 240}px`;
     el.dataset.nodeId = node.id;
 
+    // Barra de acciones del nodo (táctil): editar ✏️ y eliminar 🗑.
+    // Siempre visible en móvil; en escritorio aparece al seleccionar / hover.
+    const toolbar = `
+      <div class="vn-node-toolbar" role="toolbar" aria-label="Acciones del nodo">
+        <button data-action="edit-node" data-node="${node.id}" title="Editar nodo (pregunta, personaje…)" aria-label="Editar nodo"
+          class="vn-node-btn vn-node-btn-edit">✏️</button>
+        <button data-action="delete-node" data-node="${node.id}" title="Eliminar nodo" aria-label="Eliminar nodo"
+          class="vn-node-btn vn-node-btn-delete">🗑</button>
+      </div>
+    `;
+
     // 1. BANNER SCENE NODE (e.g., "Start Scene 1" in Image 1)
     if (node.type === 'banner_scene') {
       const charObj = resolveCharacter(node.characterId);
       el.innerHTML = `
-        <div class="p-3.5 relative">
+        <div class="p-3.5 relative vn-node-pad-ports">
+          <!-- Input Port (permite ciclos / volver a la escena inicial) -->
+          <div class="vn-port vn-port-cyan vn-port-in vn-port-dim"
+               style="left: -9px; top: 26px;"
+               data-node-id="${node.id}"
+               data-port-id="in_main"
+               data-port-dir="in"
+               data-port-color="cyan"></div>
           <!-- Blue Start Badge -->
           <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-bold shadow-md mb-2.5">
             <span class="editable-field" data-field="badge">${escapeHtml(node.badge || 'Escena inicial 1')}</span>
@@ -46,8 +64,8 @@ export function renderNodes() {
 
           <!-- Output Ports on Right -->
           ${(node.portsOut || []).map(p => `
-            <div class="vn-port ${p.color === 'coral' ? 'vn-port-coral' : 'vn-port-cyan'}"
-                 style="right: -7px; top: ${p.yOffset}px;"
+            <div class="vn-port ${p.color === 'coral' ? 'vn-port-coral' : 'vn-port-cyan'} vn-port-out"
+                 style="right: -9px; top: ${p.yOffset}px;"
                  data-node-id="${node.id}"
                  data-port-id="${p.id}"
                  data-port-dir="out"
@@ -82,14 +100,14 @@ export function renderNodes() {
               if (opt.style === 'coral') pillClass = 'bg-gradient-to-r from-[#5a343b] to-[#4a2c33] border-rose-400/50 text-rose-100';
               if (opt.style === 'teal') pillClass = 'bg-gradient-to-r from-[#1e485c] to-[#1a3b4e] border-cyan-400/50 text-cyan-100';
               return `
-                <div class="relative flex items-center">
+                <div class="relative flex items-center vn-choice-row">
                   <!-- Left Input Port -->
-                  <div class="vn-port ${opt.inColor === 'coral' ? 'vn-port-coral' : 'vn-port-cyan'}"
-                       style="left: -21px; top: 50%; transform: translateY(-50%);"
-                       data-node-id="${node.id}"
-                       data-port-id="in_${opt.id}"
-                       data-port-dir="in"
-                       data-port-color="${opt.inColor || 'cyan'}"></div>
+                  <div class="vn-port ${opt.inColor === 'coral' ? 'vn-port-coral' : 'vn-port-cyan'} vn-port-in"
+                       style="left: -9px; top: 50%; transform: translateY(-50%);"
+                        data-node-id="${node.id}"
+                        data-port-id="in_${opt.id}"
+                        data-port-dir="in"
+                        data-port-color="${opt.inColor || 'cyan'}"></div>
 
                   <!-- Choice Pill -->
                   <div class="w-full px-3 py-2 rounded-xl border ${pillClass} text-xs font-medium flex items-center justify-between shadow-inner">
@@ -97,8 +115,8 @@ export function renderNodes() {
                   </div>
 
                   <!-- Right Output Port -->
-                  <div class="vn-port ${opt.outColor === 'coral' ? 'vn-port-ring-coral' : 'vn-port-ring-cyan'}"
-                       style="right: -21px; top: 50%; transform: translateY(-50%);"
+                  <div class="vn-port ${opt.outColor === 'coral' ? 'vn-port-ring-coral' : 'vn-port-ring-cyan'} vn-port-out"
+                       style="right: -9px; top: 50%; transform: translateY(-50%);"
                        data-node-id="${node.id}"
                        data-port-id="out_${opt.id}"
                        data-port-dir="out"
@@ -120,25 +138,25 @@ export function renderNodes() {
     // 3. COMPACT SCENE NODE (e.g., "Forest Scene" in Image 1)
     else if (node.type === 'compact_scene') {
       el.innerHTML = `
-        <div class="p-4 relative">
+        <div class="p-4 relative vn-node-pad-ports">
           <!-- Input Port -->
-          <div class="vn-port ${node.inColor === 'coral' ? 'vn-port-coral' : 'vn-port-cyan'}"
-               style="left: -7px; top: 24px;"
-               data-node-id="${node.id}"
-               data-port-id="in_main"
-               data-port-dir="in"
-               data-port-color="${node.inColor || 'cyan'}"></div>
+          <div class="vn-port ${node.inColor === 'coral' ? 'vn-port-coral' : 'vn-port-cyan'} vn-port-in"
+               style="left: -9px; top: 24px;"
+                data-node-id="${node.id}"
+                data-port-id="in_main"
+                data-port-dir="in"
+                data-port-color="${node.inColor || 'cyan'}"></div>
 
           <div class="text-sm font-bold text-white mb-2 editable-field" data-field="title">${escapeHtml(node.title || 'Escena')}</div>
           <div class="text-xs text-slate-200 leading-relaxed whitespace-pre-line editable-field" data-field="dialogue">${escapeHtml(node.dialogue)}</div>
 
           <!-- Output Port -->
-          <div class="vn-port vn-port-cyan"
-               style="right: -7px; top: 50%;"
-               data-node-id="${node.id}"
-               data-port-id="out_main"
-               data-port-dir="out"
-               data-port-color="cyan"></div>
+          <div class="vn-port vn-port-cyan vn-port-out"
+               style="right: -9px; top: 50%;"
+                data-node-id="${node.id}"
+                data-port-id="out_main"
+                data-port-dir="out"
+                data-port-color="cyan"></div>
         </div>
       `;
     }
@@ -148,14 +166,22 @@ export function renderNodes() {
       const charKeys = Object.keys(getCharacterCatalog());
       const selChar = resolveCharacter(node.selectedCharId);
       el.innerHTML = `
-        <div class="p-3.5 relative">
+        <div class="p-3.5 relative vn-node-pad-ports">
           <!-- Input Port -->
-          <div class="vn-port ${node.inColor === 'coral' ? 'vn-port-coral' : 'vn-port-cyan'}"
-               style="left: -7px; top: 122px;"
+          <div class="vn-port ${node.inColor === 'coral' ? 'vn-port-coral' : 'vn-port-cyan'} vn-port-in"
+               style="left: -9px; top: 122px;"
+                data-node-id="${node.id}"
+                data-port-id="in_main"
+                data-port-dir="in"
+                data-port-color="${node.inColor || 'coral'}"></div>
+
+          <!-- Output Port (para encadenar tras elegir personaje) -->
+          <div class="vn-port vn-port-ring-cyan vn-port-out"
+               style="right: -9px; top: 122px;"
                data-node-id="${node.id}"
-               data-port-id="in_main"
-               data-port-dir="in"
-               data-port-color="${node.inColor || 'coral'}"></div>
+               data-port-id="out_main"
+               data-port-dir="out"
+               data-port-color="cyan"></div>
 
           <div class="text-sm font-bold text-white mb-2.5 text-center">${escapeHtml(node.title || 'Selector de personaje')}</div>
 
@@ -215,7 +241,14 @@ export function renderNodes() {
     else if (node.type === 'avatar_scene') {
       const charObj = resolveCharacter(node.characterId);
       el.innerHTML = `
-        <div class="relative">
+        <div class="relative vn-node-pad-ports">
+          <!-- Input Port (permite encadenar escenas) -->
+          <div class="vn-port vn-port-cyan vn-port-in"
+               style="left: -9px; top: 26px;"
+               data-node-id="${node.id}"
+               data-port-id="in_main"
+               data-port-dir="in"
+               data-port-color="cyan"></div>
           ${node.topTitle ? `
             <div class=" -top-11 left-0.5 mb-1.5 px-3 pt-2.5">
               <div class="text-xs font-bold text-white editable-field" data-field="topTitle">${escapeHtml(node.topTitle)}</div>
@@ -239,8 +272,8 @@ export function renderNodes() {
 
             <!-- Output Ports -->
             ${(node.portsOut || []).map(p => `
-              <div class="vn-port vn-port-ring-cyan"
-                   style="right: -7px; top: ${p.yOffset}px;"
+              <div class="vn-port vn-port-ring-cyan vn-port-out"
+                   style="right: -9px; top: ${p.yOffset}px;"
                    data-node-id="${node.id}"
                    data-port-id="${p.id}"
                    data-port-dir="out"
@@ -255,14 +288,14 @@ export function renderNodes() {
     else if (node.type === 'branch_scene') {
       const charObj = resolveCharacter(node.characterId);
       el.innerHTML = `
-        <div class="relative overflow-visible">
+        <div class="relative overflow-visible vn-node-pad-ports">
           <!-- Input Port -->
-          <div class="vn-port ${node.inColor === 'coral' ? 'vn-port-ring-coral' : 'vn-port-ring-cyan'}"
-               style="left: -7px; top: 62px;"
-               data-node-id="${node.id}"
-               data-port-id="in_main"
-               data-port-dir="in"
-               data-port-color="${node.inColor || 'cyan'}"></div>
+          <div class="vn-port ${node.inColor === 'coral' ? 'vn-port-ring-coral' : 'vn-port-ring-cyan'} vn-port-in"
+               style="left: -9px; top: 62px;"
+                data-node-id="${node.id}"
+                data-port-id="in_main"
+                data-port-dir="in"
+                data-port-color="${node.inColor || 'cyan'}"></div>
 
           <div class="px-3.5 py-2 border-b border-slate-700/70 text-xs font-bold text-white editable-field" data-field="headerBar">
             ${escapeHtml(node.headerBar || 'Rama de escena')}
@@ -274,8 +307,8 @@ export function renderNodes() {
           </div>
 
           <!-- Output Port -->
-          <div class="vn-port vn-port-ring-cyan"
-               style="right: -7px; top: 62px;"
+          <div class="vn-port vn-port-ring-cyan vn-port-out"
+               style="right: -9px; top: 62px;"
                data-node-id="${node.id}"
                data-port-id="out_main"
                data-port-dir="out"
@@ -284,6 +317,7 @@ export function renderNodes() {
       `;
     }
 
+    el.insertAdjacentHTML('afterbegin', toolbar);
     layer.appendChild(el);
   });
 

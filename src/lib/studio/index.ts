@@ -13,6 +13,8 @@ import { playSynthSfx } from './domain/audio';
 import { showToast } from './ui/toast';
 import { renderWires } from './ui/render-wires';
 import { setZoom } from './ui/transform';
+import { checkSharedPlayModeOnBoot, openShareModal } from './ui/share';
+import { deleteNode } from './ui/node-editor';
 
     
 let __studioInited = false;
@@ -46,6 +48,7 @@ export function initStudio() {
 
       // Top bar buttons
       document.getElementById('btnPlayPreviewTop').addEventListener('click', startPlaytest);
+      document.getElementById('btnShareLevel')?.addEventListener('click', openShareModal);
       document.getElementById('btnExportHtml').addEventListener('click', exportStandaloneHtml);
       document.getElementById('btnExportExe').addEventListener('click', openExeExportModal);
       document.getElementById('btnTopSettings').addEventListener('click', () => openWorkspaceTab('settings'));
@@ -137,6 +140,19 @@ export function initStudio() {
   wireCanvasPanZoom();
   applyTransform();
   renderNodes();
+  // Supr / Backspace elimina el nodo seleccionado (fuera de inputs).
+  window.addEventListener('keydown', (e) => {
+    const t = e.target as HTMLElement | null;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+    if ((e.key === 'Delete' || e.key === 'Backspace') && ctx.selectedNodeId) {
+      const node = ctx.state.nodes.find((n) => n.id === ctx.selectedNodeId);
+      if (!node) return;
+      e.preventDefault();
+      deleteNode(node.id);
+    }
+  });
+  // Si la URL trae un nivel compartido (#nivel=…), entra en modo jugar a pantalla completa.
+  checkSharedPlayModeOnBoot();
 }
 
 if (typeof window !== 'undefined') {

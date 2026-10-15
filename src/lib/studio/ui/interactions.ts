@@ -5,6 +5,7 @@ import { playSynthSfx } from '../domain/audio';
 import { buildBezierPath, getPortPosition } from '../domain/geometry';
 import { pushHistory } from '../domain/history';
 import { openInlineEditorModal, openInlineOptionModal } from './editors';
+import { deleteNode, duplicateNode, openNodeEditor } from './node-editor';
 import { renderNodes } from './render-nodes';
 import { showToast } from './toast';
 import { getCharacterCatalog } from '../../assets';
@@ -70,26 +71,60 @@ export function attachNodeInteractions() {
     });
   });
 
-  // Double-click text fields to edit inline
+  // Double-click text fields to edit inline (desktop).
+  // En táctil el doble-tap se detecta manualmente porque `dblclick` no siempre llega.
+  let lastFieldTap = { key: '', t: 0 };
+  function fieldActivated(fieldEl: Element, kind: 'field' | 'option') {
+    const nodeEl = fieldEl.closest('.vn-node');
+    const node = ctx.state.nodes.find(n => n.id === nodeEl?.dataset.nodeId);
+    if (!node) return;
+    if (kind === 'field') {
+      const prop = (fieldEl as HTMLElement).dataset.field;
+      if (!prop) return;
+      openInlineEditorModal(node, prop, fieldEl.textContent);
+    } else {
+      const idx = parseInt((fieldEl as HTMLElement).dataset.optIdx || '-1', 10);
+      if (!node.options || !node.options[idx]) return;
+      openInlineOptionModal(node, idx);
+    }
+  }
   document.querySelectorAll('.editable-field').forEach(fieldEl => {
     fieldEl.addEventListener('dblclick', (e) => {
       e.stopPropagation();
+      fieldActivated(fieldEl, 'field');
+    });
+    fieldEl.addEventListener('click', (e) => {
+      if (e.detail > 1) return; // el dblclick ya lo gestiona en desktop
       const nodeEl = fieldEl.closest('.vn-node');
-      const node = ctx.state.nodes.find(n => n.id === nodeEl?.dataset.nodeId);
-      const prop = fieldEl.dataset.field;
-      if (!node || !prop) return;
-      openInlineEditorModal(node, prop, fieldEl.textContent);
+      const key = `${nodeEl?.dataset.nodeId}:${(fieldEl as HTMLElement).dataset.field}`;
+      const now = performance.now();
+      if (lastFieldTap.key === key && now - lastFieldTap.t < 350) {
+        e.stopPropagation();
+        lastFieldTap = { key: '', t: 0 };
+        fieldActivated(fieldEl, 'field');
+      } else {
+        lastFieldTap = { key, t: now };
+      }
     });
   });
 
   document.querySelectorAll('.editable-option').forEach(optEl => {
     optEl.addEventListener('dblclick', (e) => {
       e.stopPropagation();
+      fieldActivated(optEl, 'option');
+    });
+    optEl.addEventListener('click', (e) => {
+      if (e.detail > 1) return;
       const nodeEl = optEl.closest('.vn-node');
-      const node = ctx.state.nodes.find(n => n.id === nodeEl?.dataset.nodeId);
-      const idx = parseInt(optEl.dataset.optIdx, 10);
-      if (!node || !node.options || !node.options[idx]) return;
-      openInlineOptionModal(node, idx);
+      const key = `${nodeEl?.dataset.nodeId}:opt:${(optEl as HTMLElement).dataset.optIdx}`;
+      const now = performance.now();
+      if (lastFieldTap.key === key && now - lastFieldTap.t < 350) {
+        e.stopPropagation();
+        lastFieldTap = { key: '', t: 0 };
+        fieldActivated(optEl, 'option');
+      } else {
+        lastFieldTap = { key, t: now };
+      }
     });
   });
 
@@ -100,7 +135,29 @@ export function attachNodeInteractions() {
     const node = ctx.state.nodes.find(n => n.id === nodeId);
     if (!node) return;
 
-    if (action === 'cycle-char') {
+    if (action === 'edit-node') {
+      ctrl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playSynthSfx('click');
+        openNodeEditor(nodeId);
+      });
+    } else if (action === 'delete-node') {
+      ctrl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playSynthSfx('click');
+        if (confirm(`¿Eliminar este nodo y sus conexiones?`)) deleteNode(nodeId);
+        else {
+          // Sin confirmación accidental: al menos selecciona el nodo.
+          ctx.selectedNodeId = nodeId;
+          renderNodes();
+        }
+      });
+    } else if (action === 'duplicate-node') {
+      ctrl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        duplicateNode(nodeId);
+      });
+    } else if (action === 'cycle-char') {
       ctrl.addEventListener('click', (e) => {
         e.stopPropagation();
         pushHistory();
