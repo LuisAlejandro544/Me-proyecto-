@@ -39,6 +39,8 @@ mueve el `style="left/right: -9px; top: …"` en `render-nodes.ts`, revisa
 **Pulir móvil:**
 `StudioShell.svelte` (header truncado, footer con scroll, modales `92dvh` +
 safe-area) + `app.css` (`@media 640px/380px`, `pointer: coarse`, toast y popover).
+El lienzo es GPU: no reconstruyas cables en gestos (usa `updateWirePaths` en drag
+y nada en pan/pinch/zoom); el minimapa va con `scheduleMinimap()`.
 
 **Compartir nivel:**
 `openShareModal()` (selector de permiso + copiar) → `buildShareUrl()` →

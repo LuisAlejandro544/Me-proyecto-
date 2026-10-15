@@ -9,6 +9,10 @@
 - Una sola base web (`src/`) alimenta desktop y móvil.
 - `src/App.svelte` es solo el shell: monta `components/StudioShell.svelte` (chrome: header, canvas, footer, modales).
 - `src/lib/studio/` — lógica del editor partida por dominios (ver mapa abajo). Barrel: `index.ts` (`initStudio()`, `getStudioState()`).
+- Lienzo por GPU: `#panLayer` traslada y `#canvasWorld` escala con `transform`
+  (compositor, sin re-layout). Los cables SVG viven dentro del mundo y escalan
+  solos: pan/pinch/zoom no tocan el DOM; el drag actualiza solo `d`
+  (`updateWirePaths`); el minimapa va diferido (`scheduleMinimap`).
 - `src/lib/platform.ts` = puente de export nativo (Tauri dialog/fs, Capacitor Filesystem/Share).
 - Estado canónico del grafo: tipos en `src/lib/types.ts`; estado mutable legacy centralizado en `studio/context.ts`.
 

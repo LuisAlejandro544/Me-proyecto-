@@ -20,7 +20,14 @@
 **Decisión:** partir `studio.ts` (1650 líneas) en `lib/studio/{data,domain,ui}/` + `context.ts` como único estado mutable, con extracción mecánica verificada (build + check + captura headless idéntica).
 **Consecuencia:** cada módulo tiene una sola razón de cambio; `context.ts` es el seam para migrar a stores Svelte por slices (Fase 2: componentes por tipo de nodo).
 
-## ADR-006 — Zoom por layout (CSS `zoom`), no por `scale()`
-**Contexto:** el `scale()` CSS rasterizaba los nodos como bitmap (+ `backdrop-filter`) y el texto se veía borroso al acercar.
-**Decisión:** `#panLayer` solo traslada (px de pantalla); `#canvasWorld` usa `zoom: <nivel>` para re-maquetar nítido. La matemática existente (`screenToWorld`, `zoomAtPoint`, drag ÷ zoom) no cambió.
-**Consecuencia:** texto y vectores nítidos de 35% a 200%; verificado con capturas headless.
+## ADR-006 — Zoom por GPU (`transform: scale`), no por layout
+**Contexto:** primero `scale()` rasterizaba como bitmap (+ `backdrop-filter`) y se
+veía borroso; se pasó a CSS `zoom` (nítido) pero re-maquetaba todos los nodos por
+frame y reconstruía cables + minimapa en cada `pointermove`: lento en móvil.
+**Decisión:** `#panLayer` traslada y `#canvasWorld` escala con `transform` (GPU,
+sin re-layout). Pan/pinch/zoom solo tocan el compositor (un rAF, rect cacheado);
+los cables escalan solos y solo se tocan en drag (`updateWirePaths`) o cambio de
+grafo (`renderWires`); durante el gesto `body.vn-gesturing` apaga blur/glow y en
+táctil no se usan filtros gaussianos. La matemática
+(`screenToWorld`, `zoomAtPoint`, drag ÷ zoom) no cambió.
+**Consecuencia:** nítido de 35% a 200% y 60fps en móvil; verificado con build + check.

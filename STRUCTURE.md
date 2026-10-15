@@ -56,8 +56,10 @@ Me-proyecto-/
 │               ├── editors.ts       edición rápida inline (doble-clic / doble-toque)
 │               ├── interactions.ts  drag nodos, drag cables, botones, doble-toque, Supr
 │               ├── render-wires.ts  cables SVG + popover (Quitar/Color) + Shift+Clic borra
+│               │                     + updateWirePaths() (vía rápida drag) + scheduleMinimap()
 │               ├── viewport.ts      pan 1 dedo, pinch 2 dedos, inercia, zoom rueda/anclado
-│               ├── transform.ts     setZoom/applyTransform (panLayer translate + world zoom)
+│               │                     (rAF único, rect cacheado, sin rebuild de cables en el gesto)
+│               ├── transform.ts     setZoom/applyTransform (panLayer translate GPU + world scale GPU)
 │               ├── minimap.ts       renderMinimap
 │               ├── load-preset.ts   loadPreset(sora|aoi|blank)
 │               ├── playtest.ts      startPlaytest/renderPlaytestStep
@@ -82,8 +84,8 @@ Me-proyecto-/
 | Cambiar cómo se ve un nodo | `ui/render-nodes.ts` + `app.css` (`.vn-node`, `.vn-port`, `.vn-node-toolbar`) |
 | Añadir un campo editable | `ui/node-editor.ts` (`openNodeEditor`) + tipos en `lib/types.ts` |
 | Cambiar borrar/duplicar | `ui/node-editor.ts` (`deleteNode`/`duplicateNode`) |
-| Cambiar cables/puertos | `ui/render-nodes.ts` (posiciones) + `domain/geometry.ts` + `ui/render-wires.ts` |
-| Cambiar gestos canvas | `ui/viewport.ts` + `ui/transform.ts` |
+| Cambiar cables/puertos | `ui/render-nodes.ts` (posiciones) + `domain/geometry.ts` + `ui/render-wires.ts` (`renderWires` rebuild completo, `updateWirePaths` en drag) |
+| Cambiar gestos canvas | `ui/viewport.ts` + `ui/transform.ts` (GPU: translate + scale; `body.vn-gesturing` apaga blur/glow) |
 | Cambiar compartir/jugar | `ui/share.ts` + `StudioShell.svelte` (`#btnShareLevel`, `#shareLoading`, `#playtestModal`) + `app.css` (`shared-play-mode`) |
 | Añadir pestaña inferior | `StudioShell.svelte` (footer) + `ui/workspace.ts` (`openWorkspaceTab`) |
 | Cambiar export nativo | `lib/platform.ts` + `ui/exporter.ts` |

@@ -43,10 +43,31 @@
       -webkit-user-select: none;
       user-select: none;
     }
+    /* Capas GPU: pan traslada y zoom escala por compositor, sin re-layout.
+       El `zoom` por layout se eliminó por lento en móvil (ver transform.ts). */
     #panLayer {
       will-change: transform;
+      transform: translate3d(0, 0, 0);
+      backface-visibility: hidden;
     }
     #canvasWorld {
+      will-change: transform;
+      transform-origin: 0 0;
+      backface-visibility: hidden;
+    }
+    /* Durante el gesto se apagan los efectos caros (blur de tarjetas,
+       glow de cables y transiciones) para clavar 60fps; al soltar vuelven. */
+    body.vn-gesturing .vn-node {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+    body.vn-gesturing .vn-wire-glow {
+      display: none;
+    }
+    body.vn-gesturing .vn-node,
+    body.vn-gesturing .vn-port,
+    body.vn-gesturing .vn-wire-core {
+      transition: none !important;
     }
     /* Node Glass Card */
     .vn-node {

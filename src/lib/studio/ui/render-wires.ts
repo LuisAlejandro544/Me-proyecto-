@@ -40,6 +40,23 @@ function ensureWirePopover() {
   return pop;
 }
 
+function isCoarsePointer() {
+  try {
+    return window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  } catch {
+    return false;
+  }
+}
+
+let minimapRaf = 0;
+export function scheduleMinimap() {
+  if (minimapRaf) return;
+  minimapRaf = requestAnimationFrame(() => {
+    minimapRaf = 0;
+    renderMinimap();
+  });
+}
+
 function positionWirePopover(clientX, clientY) {
   const pop = ensureWirePopover();
   const x = Math.min(Math.max(clientX, 130), window.innerWidth - 130);
@@ -65,7 +82,7 @@ export function deleteSelectedWire() {
   playSynthSfx('click');
   clearWireSelection();
   renderWires();
-  renderMinimap();
+  scheduleMinimap();
   showToast('Conexión eliminada');
 }
 
@@ -82,9 +99,12 @@ export function cycleSelectedWireColor() {
   if (g) g.classList.add('wire-selected');
 }
 
-export function renderWires() {
+export function renderWires(opts) {
   const wiresLayer = document.getElementById('wiresLayer');
   if (!wiresLayer) return;
+  const skipMinimap = opts && opts.minimap === false;
+  const coarse = isCoarsePointer();
+  const frag = document.createDocumentFragment();
   wiresLayer.innerHTML = '';
 
   ctx.state.wires.forEach(wire => {
@@ -99,14 +119,16 @@ export function renderWires() {
     g.setAttribute('class', 'vn-wire-group' + (ctx.selectedWireId === wire.id ? ' wire-selected' : ''));
     g.dataset.wireId = wire.id;
 
-    // Outer soft glow path
+    // Outer soft glow path (sin filtro gaussiano en táctil: el blur por
+    // cable es lo que más GPU come en móvil; se deja halo simple).
     const glowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     glowPath.setAttribute('d', d);
+    glowPath.setAttribute('class', 'vn-wire-glow');
     glowPath.setAttribute('fill', 'none');
     glowPath.setAttribute('stroke', strokeColor);
     glowPath.setAttribute('stroke-width', '6');
-    glowPath.setAttribute('stroke-opacity', '0.32');
-    glowPath.setAttribute('filter', glowFilter);
+    glowPath.setAttribute('stroke-opacity', coarse ? '0.18' : '0.32');
+    if (!coarse) glowPath.setAttribute('filter', glowFilter);
 
     // Core neon wire path
     const corePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -120,6 +142,7 @@ export function renderWires() {
     // Invisible thicker hit area for clicking wire to toggle color or delete
     const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     hitPath.setAttribute('d', d);
+    hitPath.setAttribute('class', 'vn-wire-hit');
     hitPath.setAttribute('fill', 'none');
     hitPath.setAttribute('stroke', 'transparent');
     hitPath.setAttribute('stroke-width', '22');
@@ -158,8 +181,9 @@ export function renderWires() {
       deleteSelectedWire();
     });
 
-    wiresLayer.appendChild(g);
+    frag.appendChild(g);
   });
+  wiresLayer.appendChild(frag);
 
   // Clic en el lienzo vacío o Escape quita la selección.
   const viewport = document.getElementById('canvasViewport');
@@ -173,5 +197,28 @@ export function renderWires() {
     });
   }
 
-  renderMinimap();
+  if (!skipMinimap) scheduleMinimap();
+}
+
+/**
+ * Vía rápida para arrastrar nodos: actualiza solo el atributo `d` de los
+ * cables existentes (o de un nodo) sin reconstruir el DOM ni re-anexar
+ * listeners. Es lo que mantiene 60fps en móvil durante el drag.
+ */
+export function updateWirePaths(onlyNodeId) {
+  const wiresLayer = document.getElementById('wiresLayer');
+  if (!wiresLayer) return;
+  const groups = wiresLayer.querySelectorAll('.vn-wire-group');
+  if (!groups.length) return;
+  const byId = new Map(ctx.state.wires.map((w) => [w.id, w]));
+  groups.forEach((g) => {
+    const wire = byId.get(g.dataset.wireId);
+    if (!wire) return;
+    if (onlyNodeId && wire.fromNode !== onlyNodeId && wire.toNode !== onlyNodeId) return;
+    const p1 = getPortPosition(wire.fromNode, wire.fromPort);
+    const p2 = getPortPosition(wire.toNode, wire.toPort);
+    const d = buildBezierPath(p1.x, p1.y, p2.x, p2.y);
+    const paths = g.querySelectorAll('path');
+    paths.forEach((p) => p.setAttribute('d', d));
+  });
 }
