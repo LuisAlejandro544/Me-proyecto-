@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Studio module — see src/lib/studio/index.ts barrel and docs/ARCHITECTURE.md.
 import { ctx } from '../context';
-import { CHARACTER_ASSETS } from '../data/assets';
+import { getCharacterCatalog, resolveCharacter } from '../../assets';
 import { escapeHtml } from '../domain/geometry';
 import { attachNodeInteractions } from './interactions';
 import { renderWires } from './render-wires';
@@ -20,19 +20,19 @@ export function renderNodes() {
 
     // 1. BANNER SCENE NODE (e.g., "Start Scene 1" in Image 1)
     if (node.type === 'banner_scene') {
-      const charObj = CHARACTER_ASSETS[node.characterId] || CHARACTER_ASSETS.sora;
+      const charObj = resolveCharacter(node.characterId);
       el.innerHTML = `
         <div class="p-3.5 relative">
           <!-- Blue Start Badge -->
           <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-bold shadow-md mb-2.5">
-            <span class="editable-field" data-field="badge">${escapeHtml(node.badge || 'Start Scene 1')}</span>
+            <span class="editable-field" data-field="badge">${escapeHtml(node.badge || 'Escena inicial 1')}</span>
           </div>
 
           <!-- 16:9 Character Banner -->
           <div class="relative w-full h-24 rounded-xl overflow-hidden border border-white/15 mb-2.5 shadow-inner group">
             <img src="${charObj.banner}" alt="${escapeHtml(node.speaker)}" class="w-full h-full object-cover" />
-            <button data-action="cycle-char" data-node="${node.id}" title="Change Character Sprite" class="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded bg-black/65 text-[10px] text-cyan-300 opacity-0 group-hover:opacity-100 transition">
-              Swap Sprite
+            <button data-action="cycle-char" data-node="${node.id}" title="Cambiar sprite del personaje" class="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded bg-black/65 text-[10px] text-cyan-300 opacity-0 group-hover:opacity-100 transition">
+              Cambiar sprite
             </button>
           </div>
 
@@ -68,9 +68,9 @@ export function renderNodes() {
                 <span class="editable-field" data-field="title">${escapeHtml(node.title)}</span>
                 ${!node.showAddButtons ? `<span class="font-normal text-slate-300 ml-1 editable-field" data-field="subtitle">${escapeHtml(node.subtitle || '')}</span>` : ''}
               </div>
-              ${node.showAddButtons ? `<div class="text-[11px] text-slate-400">${escapeHtml(node.subtitle || 'Choice Node')}</div>` : ''}
+              ${node.showAddButtons ? `<div class="text-[11px] text-slate-400">${escapeHtml(node.subtitle || 'Nodo de elección')}</div>` : ''}
             </div>
-            <button data-action="add-choice-opt" data-node="${node.id}" title="Add Choice Branch" class="w-6 h-6 rounded-full bg-slate-700/80 hover:bg-cyan-500/30 border border-slate-500/60 flex items-center justify-center text-xs font-bold text-slate-200 hover:text-cyan-200 transition">
+            <button data-action="add-choice-opt" data-node="${node.id}" title="Añadir rama de elección" class="w-6 h-6 rounded-full bg-slate-700/80 hover:bg-cyan-500/30 border border-slate-500/60 flex items-center justify-center text-xs font-bold text-slate-200 hover:text-cyan-200 transition">
               +
             </button>
           </div>
@@ -129,7 +129,7 @@ export function renderNodes() {
                data-port-dir="in"
                data-port-color="${node.inColor || 'cyan'}"></div>
 
-          <div class="text-sm font-bold text-white mb-2 editable-field" data-field="title">${escapeHtml(node.title || 'Scene')}</div>
+          <div class="text-sm font-bold text-white mb-2 editable-field" data-field="title">${escapeHtml(node.title || 'Escena')}</div>
           <div class="text-xs text-slate-200 leading-relaxed whitespace-pre-line editable-field" data-field="dialogue">${escapeHtml(node.dialogue)}</div>
 
           <!-- Output Port -->
@@ -145,8 +145,8 @@ export function renderNodes() {
 
     // 4. CHARACTER SELECTOR NODE (Exact match to bottom-right node in Image 1)
     else if (node.type === 'character_selector') {
-      const charKeys = Object.keys(CHARACTER_ASSETS);
-      const selChar = CHARACTER_ASSETS[node.selectedCharId] || CHARACTER_ASSETS.yuki;
+      const charKeys = Object.keys(getCharacterCatalog());
+      const selChar = resolveCharacter(node.selectedCharId);
       el.innerHTML = `
         <div class="p-3.5 relative">
           <!-- Input Port -->
@@ -157,14 +157,15 @@ export function renderNodes() {
                data-port-dir="in"
                data-port-color="${node.inColor || 'coral'}"></div>
 
-          <div class="text-sm font-bold text-white mb-2.5 text-center">${escapeHtml(node.title || 'Character Selector')}</div>
+          <div class="text-sm font-bold text-white mb-2.5 text-center">${escapeHtml(node.title || 'Selector de personaje')}</div>
 
           <!-- Avatar Carousel -->
           <div class="flex items-center justify-between gap-1.5 mb-3">
-            <button data-action="char-prev" data-node="${node.id}" class="p-1 text-slate-400 hover:text-white">‹</button>
-            <div class="flex items-center gap-2 overflow-hidden">
-              ${charKeys.slice(0, 3).map(ck => {
-                const c = CHARACTER_ASSETS[ck];
+            <button data-action="char-prev" data-node="${node.id}" title="Anterior" class="p-1 text-slate-400 hover:text-white">‹</button>
+            <div class="flex items-center gap-2 overflow-x-auto">
+              ${(node.selectedCharId && !charKeys.slice(0, 3).includes(node.selectedCharId) ? [node.selectedCharId, ...charKeys.slice(0, 2)] : charKeys.slice(0, 3)).map(ck => {
+                const c = getCharacterCatalog()[ck];
+                if (!c) return '';
                 const isSel = ck === node.selectedCharId;
                 return `
                   <img src="${c.avatar}" data-action="select-char" data-node="${node.id}" data-char="${ck}"
@@ -173,13 +174,13 @@ export function renderNodes() {
                 `;
               }).join('')}
             </div>
-            <button data-action="char-next" data-node="${node.id}" class="p-1 text-slate-400 hover:text-white">›</button>
+            <button data-action="char-next" data-node="${node.id}" title="Siguiente" class="p-1 text-slate-400 hover:text-white">›</button>
           </div>
 
           <!-- Expression Dropdown -->
           <div class="mb-3">
             <select data-action="change-expr" data-node="${node.id}" class="w-full px-2.5 py-1.5 rounded-lg bg-[#252d4b] border border-slate-600/70 text-xs text-slate-100 outline-none">
-              ${Object.values(CHARACTER_ASSETS).flatMap(c => c.expressions).map(exp => `
+              ${Object.values(getCharacterCatalog()).flatMap(c => c.expressions).map(exp => `
                 <option value="${escapeHtml(exp)}" ${exp === node.expression ? 'selected' : ''}>${escapeHtml(exp)}</option>
               `).join('')}
             </select>
@@ -188,7 +189,7 @@ export function renderNodes() {
           <!-- Scale Slider -->
           <div class="mb-2.5">
             <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-              <span>Scale</span>
+              <span>Tamaño</span>
               <span id="scaleVal_${node.id}">${node.scale || 92}%</span>
             </div>
             <input type="range" min="50" max="140" value="${node.scale || 92}"
@@ -199,7 +200,7 @@ export function renderNodes() {
           <!-- Position Slider -->
           <div>
             <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-              <span>Position</span>
+              <span>Posición</span>
               <span id="posVal_${node.id}">${node.position || 62}%</span>
             </div>
             <input type="range" min="10" max="90" value="${node.position || 62}"
@@ -212,7 +213,7 @@ export function renderNodes() {
 
     // 5. AVATAR SCENE NODE (Matches "Node 1: Introduction / Scene 1: Meetup" in Image 2)
     else if (node.type === 'avatar_scene') {
-      const charObj = CHARACTER_ASSETS[node.characterId] || CHARACTER_ASSETS.aoi;
+      const charObj = resolveCharacter(node.characterId);
       el.innerHTML = `
         <div class="relative">
           ${node.topTitle ? `
@@ -223,14 +224,14 @@ export function renderNodes() {
           ` : ''}
           <div class="p-3 pt-2">
             <div class="px-3 py-1.5 rounded-lg bg-[#253554] border border-cyan-500/25 text-xs font-semibold text-slate-100 mb-3 editable-field" data-field="headerBar">
-              ${escapeHtml(node.headerBar || 'Scene 1: Meetup')}
+              ${escapeHtml(node.headerBar || 'Escena 1: Encuentro')}
             </div>
 
             <div class="flex items-center gap-3 mb-2.5">
-              <img src="${charObj.avatar}" data-action="cycle-char" data-node="${node.id}" title="Click to swap character" class="w-12 h-12 rounded-xl object-cover border border-white/20 cursor-pointer" />
+              <img src="${charObj.avatar}" data-action="cycle-char" data-node="${node.id}" title="Clic para cambiar de personaje" class="w-12 h-12 rounded-xl object-cover border border-white/20 cursor-pointer" />
               <div>
                 <div class="text-xs font-bold text-white editable-field" data-field="speaker">${escapeHtml(node.speaker)}</div>
-                <div class="text-[11px] text-slate-400">${escapeHtml(node.speakerSub || 'Thumbnail')}</div>
+                <div class="text-[11px] text-slate-400">${escapeHtml(node.speakerSub || 'Miniatura')}</div>
               </div>
             </div>
 
@@ -252,7 +253,7 @@ export function renderNodes() {
 
     // 6. BRANCH SCENE NODE (Matches "Node 3: Scene 1A" and "Node 4: Scene 1B" in Image 2)
     else if (node.type === 'branch_scene') {
-      const charObj = CHARACTER_ASSETS[node.characterId] || CHARACTER_ASSETS.mio;
+      const charObj = resolveCharacter(node.characterId);
       el.innerHTML = `
         <div class="relative overflow-visible">
           <!-- Input Port -->
@@ -264,7 +265,7 @@ export function renderNodes() {
                data-port-color="${node.inColor || 'cyan'}"></div>
 
           <div class="px-3.5 py-2 border-b border-slate-700/70 text-xs font-bold text-white editable-field" data-field="headerBar">
-            ${escapeHtml(node.headerBar || 'Scene Branch')}
+            ${escapeHtml(node.headerBar || 'Rama de escena')}
           </div>
 
           <div class="p-3.5 flex items-center gap-3">

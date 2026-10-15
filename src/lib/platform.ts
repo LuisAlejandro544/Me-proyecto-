@@ -42,7 +42,7 @@ export async function saveHtmlExport(filename = 'my-novel-export.html'): Promise
     const { Filesystem, Directory } = await import('@capacitor/filesystem');
     const { Share } = await import('@capacitor/share');
     const res = await Filesystem.writeFile({ path: filename, data: btoa(unescape(encodeURIComponent(html))), directory: Directory.Cache });
-    await Share.share({ title: 'Export Web (.html)', url: res.uri, dialogTitle: 'Share export' });
+    await Share.share({ title: 'Exportar web (.html)', url: res.uri, dialogTitle: 'Compartir exportación' });
     return;
   }
 

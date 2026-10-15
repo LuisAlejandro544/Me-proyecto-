@@ -1,13 +1,13 @@
 // @ts-nocheck
 // Studio module — see src/lib/studio/index.ts barrel and docs/ARCHITECTURE.md.
 import { ctx } from '../context';
-import { CHARACTER_ASSETS } from '../data/assets';
 import { playSynthSfx } from '../domain/audio';
 import { buildBezierPath, getPortPosition } from '../domain/geometry';
 import { pushHistory } from '../domain/history';
 import { openInlineEditorModal, openInlineOptionModal } from './editors';
 import { renderNodes } from './render-nodes';
 import { showToast } from './toast';
+import { getCharacterCatalog } from '../../assets';
 
 export function attachNodeInteractions() {
   // Node selection & drag start (touch: single-finger drag, capture pointer for fluid move)
@@ -104,10 +104,11 @@ export function attachNodeInteractions() {
       ctrl.addEventListener('click', (e) => {
         e.stopPropagation();
         pushHistory();
-        const keys = Object.keys(CHARACTER_ASSETS);
+        const catalog = getCharacterCatalog();
+        const keys = Object.keys(catalog);
         const nextIdx = (keys.indexOf(node.characterId) + 1) % keys.length;
         node.characterId = keys[nextIdx];
-        node.speaker = CHARACTER_ASSETS[node.characterId].name;
+        node.speaker = catalog[node.characterId].name;
         playSynthSfx('click');
         renderNodes();
       });
@@ -119,14 +120,14 @@ export function attachNodeInteractions() {
         const optId = 'opt_' + Date.now().toString(36);
         node.options.push({
           id: optId,
-          label: `Option ${nextNum}: "New branch"`,
+          label: `Opción ${nextNum}: «Rama nueva»`,
           style: nextNum % 2 === 0 ? 'teal' : 'coral',
           inColor: 'cyan',
           outColor: nextNum % 2 === 0 ? 'cyan' : 'coral'
         });
         playSynthSfx('click');
         renderNodes();
-        showToast('Added new choice option');
+        showToast('Nueva opción de elección añadida');
       });
     } else if (action === 'select-char') {
       ctrl.addEventListener('click', (e) => {
@@ -134,18 +135,18 @@ export function attachNodeInteractions() {
         pushHistory();
         const charKey = ctrl.dataset.char;
         node.selectedCharId = charKey;
-        node.expression = CHARACTER_ASSETS[charKey].expressions[0];
+        node.expression = getCharacterCatalog()[charKey].expressions[0];
         playSynthSfx('click');
         renderNodes();
       });
     } else if (action === 'char-prev' || action === 'char-next') {
       ctrl.addEventListener('click', (e) => {
         e.stopPropagation();
-        const keys = Object.keys(CHARACTER_ASSETS);
+        const keys = Object.keys(getCharacterCatalog());
         const cur = keys.indexOf(node.selectedCharId || 'yuki');
         const next = action === 'char-next' ? (cur + 1) % keys.length : (cur - 1 + keys.length) % keys.length;
         node.selectedCharId = keys[next];
-        node.expression = CHARACTER_ASSETS[keys[next]].expressions[0];
+        node.expression = getCharacterCatalog()[keys[next]].expressions[0];
         playSynthSfx('click');
         renderNodes();
       });
@@ -153,7 +154,7 @@ export function attachNodeInteractions() {
       ctrl.addEventListener('change', (e) => {
         node.expression = e.target.value;
         playSynthSfx('click');
-        showToast(`Expression set to ${node.expression}`);
+        showToast(`Expresión: ${node.expression}`);
       });
     } else if (action === 'slider-scale') {
       ctrl.addEventListener('input', (e) => {

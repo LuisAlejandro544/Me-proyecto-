@@ -1,10 +1,10 @@
 // @ts-nocheck
 // Studio module — see src/lib/studio/index.ts barrel and docs/ARCHITECTURE.md.
 import { ctx } from '../context';
-import { CHARACTER_ASSETS } from '../data/assets';
 import { playSynthSfx } from '../domain/audio';
 import { escapeHtml } from '../domain/geometry';
 import { showToast } from './toast';
+import { resolveCharacter } from '../../assets';
 
 export function startPlaytest() {
   playSynthSfx('click');
@@ -30,8 +30,7 @@ export function renderPlaytestStep(nodeId) {
 
   const spriteImg = document.getElementById('vnCharacterSprite');
   const spriteWrap = document.getElementById('vnSpriteContainer');
-  const charKey = node.characterId || node.selectedCharId || 'sora';
-  const charObj = CHARACTER_ASSETS[charKey] || CHARACTER_ASSETS.sora;
+  const charObj = resolveCharacter(node.characterId || node.selectedCharId);
 
   spriteImg.src = node.type === 'banner_scene' ? charObj.banner : charObj.avatar;
   spriteWrap.style.transform = `translateX(${(posPct - 50) * 2.2}px) scale(${scalePct / 100})`;
@@ -39,15 +38,15 @@ export function renderPlaytestStep(nodeId) {
   document.getElementById('vnSpeakerName').textContent = node.speaker || charObj.name;
   document.getElementById('vnSpeakerName').style.color = node.speakerColor || charObj.color;
   document.getElementById('vnExpressionTag').textContent =
-    `${charSelector?.expression || charObj.expressions[0]} • Scale ${scalePct}%`;
+    `${charSelector?.expression || charObj.expressions[0]} • Escala ${scalePct}%`;
 
   const dialogueEl = document.getElementById('vnDialogueText');
   if (node.type === 'choice') {
-    dialogueEl.textContent = 'Select your next decision:';
+    dialogueEl.textContent = 'Elige tu próxima decisión:';
   } else if (node.type === 'character_selector') {
-    dialogueEl.textContent = `${charObj.name} enters the scene (${node.expression})!`;
+    dialogueEl.textContent = `¡${charObj.name} entra en escena (${node.expression})!`;
   } else {
-    dialogueEl.textContent = node.dialogue || '...';
+    dialogueEl.textContent = node.dialogue || '…';
   }
 
   // Render story variables readout
@@ -82,7 +81,7 @@ export function renderPlaytestStep(nodeId) {
           renderPlaytestStep(targetNodeId);
         } else {
           choicesOverlay.classList.add('hidden');
-          dialogueEl.textContent = `[Chosen: ${opt.label}] — End of this branch! Connect an output wire in the editor to continue.`;
+          dialogueEl.textContent = `[Elegido: ${opt.label}] — ¡Fin de esta rama! Conecta un cable de salida en el editor para continuar.`;
         }
       };
       choicesOverlay.appendChild(btn);
@@ -95,7 +94,7 @@ export function renderPlaytestStep(nodeId) {
       if (outWires.length > 0) {
         renderPlaytestStep(outWires[0].toNode);
       } else {
-        showToast('Reached the end of this story branch!');
+        showToast('¡Llegaste al final de esta rama de la historia!');
       }
     };
   }

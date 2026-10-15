@@ -53,7 +53,7 @@ export function initStudio() {
       // Undo / Redo
       document.getElementById('btnUndo').addEventListener('click', () => {
         if (!ctx.historyStack.length) {
-          showToast('Nothing to undo');
+          showToast('Nada que deshacer');
           return;
         }
         ctx.redoStack.push(JSON.parse(JSON.stringify({ nodes: ctx.state.nodes, wires: ctx.state.wires, variables: ctx.state.variables })));
@@ -63,12 +63,12 @@ export function initStudio() {
         ctx.state.variables = prev.variables;
         playSynthSfx('click');
         renderNodes();
-        showToast('Undid last action');
+        showToast('Última acción deshecha');
       });
 
       document.getElementById('btnRedo').addEventListener('click', () => {
         if (!ctx.redoStack.length) {
-          showToast('Nothing to redo');
+          showToast('Nada que rehacer');
           return;
         }
         ctx.historyStack.push(JSON.parse(JSON.stringify({ nodes: ctx.state.nodes, wires: ctx.state.wires, variables: ctx.state.variables })));
@@ -78,7 +78,7 @@ export function initStudio() {
         ctx.state.variables = next.variables;
         playSynthSfx('click');
         renderNodes();
-        showToast('Redid action');
+        showToast('Acción rehecha');
       });
 
       // Zoom / Pan controls
@@ -91,7 +91,7 @@ export function initStudio() {
         ctx.state.panX = 20;
         ctx.state.panY = 15;
         setZoom(0.92);
-        showToast('View centered');
+        showToast('Vista centrada');
       });
       document.getElementById('btnZoomOutPill').addEventListener('click', () => setZoom(Math.max(0.45, ctx.state.zoom - 0.1)));
       document.getElementById('btnMinimapZoomOut').addEventListener('click', () => setZoom(Math.max(0.45, ctx.state.zoom - 0.1)));
@@ -130,7 +130,7 @@ export function initStudio() {
       });
       document.getElementById('btnVnToggleAudio').addEventListener('click', (e) => {
         ctx.sfxEnabled = !ctx.sfxEnabled;
-        e.currentTarget.textContent = ctx.sfxEnabled ? '🔊 SFX On' : '🔇 SFX Muted';
+        e.currentTarget.textContent = ctx.sfxEnabled ? '🔊 Sonido activado' : '🔇 Sonido silenciado';
       });
 
       // Initial render

@@ -36,7 +36,7 @@
   <header class="h-14 px-3 sm:px-5 bg-[#121629]/95 border-b border-slate-700/50 flex items-center justify-between gap-2 z-40 shrink-0 shadow-lg">
     <!-- Left: Back button + Project Selector -->
     <div class="flex items-center gap-2 sm:gap-3">
-      <button id="btnResetView" title="Center Canvas View" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/70 transition">
+      <button id="btnResetView" title="Centrar la vista del lienzo" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/70 transition">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
         </svg>
@@ -44,8 +44,8 @@
 
       <div class="relative">
         <button id="btnProjectDropdown" class="flex items-center gap-1.5 text-sm sm:text-base font-medium text-slate-300 hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-slate-800/60 transition">
-          <span class="text-slate-400 font-normal">Project:</span>
-          <span id="currentProjectLabel" class="font-bold text-white">My Novel</span>
+          <span class="text-slate-400 font-normal">Proyecto:</span>
+          <span id="currentProjectLabel" class="font-bold text-white">Mi Novela</span>
           <svg class="w-4 h-4 text-slate-400 ml-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
           </svg>
@@ -53,25 +53,25 @@
 
         <!-- Dropdown Menu -->
         <div id="projectDropdownMenu" class="hidden absolute left-0 mt-2 w-72 rounded-xl bg-[#181e36] border border-slate-600/60 shadow-2xl py-2 z-50">
-          <div class="px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Switch Scene Preset</div>
+          <div class="px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Cambiar preset de escena</div>
           <button data-preset="sora" class="preset-option w-full text-left px-3.5 py-2.5 text-xs sm:text-sm hover:bg-indigo-500/20 flex items-center justify-between text-white">
             <div>
-              <div class="font-semibold text-cyan-300">My Novel — Sora's Route</div>
-              <div class="text-[11px] text-slate-400">Start Scene 1 + Forest + Character Selector</div>
+              <div class="font-semibold text-cyan-300">Mi Novela — Ruta de Sora</div>
+              <div class="text-[11px] text-slate-400">Escena inicial 1 + Bosque + Selector de personaje</div>
             </div>
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">View 1</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">Vista 1</span>
           </button>
           <button data-preset="aoi" class="preset-option w-full text-left px-3.5 py-2.5 text-xs sm:text-sm hover:bg-indigo-500/20 flex items-center justify-between text-white">
             <div>
-              <div class="font-semibold text-rose-300">My Novel — Aoi's Meetup</div>
-              <div class="text-[11px] text-slate-400">Decision Split + Apology / Tease Branches</div>
+              <div class="font-semibold text-rose-300">Mi Novela — Encuentro con Aoi</div>
+              <div class="text-[11px] text-slate-400">Bifurcación de decisión + Ramas de disculpa / broma</div>
             </div>
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/30">View 2</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/30">Vista 2</span>
           </button>
           <div class="border-t border-slate-700/60 my-1"></div>
           <button data-preset="blank" class="preset-option w-full text-left px-3.5 py-2 text-xs sm:text-sm hover:bg-slate-700/50 text-slate-300 flex items-center gap-2">
             <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-            New Blank Story Graph
+            Nuevo grafo de historia en blanco
           </button>
         </div>
       </div>
@@ -81,15 +81,15 @@
     <div class="flex items-center gap-2 sm:gap-3">
       <button id="btnPlayPreviewTop" class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#232b4a] to-[#2c3558] hover:from-[#2d3860] hover:to-[#37426d] border border-cyan-400/40 shadow-[0_0_15px_rgba(0,242,254,0.18)] text-xs sm:text-sm font-medium text-white transition">
         <svg class="w-3.5 h-3.5 text-cyan-400 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-        <span>Preview</span>
-        <span class="hidden md:inline text-slate-400 font-normal">(Play)</span>
+        <span>Vista previa</span>
+        <span class="hidden md:inline text-slate-400 font-normal">(Jugar)</span>
       </button>
 
       <div class="hidden sm:flex items-center bg-[#181e36] border border-slate-700/70 rounded-lg px-1.5 py-1 gap-1">
-        <button id="btnUndo" title="Undo (Ctrl+Z)" class="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-700/50 transition">
+        <button id="btnUndo" title="Deshacer (Ctrl+Z)" class="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-700/50 transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4"/></svg>
         </button>
-        <button id="btnRedo" title="Redo (Ctrl+Y)" class="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-700/50 transition">
+        <button id="btnRedo" title="Rehacer (Ctrl+Y)" class="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-700/50 transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 10H11a5 5 0 00-5 5v2m15-7l-4-4m4 4l-4 4"/></svg>
         </button>
         <div class="h-3.5 w-[1px] bg-slate-700 mx-0.5"></div>
@@ -101,7 +101,7 @@
 
     <!-- Right: Export Win (.exe) & Web (.html) + Settings -->
     <div class="flex items-center gap-2">
-      <span class="hidden lg:inline text-xs text-slate-400 mr-0.5">Export:</span>
+      <span class="hidden lg:inline text-xs text-slate-400 mr-0.5">Exportar:</span>
 
       <button id="btnExportExe" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#15233b] hover:bg-[#1c3050] border border-cyan-400/60 shadow-[0_0_12px_rgba(0,242,254,0.2)] text-xs font-medium text-cyan-200 transition">
         <svg class="w-3.5 h-3.5 text-cyan-400 fill-current" viewBox="0 0 24 24">
@@ -117,7 +117,7 @@
         <span>Web (.html)</span>
       </button>
 
-      <button id="btnTopSettings" title="Global Settings" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/70 transition">
+      <button id="btnTopSettings" title="Ajustes globales" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/70 transition">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -132,13 +132,13 @@
     <!-- Quick Mode Switcher Pill (Top-Left floating helper to compare View 1 & View 2 effortlessly) -->
     <div class="absolute top-3 left-3 z-30 flex items-center gap-1.5 bg-[#161c33]/90 backdrop-blur-md border border-slate-700/70 rounded-full p-1 shadow-lg">
       <button id="pillPresetSora" class="px-3 py-1 rounded-full text-xs font-semibold transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">
-        Scene 1: Sora (Mobile UI)
+        Escena 1: Sora (móvil)
       </button>
       <button id="pillPresetAoi" class="px-3 py-1 rounded-full text-xs font-semibold transition text-slate-400 hover:text-white">
-        Scene 2: Aoi (Tablet UI)
+        Escena 2: Aoi (tableta)
       </button>
       <span class="hidden md:inline-block text-[11px] text-slate-400 px-2 border-l border-slate-700/70">
-        Drag nodes or ports • Double-click text to edit
+        Arrastra nodos o puertos • Doble clic en un texto para editar
       </span>
     </div>
 
@@ -178,14 +178,14 @@
 
     <!-- Floating Bottom-Left Zoom / Pan Pill (from Image 1) -->
     <div class="absolute bottom-4 left-4 z-30 flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[#171c32]/90 backdrop-blur-md border border-slate-700/70 shadow-xl">
-      <button id="btnZoomOutPill" title="Zoom Out" class="text-slate-300 hover:text-cyan-300 transition">
+      <button id="btnZoomOutPill" title="Reducir zoom" class="text-slate-300 hover:text-cyan-300 transition">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"/></svg>
       </button>
       <span id="pillZoomLabel" class="text-xs sm:text-sm font-semibold text-slate-100 min-w-[38px] text-center">92%</span>
-      <button id="btnCenterCanvas" title="Recenter Graph" class="text-slate-400 hover:text-white transition">
+      <button id="btnCenterCanvas" title="Recentrar el grafo" class="text-slate-400 hover:text-white transition">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
       </button>
-      <button id="btnFitGraph" title="Auto-Fit All Nodes" class="text-slate-400 hover:text-white transition">
+      <button id="btnFitGraph" title="Ajustar todos los nodos a la vista" class="text-slate-400 hover:text-white transition">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
       </button>
     </div>
@@ -193,7 +193,7 @@
     <!-- Floating Bottom-Right Controls: Glowing "+" FAB (Image 1) + Interactive Mini-map (Image 2) -->
     <div class="absolute bottom-4 right-4 z-30 flex items-end gap-3">
       <!-- Glowing Add Node FAB from Image 1 -->
-      <button id="btnFabAddNode" title="Add New Node" class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 via-indigo-500 to-purple-600 p-[1.5px] shadow-[0_0_25px_rgba(0,242,254,0.4)] hover:scale-105 active:scale-95 transition">
+      <button id="btnFabAddNode" title="Añadir nodo nuevo" class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 via-indigo-500 to-purple-600 p-[1.5px] shadow-[0_0_25px_rgba(0,242,254,0.4)] hover:scale-105 active:scale-95 transition">
         <div class="w-full h-full rounded-[14px] bg-[#1e294b]/80 backdrop-blur-sm flex items-center justify-center text-white">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m-7-7h14"/></svg>
         </div>
@@ -223,8 +223,8 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
       </svg>
       <div class="text-left">
-        <div>Nodes</div>
-        <div class="hidden md:block text-[10px] text-slate-400 font-normal">+ Add Node</div>
+        <div>Nodos</div>
+        <div class="hidden md:block text-[10px] text-slate-400 font-normal">+ Añadir nodo</div>
       </div>
     </button>
 
@@ -234,8 +234,8 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
       </svg>
       <div class="text-left">
-        <div>Assets</div>
-        <div class="hidden md:block text-[10px] text-slate-500 font-normal">Sprites & BG</div>
+        <div>Recursos</div>
+        <div class="hidden md:block text-[10px] text-slate-500 font-normal">Sprites y fondos</div>
       </div>
     </button>
 
@@ -245,7 +245,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
       </svg>
       <div class="text-left">
-        <div>Timeline</div>
+        <div>Cronología</div>
         <div class="hidden md:block text-[10px] text-slate-500 font-normal">Variables</div>
       </div>
     </button>
@@ -256,8 +256,8 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
       </svg>
       <div class="text-left">
-        <div>Characters</div>
-        <div class="hidden md:block text-[10px] text-slate-500 font-normal">Cast & Poses</div>
+        <div>Personajes</div>
+        <div class="hidden md:block text-[10px] text-slate-500 font-normal">Reparto y poses</div>
       </div>
     </button>
 
@@ -268,8 +268,8 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
       </svg>
       <div class="text-left">
-        <div>Playtest</div>
-        <div class="hidden md:block text-[10px] text-slate-500 font-normal">Run Game</div>
+        <div>Probar</div>
+        <div class="hidden md:block text-[10px] text-slate-500 font-normal">Jugar</div>
       </div>
     </button>
 
@@ -280,18 +280,18 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
       </svg>
       <div class="text-left">
-        <div>Settings</div>
-        <div class="hidden md:block text-[10px] text-slate-500 font-normal">Audio & Prefs</div>
+        <div>Ajustes</div>
+        <div class="hidden md:block text-[10px] text-slate-500 font-normal">Audio y prefs.</div>
       </div>
     </button>
   </footer>
 
-  <!-- ADD NODE / DRAWER MODAL -->
+  <!-- MODAL AÑADIR NODO / PANEL -->
   <div id="drawerModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="w-full sm:max-w-2xl bg-[#161c33] border border-slate-700/80 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[82vh] flex flex-col">
       <div class="px-5 py-3.5 bg-[#111629] border-b border-slate-700/60 flex items-center justify-between">
-        <h3 id="drawerModalTitle" class="text-base font-bold text-white flex items-center gap-2">Workspace Panel</h3>
-        <button id="btnCloseDrawer" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
+        <h3 id="drawerModalTitle" class="text-base font-bold text-white flex items-center gap-2">Panel de trabajo</h3>
+        <button id="btnCloseDrawer" title="Cerrar panel" aria-label="Cerrar panel" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
@@ -299,7 +299,7 @@
     </div>
   </div>
 
-  <!-- INTERACTIVE VISUAL NOVEL PLAYTEST ENGINE MODAL -->
+  <!-- MODAL DEL MOTOR DE PRUEBA DE NOVELA VISUAL -->
   <div id="playtestModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-6">
     <div class="relative w-full max-w-4xl aspect-[16/10] sm:aspect-[16/9] bg-[#0c1021] rounded-2xl border-2 border-cyan-400/50 shadow-[0_0_50px_rgba(0,242,254,0.22)] overflow-hidden flex flex-col justify-between">
       <!-- Dynamic Scene Background -->
@@ -312,19 +312,19 @@
         <div class="flex items-center gap-2">
           <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 flex items-center gap-1.5">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            LIVE PLAYTEST
+            PRUEBA EN VIVO
           </span>
-          <span id="vnCurrentNodeBadge" class="text-xs text-slate-300 font-medium">Start Scene 1</span>
+          <span id="vnCurrentNodeBadge" class="text-xs text-slate-300 font-medium">Escena inicial 1</span>
         </div>
         <div class="flex items-center gap-2">
           <button id="btnVnRestart" class="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-xs text-slate-200 border border-slate-600/50 transition">
-            Restart Story
+            Reiniciar historia
           </button>
           <button id="btnVnToggleAudio" class="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-xs text-cyan-300 border border-slate-600/50 transition">
-            🔊 SFX On
+            🔊 Sonido activado
           </button>
           <button id="btnClosePlaytest" class="px-3 py-1 rounded-lg bg-rose-500/80 hover:bg-rose-500 text-xs font-semibold text-white transition">
-            Exit Preview
+            Salir de la vista previa
           </button>
         </div>
       </div>
@@ -344,15 +344,15 @@
         <div class="bg-[#12172d]/95 border border-cyan-400/40 rounded-2xl p-4 sm:p-5 shadow-2xl backdrop-blur-md">
           <div class="flex items-center justify-between mb-1.5">
             <span id="vnSpeakerName" class="text-sm sm:text-base font-bold text-rose-400 tracking-wide">Sora</span>
-            <span id="vnExpressionTag" class="text-[11px] text-slate-400">Joyful • 100% Scale</span>
+            <span id="vnExpressionTag" class="text-[11px] text-slate-400">Alegre • Escala 100%</span>
           </div>
           <p id="vnDialogueText" class="text-sm sm:text-base text-slate-100 leading-relaxed min-h-[2.75rem]">
-            Hey! Glad you made it. Where to?
+            ¡Hola! Qué bueno que llegaste. ¿A dónde vamos?
           </p>
           <div class="mt-3 flex items-center justify-between border-t border-slate-800/80 pt-2.5">
             <div id="vnVariablesReadout" class="text-[11px] text-slate-400 flex items-center gap-3"></div>
             <button id="btnVnNext" class="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-xs sm:text-sm font-semibold text-slate-950 shadow-lg transition">
-              <span>Continue</span>
+              <span>Continuar</span>
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
             </button>
           </div>
@@ -361,10 +361,10 @@
     </div>
   </div>
 
-  <!-- TOAST NOTIFICATION -->
+  <!-- NOTIFICACIÓN FLOTANTE -->
   <div id="toastBanner" class="fixed top-16 right-4 z-50 hidden px-4 py-2.5 rounded-xl bg-[#18203c] border border-cyan-400/60 text-xs sm:text-sm text-cyan-200 shadow-2xl flex items-center gap-2">
     <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
-    <span id="toastMessage">Saved!</span>
+    <span id="toastMessage">¡Guardado!</span>
   </div>
 </div>
 {#if toast}
