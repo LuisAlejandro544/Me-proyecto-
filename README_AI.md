@@ -21,6 +21,9 @@ npm run build && npm run check  # verificación obligatoria (0 errores)
 5. **Compartir**: `ui/share.ts` codifica `{ permiso:'jugar', state }` en
    `#nivel=<base64url>` con base pública (nunca `localhost`) y lo abre con
    carga + fullscreen (`shared-play-mode`); hay `.html` jugable sin servidor.
+6. **Pantallas completas**: `CompositionStudio.svelte` se monta en `App.svelte`
+   (eventos `vn:open-composer`/`vn:close-composer`), NO en el drawer; los
+   assets llevan `tags` con `setAssetTags`/`getAllAssetTags`.
 
 ## Recetas
 

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 ### Added
+- Editor de composición 🎨 a pantalla completa independiente (`components/CompositionStudio.svelte` `#composerScreen` + `lib/compositions.ts`): pestaña *Componer* en el pie, lienzo 16:9 con fondo (Recursos, sprites incluidos, galería o archivos) + sprites superpuestos arrastrables (tamaño, opacidad, espejo, orden, duplicar) y **Guardar PNG** (1280×720) en la carpeta de Recursos con etiquetas
+- Etiquetas 🏷 en la carpeta (`CustomAsset.tags` + `normalizeTags`/`setAssetTags`/`getAllAssetTags`/`saveCustomAssetFromDataUrl`): chips `#etiqueta · N` para filtrar, buscador por nombre/etiqueta y edición inline (🏷) por tarjeta
+### Added
 - Menú principal (`components/MainMenu.svelte`): al entrar se muestra «Mis Historias» con Continuar donde la dejé (autosave `vn_autosave_v1`) + 3 slots en almacenamiento local (`vn_slots_v1`); nombre personalizable por historia/slot e historia nueva (en blanco o presets Sora/Aoi); botón 🏠 `#btnGoHome` para volver al menú (guarda sesión) y `#projectNameInput` + `.slot-save-btn` en el desplegable del editor
 - Nodo inicial de partida (`VNState.startNodeId`): botón ▶/🟢 en la toolbar de cada nodo + insignia «▶ INICIO» + botón en el editor completo; Jugar, Reiniciar, enlace compartido y `.html` jugable empiezan ahí (fallback al primer nodo)
 ### Added

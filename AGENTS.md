@@ -11,7 +11,7 @@ Idioma del repo: español en respuestas al usuario.
 - `npx cap sync` tras `npm run build` (móvil)
 
 ## Estructura
-- `src/App.svelte` — shell mínimo, monta `components/StudioShell.svelte`
+- `src/App.svelte` — shell mínimo, monta `components/StudioShell.svelte` + `components/CompositionStudio.svelte` (pantalla completa vía `vn:open-composer`/`vn:close-composer`)
 - `src/components/StudioShell.svelte` — chrome portado (ids intactos, NO renombrar ids;
   mapa en `STRUCTURE.md`; nuevo: `#btnShareLevel`, `#shareLoading`)
 - `src/lib/studio/` — módulos por dominio (`data/`, `domain/`, `ui/`); barrel `index.ts`; estado en `context.ts`
@@ -23,7 +23,8 @@ Idioma del repo: español en respuestas al usuario.
     (`renderWires` solo al cambiar el grafo; `updateWirePaths` en drag; nada en pan/zoom)
   - `ui/viewport.ts` + `ui/transform.ts` — pan/pinch/zoom GPU (pan en `#panLayer`, scale en `#canvasWorld`, `body.vn-gesturing` en el gesto)
 - `src/lib/types.ts` — tipos `VNNode`, `VNWire`, `VNState` (usar en código nuevo)
-- `src/lib/assets.ts` — `getCharacterCatalog` / `resolveCharacter` + import galería/cámara
+- `src/lib/assets.ts` — `getCharacterCatalog` / `resolveCharacter` + import galería/cámara + etiquetas (`tags`, `setAssetTags`, `getAllAssetTags`)
+- `src/lib/compositions.ts` — composiciones fondo+sprites + `renderCompositionToDataUrl` (PNG 1280×720 para Recursos)
 - `src/lib/platform.ts` — export nativo (Tauri `dialog`/`fs`, Capacitor `Filesystem`/`Share`)
 - `my_novel_visual_novel_node_studio.html` — referencia legacy, no borrar
 - `icon.svg` — fuente de iconos (`npx tauri icon ./icon.svg` los regenera)

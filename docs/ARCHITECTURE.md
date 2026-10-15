@@ -12,6 +12,18 @@ Donde viven los elementos de UI:
 
 - Una sola base web (`src/`) alimenta desktop y móvil.
 - `src/App.svelte` es solo el shell: monta `components/StudioShell.svelte` (chrome: header, canvas, footer, modales).
+- `src/components/CompositionStudio.svelte` es pantalla completa independiente
+  (`#composerScreen`, `fixed inset-0 z-[80]`): NO vive en el drawer. `App.svelte`
+  la monta bajo `{#if showComposer}` y la abre/cierra con los eventos
+  `vn:open-composer` / `vn:close-composer` que dispara `openWorkspaceTab('compositor')`.
+- `src/lib/compositions.ts`: `Composition { background, bgFit, layers[] }` en
+  `localStorage (vn_compositions_v1)` + `renderCompositionToDataUrl()` (canvas
+  1280×720, fondo cover/contain/stretch + capas con opacidad/espejo) →
+  `saveCustomAssetFromDataUrl()` la archiva en Recursos con etiquetas.
+- `src/lib/assets.ts`: `CustomAsset.tags: string[]` (`normalizeTags`,
+  `setAssetTags`, `getAllAssetTags`); el drawer (`workspace.ts`, pestaña
+  `assets`) filtra por chips `[data-tag-filter]` y edita inline con
+  `[data-edit-tags]`.
 - `src/lib/studio/` — lógica del editor partida por dominios (ver mapa abajo). Barrel: `index.ts` (`initStudio()`, `getStudioState()`).
 - Lienzo por GPU: `#panLayer` traslada y `#canvasWorld` escala con `transform`
   (compositor, sin re-layout). Los cables SVG viven dentro del mundo y escalan

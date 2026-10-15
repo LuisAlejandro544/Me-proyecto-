@@ -19,6 +19,15 @@ para jugar a pantalla completa**.
 - **Elegir personaje**: selector en el propio nodo, en el editor completo o en las
   pestañas *Recursos* / *Personajes* (incluye importar tus fotos desde galería,
   archivos o cámara en móvil).
+- **Etiquetas en Recursos 🏷**: cada asset admite hasta 12 etiquetas
+  (`#fondo`, `#noche`…) con buscador por nombre/etiqueta, filtro por chips
+  `#etiqueta · N` y edición inline con el botón 🏷.
+- **Editor de composición 🎨**: pestaña *Componer* → pantalla completa
+  independiente (no es un popup) con lienzo 16:9: elige fondo desde tus
+  Recursos, sprites incluidos, galería o archivos, superpón sprites
+  (arrastrar, tamaño, opacidad, espejo, orden de capas, duplicar) y pulsa
+  **Guardar PNG** para renderizar a 1280×720 y archivarla en Recursos con
+  etiquetas, lista para usar en nodos.
 - **Bloque de vídeo 🎬**: nodo `video_scene` que reproduce un vídeo de la carpeta
   (galería de vídeos o administrador de archivos, `.mp4`/`.webm`/`.mov`) con
   autoplay, bucle, silencio y controles configurables.
@@ -112,6 +121,9 @@ Formato: `https://tu-dominio-publico/#nivel=<base64url>` con `{ v, permiso, proy
 src/App.svelte                  shell mínimo
 src/components/StudioShell.svelte  chrome (ids intactos, NO renombrar)
 src/lib/types.ts                VNNode, VNWire, VNState
+src/lib/assets.ts               galería/cámara/archivos + etiquetas (#tag) de assets
+src/lib/compositions.ts         composiciones fondo+sprites + render a PNG 1280×720
+src/components/CompositionStudio.svelte  editor de escenas a pantalla completa (#composerScreen)
 src/lib/studio/context.ts       estado mutable único
 src/lib/studio/ui/render-nodes.ts  tarjetas + puertos + toolbar ✏️/🗑
 src/lib/studio/ui/node-editor.ts   editor completo + eliminar/duplicar

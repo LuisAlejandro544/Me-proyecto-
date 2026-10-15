@@ -2,9 +2,10 @@
 
 > Estado a 2026-10-15. Hecho reciente: bloque de vídeo 🎬 + complemento de sonido 🔊
 > (carpeta con galería de vídeos y audios), reproductor de prueba en horizontal 16:9,
-> enlaces compartibles (adiós `localhost` + `.html` jugable) y canal de
+> enlaces compartibles (adiós `localhost` + `.html` jugable), canal de
 > auto-actualizaciones (workflow `Auto-update` solo en release publicado o manual
-> + pantalla «Nueva actualización» en la app).
+> + pantalla «Nueva actualización» en la app), editor de composición 🎨 a pantalla
+> completa (fondo + sprites → PNG a Recursos) y etiquetas 🏷 en la carpeta.
 
 ## Ahora (v0.2) — compartir y pulir
 
@@ -31,6 +32,13 @@
 - [x] Auto-actualizaciones: workflow `Auto-update` (solo release publicado o
   manual, nunca por commits/PRs) + chequeo en la app con pantalla
   «Nueva actualización disponible» (Descargar .zip / Recargar / Omitir).
+- [x] Editor de composición 🎨 (pantalla completa `CompositionStudio.svelte`,
+  `lib/compositions.ts`): fondo desde Recursos/sprites/galería/archivos +
+  sprites superpuestos (drag, tamaño, opacidad, espejo, orden) → PNG 1280×720
+  a la carpeta con etiquetas.
+- [x] Etiquetas 🏷 en Recursos (`CustomAsset.tags`, `setAssetTags`,
+  `getAllAssetTags`): chips `#tag · N`, buscador por nombre/etiqueta y edición
+  inline.
 - [ ] Pruebas visuales del modo invitado en Android (WebView) y iOS (Safari).
 
 ## Siguiente (v0.3) — niveles y permisos
