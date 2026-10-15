@@ -1,31 +1,32 @@
 // C++ native shell hosting the Svelte web UI (dist/).
 // UI elements live in src/ (Svelte) — this binary only contains them
 // and exposes native bindings (see App::bindAll).
+#include "serve.h"
 #include "webview.h"
 
+#include <chrono>
 #include <filesystem>
 #include <iostream>
 #include <string>
+#include <thread>
 
 namespace fs = std::filesystem;
 
 namespace {
 
-// dist/index.html sits two levels above the binary (cpp/build/vnstudio).
-std::string findDist(const char *argv0) {
+// dist/ sits two levels above the binary (cpp/build/vnstudio).
+std::string findDistDir(const char *argv0) {
     try {
         fs::path exe = fs::canonical(fs::path(argv0));
-        for (const fs::path &cand :
-             {exe.parent_path() / ".." / ".." / "dist" / "index.html"}) {
-            std::error_code ec;
-            if (fs::exists(cand, ec))
-                return std::string("file://") + fs::canonical(cand, ec).string();
-        }
+        fs::path cand = exe.parent_path() / ".." / ".." / "dist";
+        std::error_code ec;
+        if (fs::is_directory(cand, ec))
+            return fs::canonical(cand, ec).string();
     } catch (...) {
     }
     if (const char *env = std::getenv("VN_DIST"))
-        return std::string("file://") + env;
-    return "http://localhost:1420/"; // Dev fallback: `npm run dev`.
+        return env;
+    return {};
 }
 
 } // namespace
@@ -41,10 +42,19 @@ int main(int argc, char **argv) {
         return "\"0.1.0-cpp\"";
     });
 
-    const std::string url = (argc > 0 && argv[0]) ? findDist(argv[0]) : "";
-    std::cout << "loading: " << (url.empty() ? "<none>" : url) << std::endl;
-    if (!url.empty())
-        w.navigate(url);
+    servo::Server srv;
+    std::string url;
+    const std::string dir = (argc > 0 && argv[0]) ? findDistDir(argv[0]) : std::string();
+    if (!dir.empty() && servo::start(srv, dir, url)) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    } else if (!dir.empty()) {
+        url = std::string("file://") + dir + "/index.html"; // last resort (CORS-limited)
+    } else {
+        url = "http://localhost:1420/"; // Dev fallback: `npm run dev`.
+    }
+    std::cout << "loading: " << url << std::endl;
+    w.navigate(url);
     w.run();
+    servo::stop(srv);
     return 0;
 }

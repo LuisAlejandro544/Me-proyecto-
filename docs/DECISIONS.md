@@ -28,4 +28,6 @@
 ## ADR-007 — Shell C++ sin Qt, UI 100% web
 **Contexto:** se evaluó portar la UI a Qt Widgets y se descartó (curva + framework extra).
 **Decisión:** binario C++ (`cpp/`, librería `webview`) que hospeda `dist/`; cero rewrite de UI.
-**Consecuencia:** los bindings nativos (guardar archivo, etc.) se añaden en C++ sin tocar Svelte.
+**Raíz del blanco:** `file://` es origen `null` y todos los motores bloquean su CSS/JS por CORS
+(reproducido con errores exactos). Fix: `cpp/` sirve `dist/` por HTTP local
+(`serve.h` + cpp-httplib, verificado con `testserve` y captura del `dist` por HTTP).

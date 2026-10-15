@@ -9,8 +9,8 @@ más bindings nativos (`window.appVersion()` de ejemplo).
 ```bash
 cmake -S cpp -B cpp/build -G Ninja   # descarga webview vía FetchContent
 cmake --build cpp/build
-./cpp/build/vnstudio                  # abre dist/ (o http://localhost:1420 si no hay build)
-npm run dev &  VN_DIST= ./cpp/build/vnstudio   # contra el dev server
+./cpp/build/vnstudio                  # sirve dist/ por HTTP local y lo abre
+QT_QPA_PLATFORM=offscreen ./cpp/build/testserve  # verifica el servidor embebido
 ```
 
 ## Siguiente
