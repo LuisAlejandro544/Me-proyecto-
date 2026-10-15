@@ -52,7 +52,7 @@ Me-proyecto-/
 │           │   └── history.ts  pushHistory (30 pasos)
 │           └── ui/
 │               ├── render-nodes.ts  8 tipos + toolbar ✏️/🗑 + puertos a -9px
-│               │     banner_scene (in_main + portsOut) · choice (in/out por opción)
+│               │     banner_scene (in_main + portsOut repartidos %) · choice (in_main + out por opción; punto izq. decorativo)
 │               │     compact_scene · character_selector (in + out) · avatar_scene (in + outs)
 │               │     branch_scene (in + out) · video_scene (in + out, 🎬) · sound_cue (in + out, 🔊)
 │               ├── node-editor.ts   openNodeEditor() por tipo + deleteNode() + duplicateNode()

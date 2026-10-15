@@ -122,6 +122,20 @@
     .vn-port-dim { opacity: 0.55; }
     .vn-node:hover .vn-port-dim, .vn-node.selected .vn-port-dim { opacity: 1; }
     .vn-choice-row { overflow: visible; }
+    /* Salida del nodo choice: la fila vive dentro del p-3.5 (14px de padding),
+       así que el puerto debe compensarlo para quedar centrado en el borde. */
+    .vn-port-choice-out { right: -23px; }
+    @media (pointer: coarse) {
+      .vn-port-choice-out { right: -25px; }
+    }
+    /* Punto decorativo dentro de la píldora (NO es conector: sin arrastre) */
+    .vn-choice-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+      pointer-events: none;
+    }
     /* Bigger invisible hit area so ports are easy to grab on touch */
     .vn-port::after {
       content: '';

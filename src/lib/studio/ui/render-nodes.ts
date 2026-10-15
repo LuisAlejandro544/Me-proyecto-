@@ -62,33 +62,49 @@ export function renderNodes() {
           <!-- Dialogue Text -->
           <div class="text-xs sm:text-[13px] text-slate-100 leading-snug whitespace-pre-line editable-field" data-field="dialogue">${escapeHtml(node.dialogue)}</div>
 
-          <!-- Output Ports on Right -->
-          ${(node.portsOut || []).map(p => `
+          <!-- Salidas reales a la derecha, repartidas en el borde de la tarjeta
+               (el yOffset fijo quedaba en la esquina inferior al crecer el texto) -->
+          ${(node.portsOut || []).map((p, _idx, arr) => {
+            const topPct = arr.length <= 1 ? '50%' : `${Math.round(30 + (_idx * 40) / Math.max(1, arr.length - 1))}%`;
+            return `
             <div class="vn-port ${p.color === 'coral' ? 'vn-port-coral' : 'vn-port-cyan'} vn-port-out"
-                 style="right: -9px; top: ${p.yOffset}px;"
+                 style="right: -9px; top: ${topPct}; transform: translateY(-50%);"
                  data-node-id="${node.id}"
                  data-port-id="${p.id}"
                  data-port-dir="out"
                  data-port-color="${p.color}"></div>
-          `).join('')}
+            `;
+          }).join('')}
         </div>
       `;
     }
 
     // 2. CHOICE / DECISION SPLIT NODE (Matches Image 1 & Image 2)
+    // Diseño: UNA entrada real a la izquierda (in_main) + N salidas reales a la
+    // derecha (out_<optId>) centradas en el borde de la tarjeta. Los puntos de la
+    // izquierda de cada fila son solo decorativos (sin .vn-port ni data-port-id):
+    // antes eran puertos reales dentro de la fila (left:-9px relativo a la fila =
+    // ~12px dentro de la tarjeta) y se veían solapando el texto.
     else if (node.type === 'choice') {
       el.innerHTML = `
         <div class="p-3.5 relative">
-          <!-- Header -->
-          <div class="flex items-start justify-between mb-2.5">
-            <div>
+          <!-- Entrada única real (toda la decisión se entra por aquí) -->
+          <div class="vn-port vn-port-cyan vn-port-in"
+               style="left: -9px; top: 28px;"
+               data-node-id="${node.id}"
+               data-port-id="in_main"
+               data-port-dir="in"
+               data-port-color="cyan"></div>
+          <!-- Header (con hueco a la derecha: botón + y toolbar ✏️/🗑 del nodo) -->
+          <div class="flex items-start justify-between gap-2 mb-2.5">
+            <div class="min-w-0 flex-1 pr-12">
               <div class="text-xs sm:text-[13px] font-bold text-white">
                 <span class="editable-field" data-field="title">${escapeHtml(node.title)}</span>
                 ${!node.showAddButtons ? `<span class="font-normal text-slate-300 ml-1 editable-field" data-field="subtitle">${escapeHtml(node.subtitle || '')}</span>` : ''}
               </div>
               ${node.showAddButtons ? `<div class="text-[11px] text-slate-400">${escapeHtml(node.subtitle || 'Nodo de elección')}</div>` : ''}
             </div>
-            <button data-action="add-choice-opt" data-node="${node.id}" title="Añadir rama de elección" class="w-6 h-6 rounded-full bg-slate-700/80 hover:bg-cyan-500/30 border border-slate-500/60 flex items-center justify-center text-xs font-bold text-slate-200 hover:text-cyan-200 transition">
+            <button data-action="add-choice-opt" data-node="${node.id}" title="Añadir rama de elección" class="w-6 h-6 shrink-0 rounded-full bg-slate-700/80 hover:bg-cyan-500/30 border border-slate-500/60 flex items-center justify-center text-xs font-bold text-slate-200 hover:text-cyan-200 transition">
               +
             </button>
           </div>
@@ -99,24 +115,20 @@ export function renderNodes() {
               let pillClass = 'bg-[#2a3352]/90 border-slate-500/40 text-slate-100';
               if (opt.style === 'coral') pillClass = 'bg-gradient-to-r from-[#5a343b] to-[#4a2c33] border-rose-400/50 text-rose-100';
               if (opt.style === 'teal') pillClass = 'bg-gradient-to-r from-[#1e485c] to-[#1a3b4e] border-cyan-400/50 text-cyan-100';
+              const dotColor = (opt.inColor || opt.outColor || 'cyan') === 'coral' ? '#ff756b' : '#00f2fe';
               return `
                 <div class="relative flex items-center vn-choice-row">
-                  <!-- Left Input Port -->
-                  <div class="vn-port ${opt.inColor === 'coral' ? 'vn-port-coral' : 'vn-port-cyan'} vn-port-in"
-                       style="left: -9px; top: 50%; transform: translateY(-50%);"
-                        data-node-id="${node.id}"
-                        data-port-id="in_${opt.id}"
-                        data-port-dir="in"
-                        data-port-color="${opt.inColor || 'cyan'}"></div>
-
-                  <!-- Choice Pill -->
-                  <div class="w-full px-3 py-2 rounded-xl border ${pillClass} text-xs font-medium flex items-center justify-between shadow-inner">
-                    <span class="editable-option truncate" data-opt-idx="${idx}">${escapeHtml(opt.label)}</span>
+                  <!-- Choice Pill (punto de color decorativo, NO conectable) -->
+                  <div class="w-full pl-3 pr-3 py-2 rounded-xl border ${pillClass} text-xs font-medium flex items-center gap-2 shadow-inner">
+                    <span class="vn-choice-dot" style="background: ${dotColor}; box-shadow: 0 0 6px ${dotColor};"></span>
+                    <span class="editable-option truncate flex-1 min-w-0" data-opt-idx="${idx}">${escapeHtml(opt.label)}</span>
                   </div>
 
-                  <!-- Right Output Port -->
-                  <div class="vn-port ${opt.outColor === 'coral' ? 'vn-port-ring-coral' : 'vn-port-ring-cyan'} vn-port-out"
-                       style="right: -9px; top: 50%; transform: translateY(-50%);"
+                  <!-- Salida real: centrada en el borde de la TARJETA
+                       (la fila está inset 14px por el p-3.5, así que -9px la
+                       dejaría dentro; -23px la centra en el borde). -->
+                  <div class="vn-port ${opt.outColor === 'coral' ? 'vn-port-ring-coral' : 'vn-port-ring-cyan'} vn-port-out vn-port-choice-out"
+                       style="top: 50%; transform: translateY(-50%);"
                        data-node-id="${node.id}"
                        data-port-id="out_${opt.id}"
                        data-port-dir="out"
@@ -152,7 +164,7 @@ export function renderNodes() {
 
           <!-- Output Port -->
           <div class="vn-port vn-port-cyan vn-port-out"
-               style="right: -9px; top: 50%;"
+               style="right: -9px; top: 50%; transform: translateY(-50%);"
                 data-node-id="${node.id}"
                 data-port-id="out_main"
                 data-port-dir="out"
@@ -270,15 +282,18 @@ export function renderNodes() {
 
             <div class="text-xs text-slate-200 editable-field" data-field="dialogue">${escapeHtml(node.dialogue)}</div>
 
-            <!-- Output Ports -->
-            ${(node.portsOut || []).map(p => `
+            <!-- Salidas reales repartidas en el borde (sin yOffset fijo) -->
+            ${(node.portsOut || []).map((p, _idx, arr) => {
+              const topPct = arr.length <= 1 ? '50%' : `${Math.round(30 + (_idx * 40) / Math.max(1, arr.length - 1))}%`;
+              return `
               <div class="vn-port vn-port-ring-cyan vn-port-out"
-                   style="right: -9px; top: ${p.yOffset}px;"
+                   style="right: -9px; top: ${topPct}; transform: translateY(-50%);"
                    data-node-id="${node.id}"
                    data-port-id="${p.id}"
                    data-port-dir="out"
                    data-port-color="${p.color || 'cyan'}"></div>
-            `).join('')}
+              `;
+            }).join('')}
           </div>
         </div>
       `;
@@ -338,7 +353,7 @@ export function renderNodes() {
           <div class="text-[11px] text-slate-400 truncate editable-field" data-field="dialogue">${escapeHtml(node.dialogue || 'Se reproduce y continúa…')}</div>
           <div class="text-[10px] text-slate-500 mt-1">${node.videoAutoplay === false ? '⏸ Manual' : '▶ Auto'} · ${node.videoLoop ? '🔁 Bucle' : '➡ Sigue'}${node.videoMuted ? ' · 🔇' : ''}</div>
           <div class="vn-port vn-port-cyan vn-port-out"
-               style="right: -9px; top: 50%;"
+               style="right: -9px; top: 50%; transform: translateY(-50%);"
                data-node-id="${node.id}"
                data-port-id="out_main"
                data-port-dir="out"
@@ -370,7 +385,7 @@ export function renderNodes() {
           </div>
           <div class="text-[11px] text-slate-400 truncate editable-field" data-field="dialogue">${escapeHtml(node.dialogue || 'Complemento: no bloquea la historia')}</div>
           <div class="vn-port vn-port-coral vn-port-out"
-               style="right: -9px; top: 50%;"
+               style="right: -9px; top: 50%; transform: translateY(-50%);"
                data-node-id="${node.id}"
                data-port-id="out_main"
                data-port-dir="out"

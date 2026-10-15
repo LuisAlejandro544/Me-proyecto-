@@ -21,6 +21,7 @@
 ### Fixed
 - Zoom borroso/lento en móvil: antes layout-zoom (CSS `zoom` + rebuild de cables por frame); ahora `transform: scale` por GPU con cables dentro del mundo (nítidos 35%–200% a 60fps)
 - Conectores: puertos re-centrados a `-9px` en el borde, `overflow: visible` y `z-index` 40 (los de `choice` ya no quedan a `-21px` ni se cortan); entrada añadida en `avatar_scene`/`banner_scene` y salida en `character_selector`
+- Nodos escena/elección: `choice` con entrada única real (`in_main`) y puntos izquierdos decorativos (ya no son conectores dentro de la píldora); salidas `out_*` centradas en el borde (`-23px` por el `p-3.5`) y cabecera con hueco para ✏️/🗑; `banner_scene`/`avatar_scene` con salidas repartidas en % del borde (adiós `yOffset` fijo en la esquina); cables viejos `in_<opt>` redirigidos a `in_main` (`geometry.ts`)
 - Móvil: cabecera compacta con truncado, pie con scroll horizontal (Personajes visible), modales `92dvh` + safe-area, toast sobre el pie, puertos de 18px en táctil y doble-toque para editar textos
 
 ## [0.1.0] — 2026-10-15
