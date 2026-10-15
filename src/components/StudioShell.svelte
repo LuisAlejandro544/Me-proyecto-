@@ -4,6 +4,12 @@
 
   onMount(() => {
     initStudio();
+    // Motores sin compositor Chromium (WebKitGTK en Tauri/C++): los fades
+    // dentro de tarjetas con backdrop-filter parpadean; se muestran al instante.
+    try {
+      if (!(window as unknown as { chrome?: unknown }).chrome)
+        document.body.classList.add('fx-instant');
+    } catch {}
   });
 </script>
 

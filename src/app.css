@@ -186,6 +186,13 @@
       cursor: pointer;
       border: 2px solid #e2e8f0;
     }
+    /* Sin compositor Chromium (WebKitGTK): aparición instantánea, cero frames
+       intermedios que shimmeren contra el backdrop-filter. */
+    body.fx-instant .vn-node-toolbar,
+    body.fx-instant .vn-wire-hi,
+    body.fx-instant .vn-port-dim {
+      transition: none !important;
+    }
     /* SVG Wire animations & hover (opacity-only highlight: no geometry/filter
        morph under the cursor, so no flicker loop) */
     .vn-wire-group {
