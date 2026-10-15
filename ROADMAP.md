@@ -5,7 +5,11 @@
 > enlaces compartibles (adiós `localhost` + `.html` jugable), canal de
 > auto-actualizaciones (workflow `Auto-update` solo en release publicado o manual
 > + pantalla «Nueva actualización» en la app), editor de composición 🎨 a pantalla
-> completa (fondo + sprites → PNG a Recursos) y etiquetas 🏷 en la carpeta.
+> completa (fondo + sprites → PNG a Recursos), etiquetas 🏷 en la carpeta y
+> **compilador de novelas** (`ui/compile.ts` + modal «Compilar novela»: `.html`
+> jugable + `.vn.json` + paquetes funcionales Windows/Linux con validación) +
+> workflow manual **`Bundle escritorio (.exe + Linux)`** (Rust/Tauri: NSIS/MSI +
+> .deb/.AppImage en Artifacts).
 
 ## Ahora (v0.2) — compartir y pulir
 
@@ -39,6 +43,13 @@
 - [x] Etiquetas 🏷 en Recursos (`CustomAsset.tags`, `setAssetTags`,
   `getAllAssetTags`): chips `#tag · N`, buscador por nombre/etiqueta y edición
   inline.
+- [x] Compilador de novelas (`ui/compile.ts` + modal «Compilar novela» con
+  `#btnExportExe`/`#btnExportHtml`/`#btnExportLinux`): `.html` jugable único
+  (inicio real, variables, audio/vídeo, decisiones `out_*`, teclado, reinicio,
+  solo assets usados), `.vn.json` portable, validación (errores + avisos) con
+  tamaño estimado y paquetes funcionales Windows (`.html` + `.bat`) y Linux
+  (`.html` + `.sh` + `.desktop`); binario nativo vía Rust/Tauri en workflow
+  manual `bundle-desktop.yml` (Windows NSIS/MSI + Linux .deb/.AppImage).
 - [ ] Pruebas visuales del modo invitado en Android (WebView) y iOS (Safari).
 
 ## Siguiente (v0.3) — niveles y permisos
@@ -48,7 +59,9 @@
   URLs cortas en lugar de base64url gigante.
 - [ ] Caducidad y revocación de enlaces.
 - [ ] Miniaturas de nodos en el editor (vista previa del sprite).
-- [ ] Validación del grafo: nodos sin salida, opciones sin cable, personajes rotos.
+- [ ] Validación del grafo avanzada: nodos sin salida, opciones sin cable, personajes rotos.
+  (Base hecha: `validateStory()` en `compile.ts` ya avisa de ramas sin cable,
+  inalcanzables y recursos rotos antes de compilar.)
 
 ## Después (v0.4+) — editor y plataformas
 
@@ -56,6 +69,8 @@
   con stores en vez de `ctx` mutable + `// @ts-nocheck`.
 - [ ] Historial por nodo y portapapeles (copiar/pegar nodos con Ctrl+C/V).
 - [x] Audio por escena (campo opcional) y nodo de sonido; pendiente: transiciones de fondo.
+- [x] Paquete funcional Windows/Linux descargable + workflow manual de bundles
+  nativos (`bundle-desktop.yml`: Rust/Tauri en runners Windows/Ubuntu).
 - [ ] Paquete Tauri firmado (.exe) y APK release en CI.
 - [ ] Updater nativo en caliente (Tauri Updater con firma): hoy la pantalla
   «Nueva actualización» descarga el `.zip` y guía (recargar Pages / instalar

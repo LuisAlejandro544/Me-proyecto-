@@ -42,3 +42,19 @@ dispara; `web-check.yml` sigue siendo el único que corre en push/PR.
 **Consecuencia:** publicar = GitHub → Releases → Draft new release → Publish
 (o Actions → Run); la app detecta el `releases/latest` y muestra `#updateModal`.
 El updater nativo en caliente (Tauri Updater firmado) queda para roadmap.
+
+## ADR-009 — Compilar novelas: generador único + Rust/Tauri para el binario
+**Contexto:** se pidió «compilar un `.exe` o para Linux, tal vez integrando un
+lenguaje específico». El navegador no puede fabricar binarios (sería un agujero
+de seguridad) y el generador `.html` estaba duplicado (`exporter.ts`/`share.ts`),
+mientras el «Win (.exe)» solo bajaba un `.bat` huérfano sin el `.html` (no jugaba).
+**Decisión:** unificar en `ui/compile.ts` (`buildStandaloneHtml` jugable completo
++ `buildHistoria` `.vn.json` + `validateStory` + `saveTextFile` + modal
+«Compilar novela» + paquetes funcionales Windows `.html`+`.bat` y Linux
+`.html`+`.sh`+`.desktop`); el lenguaje específico que compila el binario real es
+**Rust** vía Tauri (`src-tauri/src/main.rs`, `tauri.conf.json` `targets: all`),
+con workflow manual `bundle-desktop.yml` (Windows NSIS/MSI + Linux .deb/.AppImage
+→ Artifacts, nunca en push/PR).
+**Consecuencia:** descarga inmediata que sí juega al doble clic + instalador
+nativo por Actions; `exporter.ts`/`share.ts` delegan al generador único (cero
+duplicidad).

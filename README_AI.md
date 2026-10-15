@@ -51,6 +51,15 @@ y nada en pan/pinch/zoom); el minimapa va con `scheduleMinimap()`.
 el invitado entra por `checkSharedPlayModeOnBoot()` → `enterSharedPlayMode()`
 (progreso `#shareLoading`, `body.shared-play-mode`, `renderPlaytestStep`).
 
+**Compilar novela (`.html` / `.vn.json` / Windows / Linux):**
+`ui/compile.ts → openCompileModal()` — valida con `validateStory()`, genera con
+`buildStandaloneHtml()` / `buildHistoria()`, guarda con `saveTextFile()` y
+arma paquetes (`exportWindowsPackage` / `exportLinuxPackage`). Los 3 botones
+(`#btnExportExe`/`#btnExportHtml`/`#btnExportLinux`) van a este modal desde
+`index.ts`. No dupliques el generador: `exporter.ts`/`share.ts` delegan aquí.
+El binario `.exe` real es Rust/Tauri (`src-tauri/src/main.rs`) vía
+`npm run tauri:build` o workflow manual `bundle-desktop.yml`.
+
 **Auto-update:**
 `ui/updater.ts → checkForUpdates()` (compara `tag_name` de `releases/latest`
 con `__APP_VERSION__`) → `UpdateModal.svelte` (`#updateModal`). No toques los
