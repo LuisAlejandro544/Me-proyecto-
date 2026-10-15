@@ -1,59 +1,46 @@
-# Manga Maker / My Novel
+# My Novel — Visual Novel Node Studio (Web + TS + Svelte → Tauri + Capacitor)
 
-Editor visual por nodos estilo la referencia: `Start → Sprite: Yui → Dialogue-01 → Choices → 2 finales`. Misma UI en Android y PC (Flutter).
+Migración del monolito `my_novel_visual_novel_node_studio.html` (2111 líneas) a stack moderno sin perder funciones.
 
-## Requisitos
-- Flutter 3.47+ / Dart 3.13+
-- Android SDK + Java 17 (solo para APK local; en CI lo pone GitHub)
+## Origen
+- `my_novel_visual_novel_node_studio.html` → se conserva como referencia legacy.
+- Portado a:
+  - `src/app.css` ← `<style>` original + Tailwind
+  - `src/App.svelte` ← markup del `<body>` (ids intactos)
+  - `src/lib/studio.ts` ← `<script>` original verbatim, envuelto en `initStudio()` (`// @ts-nocheck` para paridad 100%)
+  - `src/lib/types.ts` ← tipos `VNNode`, `VNWire`, `VNState`
+  - `src/lib/platform.ts` ← bridge nativo Web/Tauri/Capacitor
 
-## Uso rápido (sin PC, desde el celular de tu amigo)
-1. GitHub > repo > **Actions > Build Android APK > Run workflow** (o haz push a `main`).
-2. Al terminar, descarga **Artifacts > app-release-apks**.
-3. Instala el APK según tu CPU:
-   - `app-arm64-v8a-release.apk` (móviles nuevos 64 bits)
-   - `app-armeabi-v7a-release.apk` (móviles viejos 32 bits)
-4.Ways: instalador directo o súbelo a Uptodown (no Google Play).
-
-## Correr local
+## Web (Vite + Svelte + TS)
 ```bash
-flutter pub get
-flutter run -d linux     # PC Linux
-flutter run -d windows   # PC Windows
-flutter run -d android   # Android
-flutter run -d chrome    # Web preview
+npm install      # regenera package-lock.json (ignorado en git)
+npm run dev      # http://localhost:1420
+npm run build    # → dist/
+npm run preview
+npm run check    # svelte-check, 0 errores
 ```
 
-## Compilar local (o un script para todo)
+## Desktop — Tauri v2 → .exe real
+El botón legacy “Win (.exe)” antes solo bajaba un `.bat`. Ahora el binario real sale de Tauri:
 ```bash
-bash scripts/build.sh --all      # APK + Linux + Windows + Web (salta lo que tu OS no soporte)
-bash scripts/build.sh --apk      # build/app/outputs/flutter-apk/ (arm64 + arm32)
-flutter build web --release      # build/web (.html jugable)
+npm run tauri:dev    # dev con WebView
+npm run tauri:build  # → src-tauri/target/release/bundle/ (.exe, .AppImage, .dmg)
 ```
+Config: `src-tauri/tauri.conf.json` (`frontendDist: ../dist`), `src-tauri/src/main.rs` + `plugin-fs/dialog`.
+Iconos: `npx tauri icon ./icon.svg` regenera `src-tauri/icons/` (los sets Android/iOS/Store están ignorados en git).
 
-## CI (sin PC, lo corre GitHub)
-Workflow **Build APK + Linux + Windows**: `check` (analyze+test) y luego en
-paralelo `android` (APK split + Web), `linux` (bundle) y `windows` (Release).
-Artefactos: `app-release-apks`, `web-build`, `linux-bundle`, `windows-release`.
-Se dispara con push a `main` o manual en Actions > Run workflow.
-
-## Estructura (ver `docs/ARCHITECTURE.md`)
-```
-lib/main.dart                          # bootstrap mínimo
-lib/app/app.dart                       # MaterialApp + tema
-lib/core/theme/app_theme.dart          # AppColors (cero hex en UI)
-lib/core/perf/fps_chip.dart            # medidor fps (1 rebuild/seg)
-lib/features/graph/graph.dart          # barrel del feature
-lib/features/graph/models/             # datos puros, sin Flutter
-lib/features/graph/state/             # GraphController (índice O(1))
-lib/features/graph/editor/            # editor + nodos + painters
-lib/features/graph/player/            # Play Preview
-lib/features/graph/export/            # HTML autocontenido
-scripts/build.sh                       # compila APK/Linux/Windows/Web
-.github/workflows/build-android.yml    # CI: check + android + linux + windows
-```
-
-## Test
+## Mobile — Capacitor 7 → Android/iOS
+Mismo `dist/` compartido:
 ```bash
-flutter analyze
-flutter test
+npm run build
+npx cap add android   # una vez
+npx cap add ios       # una vez (en mac)
+npx cap sync          # copia dist/ a nativo
+npx cap open android  # abre Android Studio
 ```
+Export `.html` en móvil usa `@capacitor/filesystem` + `@capacitor/share` (`src/lib/platform.ts: saveHtmlExport`).
+
+## Notas de port
+- `App.svelte onMount(initStudio)` reemplaza `DOMContentLoaded`. `initStudio()` es idempotente (guard `__studioInited`).
+- El wiring de pan/zoom del canvas vive en `wireCanvasPanZoom()` (debe correr con el DOM montado, no en el import).
+- Queda pendiente refactorizar `studio.ts` (incluye `CHARACTER_ASSETS` base64) a stores Svelte por componente (`TopBar`, `Canvas`, `NodeCard`, `PlaytestModal`, etc.). La base ya compila y permite hacerlo incremental.

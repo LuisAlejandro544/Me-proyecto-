@@ -3,6 +3,16 @@
 .opencode/attachments/*
 .opencode/share/
 
+# Node / Vite / Svelte
+node_modules/
+dist/
+.cap/
+
+# Tauri / Rust
+src-tauri/target/
+src-tauri/gen/
+
+
 # Capturas de pantalla de OpenCode en raiz o docs (evitar que se cuelen)
 opencode-*.png
 opencode-*.jpg
