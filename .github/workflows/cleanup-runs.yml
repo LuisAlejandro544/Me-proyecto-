@@ -1,0 +1,160 @@
+name: Limpiar historial de Actions
+
+# Limpieza manual del historial de runs de GitHub Actions.
+# Se activa SOLO de forma manual desde la pestaña Actions
+# (Run workflow) y borra los runs terminados, sin tocar los
+# que aún están en ejecución (queued / in_progress / waiting).
+#
+# Uso: Actions → "Limpiar historial de Actions" → Run workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Solo simular (no borra nada, solo lista lo que borraría)"
+        required: false
+        default: false
+        type: boolean
+      older_than_days:
+        description: "Borrar solo runs completados más antiguos que X días (0 = todos)"
+        required: false
+        default: "0"
+        type: string
+      workflow:
+        description: "Limitar a un workflow (ej. web-check.yml). Vacío = todos los workflows"
+        required: false
+        default: ""
+        type: string
+      keep_last:
+        description: "Conservar los N runs completados más recientes por workflow (0 = no conservar ninguno)"
+        required: false
+        default: "0"
+        type: string
+
+permissions:
+  actions: write
+
+jobs:
+  cleanup:
+    name: Borrar runs terminados
+    runs-on: ubuntu-latest
+    steps:
+      - name: Eliminar runs completados (protege queued/in_progress/waiting)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          OLDER_THAN_DAYS: ${{ inputs.older_than_days }}
+          WORKFLOW_FILTER: ${{ inputs.workflow }}
+          KEEP_LAST: ${{ inputs.keep_last }}
+          CURRENT_RUN_ID: ${{ github.run_id }}
+        shell: python3 {0}
+        run: |
+          import json, os, subprocess, sys
+          from datetime import datetime, timedelta, timezone
+
+          repo = os.environ["REPO"]
+          dry_run = os.environ.get("DRY_RUN", "false").lower() == "true"
+          older_than_days = int(os.environ.get("OLDER_THAN_DAYS", "0") or "0")
+          workflow_filter = (os.environ.get("WORKFLOW_FILTER") or "").strip()
+          keep_last = int(os.environ.get("KEEP_LAST", "0") or "0")
+          current_run_id = os.environ.get("CURRENT_RUN_ID", "")
+
+          # Estados que NUNCA se borran: todo lo que no esté terminado.
+          PROTECTED_STATUSES = {"queued", "in_progress", "waiting", "requested", "pending"}
+
+          def gh_api(path, method="GET", extra_args=None):
+              cmd = ["gh", "api", path, "--method", method]
+              if extra_args:
+                  cmd += extra_args
+              r = subprocess.run(cmd, capture_output=True, text=True)
+              if r.returncode != 0:
+                  print(f"::error::gh api {path} falló: {r.stderr.strip()}")
+                  sys.exit(1)
+              return r.stdout.strip()
+
+          def gh_api_delete(path):
+              cmd = ["gh", "api", path, "--method", "DELETE", "--silent"]
+              r = subprocess.run(cmd, capture_output=True, text=True)
+              return r.returncode == 0, (r.stderr.strip() or r.stdout.strip())
+
+          # 1. Resolver workflows (para el filtro opcional por nombre de fichero
+          #    y para aplicar keep_last por workflow).
+          workflows_raw = gh_api(f"repos/{repo}/actions/workflows?per_page=100")
+          workflows = json.loads(workflows_raw).get("workflows", [])
+          if workflow_filter:
+              workflows = [w for w in workflows if (w.get("path") or "").endswith(workflow_filter) or w.get("name") == workflow_filter]
+              if not workflows:
+                  print(f"::error::No se encontró ningún workflow que coincida con '{workflow_filter}'.")
+                  sys.exit(1)
+
+          cutoff = None
+          if older_than_days > 0:
+              cutoff = datetime.now(timezone.utc) - timedelta(days=older_than_days)
+              print(f"Filtro de antigüedad: solo runs creados antes de {cutoff.isoformat()} ({older_than_days} días)")
+
+          total_deleted = 0
+          total_skipped_protected = 0
+          total_skipped_fresh = 0
+          total_skipped_kept = 0
+          total_errors = 0
+
+          for wf in workflows:
+              wf_id = wf["id"]
+              wf_name = wf.get("name") or wf.get("path")
+              page = 1
+              completed = []  # (created_at, run_id, run_number, status, conclusion)
+              while True:
+                  raw = gh_api(f"repos/{repo}/actions/workflows/{wf_id}/runs?per_page=100&page={page}")
+                  data = json.loads(raw)
+                  runs = data.get("workflow_runs", [])
+                  if not runs:
+                      break
+                  for run in runs:
+                      status = run.get("status", "")
+                      run_id = str(run.get("id"))
+                      # Protección 1: nunca borrar el run de limpieza en curso
+                      # ni ningún run no terminado.
+                      if run_id == current_run_id or status in PROTECTED_STATUSES or status != "completed":
+                          total_skipped_protected += 1
+                          continue
+                      created = run.get("created_at", "")
+                      try:
+                          created_dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
+                      except ValueError:
+                          created_dt = None
+                      if cutoff and created_dt and created_dt >= cutoff:
+                          total_skipped_fresh += 1
+                          continue
+                      completed.append((created_dt or datetime.min.replace(tzinfo=timezone.utc), run_id, run.get("run_number"), status, run.get("conclusion")))
+                  if len(runs) < 100:
+                      break
+                  page += 1
+
+              # Protección 2: keep_last conserva los N más recientes por workflow.
+              completed.sort(key=lambda t: t[0], reverse=True)
+              to_delete = completed[keep_last:] if keep_last > 0 else completed
+              total_skipped_kept += len(completed) - len(to_delete)
+
+              print(f"Workflow '{wf_name}': {len(completed)} completados, {len(to_delete)} a borrar (keep_last={keep_last}).")
+              for _, run_id, run_number, _, conclusion in to_delete:
+                  label = f"run #{run_number} (id={run_id}, conclusion={conclusion}) de '{wf_name}'"
+                  if dry_run:
+                      print(f"[dry-run] Borraría {label}")
+                      continue
+                  ok, msg = gh_api_delete(f"repos/{repo}/actions/runs/{run_id}")
+                  if ok:
+                      total_deleted += 1
+                      print(f"Borrado {label}")
+                  else:
+                      # 403/404 típico si el run cambió de estado entre listar y
+                      # borrar: se cuenta como error pero no aborta la limpieza.
+                      total_errors += 1
+                      print(f"::warning::No se pudo borrar {label}: {msg}")
+
+          print(f"Resumen: borrados={total_deleted} dry_run={dry_run} "
+                f"protegidos_en_ejecución={total_skipped_protected} "
+                f"omitidos_recientes={total_skipped_fresh} "
+                f"conservados_keep_last={total_skipped_kept} errores={total_errors}")
+          if total_errors > 0:
+              print("::warning::Algunos runs no pudieron borrarse (ver avisos arriba).")
