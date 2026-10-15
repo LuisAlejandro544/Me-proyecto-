@@ -178,11 +178,31 @@ class _EditorScreenState extends State<EditorScreen> {
                       size: size,
                       child: Stack(
                         children: [
-                          const Positioned.fill(
-                            child: RepaintBoundary(
-                              child: CustomPaint(painter: GridPainter()),
-                            ),
-                          ),
+                          // Grid por tiles: solo existen los visibles, memoria
+                          // constante. El pan los mueve la GPU sin repintar.
+                          for (
+                            var gx = (vis.left / GridTilePainter.tile).floor();
+                            gx <= (vis.right / GridTilePainter.tile).floor();
+                            gx++
+                          )
+                            for (
+                              var gy = (vis.top / GridTilePainter.tile).floor();
+                              gy <= (vis.bottom / GridTilePainter.tile).floor();
+                              gy++
+                            )
+                              Positioned(
+                                left: gx * GridTilePainter.tile,
+                                top: gy * GridTilePainter.tile,
+                                child: RepaintBoundary(
+                                  child: CustomPaint(
+                                    size: const Size(
+                                      GridTilePainter.tile,
+                                      GridTilePainter.tile,
+                                    ),
+                                    painter: GridTilePainter(tx: gx, ty: gy),
+                                  ),
+                                ),
+                              ),
                           RepaintBoundary(
                             child: CustomPaint(
                               size: size,

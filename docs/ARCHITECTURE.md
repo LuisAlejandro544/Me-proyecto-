@@ -32,3 +32,8 @@ lib/
 5. **Sin dependencias externas**: el APK no carga ni inicializa nada de terceros;
    arranca más rápido y compila offline.
 6. Archivos <500 líneas, `flutter analyze` limpio, tests unitarios + widget.
+7. **Loteo de aristas** (`painters.dart`): 2 `drawPath` + 2 `drawRawPoints`
+   en vez de 500+500 llamadas. Micro-bench: 5.14 → 1.60 ms (−69%).
+8. **Grid por tiles** de 512px alineados al grid global: solo existen los
+   visibles, memoria constante (el canvas gigante rozaba el límite de
+   textura GPU). 12 tiles: 0.59 ms total.
