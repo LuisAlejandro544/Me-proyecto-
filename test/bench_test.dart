@@ -5,8 +5,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:me_proyecto/features/graph/models/vn_models.dart';
 import 'package:me_proyecto/features/graph/editor/painters.dart';
+import 'package:me_proyecto/features/graph/models/vn_models.dart';
 
 void paintOnce(CustomPainter painter, Size size) {
   final r = ui.PictureRecorder();
@@ -23,8 +23,7 @@ void bench(String name, void Function() fn, {int iters = 30}) {
   }
   sw.stop();
   final avg = sw.elapsedMicroseconds / iters / 1000;
-  // ignore: avoid_print
-  print('BENCH $name: ${avg.toStringAsFixed(2)} ms/op');
+  debugPrint('BENCH $name: ${avg.toStringAsFixed(2)} ms/op');
 }
 
 void main() {

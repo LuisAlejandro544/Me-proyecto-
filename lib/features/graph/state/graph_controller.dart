@@ -1,22 +1,37 @@
-// Estado del grafo: proyecto, posiciones reactivas e índice O(1).
+// Estado del grafo: proyecto inmutable, posiciones reactivas e índice O(1).
 // La UI solo escucha notifiers: mover 1 nodo no reconstruye los demás
 // y el canvas cacheado evita recorrer 500 nodos por frame.
 import 'package:flutter/material.dart';
+import 'package:me_proyecto/features/graph/models/vn_models.dart';
 
-import '../models/vn_models.dart';
-
+/// Único dueño mutable del grafo. Emite [notifyListeners] en cambios
+/// estructurales y [edgeVersion] en cambios de posición.
 class GraphController extends ChangeNotifier {
-  VnProject project;
-  final Map<String, ValueNotifier<Offset>> posOf = {};
-  final Map<String, VnNode> index = {};
-  final ValueNotifier<int> edgeVersion = ValueNotifier(0);
-  final ValueNotifier<int> viewVersion = ValueNotifier(0);
-  Size canvasSize = const Size(1300, 640);
-  int seq = 100;
-
-  GraphController.demo() : project = VnProject.demo() {
+  /// Crea el controlador con el proyecto demo.
+  new demo() : project = VnProject.demo() {
     _rebuildAll();
   }
+
+  /// Proyecto actual (se reemplaza, nunca se muta).
+  VnProject project;
+
+  /// Posición reactiva por nodo: la UI se suscribe por id.
+  final Map<String, ValueNotifier<Offset>> posOf = {};
+
+  /// Índice id → nodo para búsquedas O(1).
+  final Map<String, VnNode> index = {};
+
+  /// Sube en cada cambio de datos; repinta aristas y recalcula culling.
+  final ValueNotifier<int> edgeVersion = ValueNotifier(0);
+
+  /// Sube al soltar pan/zoom; recalcula culling sin tocar datos.
+  final ValueNotifier<int> viewVersion = ValueNotifier(0);
+
+  /// Tamaño del canvas cacheado (se recalcula solo al cambiar datos).
+  Size canvasSize = const Size(1300, 640);
+
+  /// Contador para ids de nodos nuevos.
+  int seq = 100;
 
   void _rebuildAll() {
     for (final v in posOf.values) {
@@ -32,7 +47,8 @@ class GraphController extends ChangeNotifier {
   }
 
   void _recacheCanvas() {
-    double mx = 1300, my = 640;
+    var mx = 1300.0;
+    var my = 640.0;
     for (final n in project.nodes) {
       if (n.x + 320 > mx) mx = n.x + 320;
       if (n.y + 260 > my) my = n.y + 260;
@@ -40,6 +56,7 @@ class GraphController extends ChangeNotifier {
     canvasSize = Size(mx, my);
   }
 
+  /// Agrega un nodo del tipo dado junto al origen y notifica.
   void addNode(VnNodeType t) {
     seq++;
     final id = '${t.name}_$seq';
@@ -52,13 +69,13 @@ class GraphController extends ChangeNotifier {
       speaker: 'Yui',
       text: 'Nuevo texto...',
       options: t == VnNodeType.choice
-          ? [
+          ? const [
               VnOption(label: '1: Sí', nextId: 'dlg_c'),
               VnOption(label: '2: No', nextId: 'dlg_l', isDanger: true),
             ]
-          : [],
+          : const [],
     );
-    project.nodes.add(n);
+    project = project.copyWith(nodes: [...project.nodes, n]);
     index[id] = n;
     posOf[id] = ValueNotifier(Offset(n.x, n.y));
     _recacheCanvas();
@@ -66,7 +83,7 @@ class GraphController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Genera 500 nodos de una sola vez (1 solo rebuild).
+  /// Genera 500 nodos de prueba de una sola vez (1 solo rebuild).
   void stress500() {
     project = VnProject.stress500();
     seq = 1000;
@@ -75,6 +92,7 @@ class GraphController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Restaura el proyecto demo.
   void restoreDemo() {
     project = VnProject.demo();
     seq = 100;
@@ -83,9 +101,15 @@ class GraphController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Borra el nodo y sus aristas sin dejar huérfanos. No falla si no existe.
   void deleteNode(VnNode n) {
-    project.nodes.removeWhere((e) => e.id == n.id);
-    project.edges.removeWhere((e) => e.fromId == n.id || e.toId == n.id);
+    if (!index.containsKey(n.id)) return;
+    project = project.copyWith(
+      nodes: project.nodes.where((e) => e.id != n.id).toList(),
+      edges: project.edges
+          .where((e) => e.fromId != n.id && e.toId != n.id)
+          .toList(),
+    );
     index.remove(n.id);
     posOf.remove(n.id)?.dispose();
     _recacheCanvas();
@@ -93,14 +117,20 @@ class GraphController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Llamado al SOLTAR un arrastre: 1 repintado de aristas por gesto.
+  /// Mueve un nodo al SOLTAR un arrastre: 1 repintado de aristas por gesto.
+  /// Crea un objeto nuevo (modelos inmutables) y actualiza índice y posición.
   void moveNode(VnNode n, double dx, double dy) {
-    n.x += dx;
-    n.y += dy;
-    posOf[n.id]?.value = Offset(n.x, n.y);
+    if (!index.containsKey(n.id)) return;
+    final updated = n.copyWith(x: n.x + dx, y: n.y + dy);
+    final nodes = [...project.nodes];
+    nodes[nodes.indexWhere((e) => e.id == n.id)] = updated;
+    project = project.copyWith(nodes: nodes);
+    index[n.id] = updated;
+    posOf[n.id]?.value = Offset(updated.x, updated.y);
     edgeVersion.value++;
   }
 
+  /// Recalcula el culling (llamado al soltar pan/zoom).
   void bumpView() => viewVersion.value++;
 
   @override

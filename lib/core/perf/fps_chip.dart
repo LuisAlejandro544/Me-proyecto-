@@ -2,10 +2,16 @@
 // repinta solo 1 vez por segundo. Cuesta ~0 en el frame budget.
 import 'package:flutter/material.dart';
 
+/// Texto vivo con fps y conteo de nodos para el AppBar del editor.
 class FpsChip extends StatefulWidget {
+  /// Crea el chip con lectores de conteo visible/total.
+  const new({required this.visibleOf, required this.totalOf, super.key});
+
+  /// Nodos visibles ahora (lo lee el filtro de culling).
   final int Function() visibleOf;
+
+  /// Nodos totales del proyecto.
   final int Function() totalOf;
-  const FpsChip({super.key, required this.visibleOf, required this.totalOf});
 
   @override
   State<FpsChip> createState() => _FpsChipState();

@@ -1,27 +1,57 @@
-// Lógica de datos del editor Visual Novel: proyecto, nodos y aristas.
-// Sin dependencias externas para compilar offline en Android, Linux, Windows y Web.
-enum VnNodeType { start, sprite, dialogue, choice, sound }
+// Modelos inmutables del editor Visual Novel: proyecto, nodos y aristas.
+// Sin dependencias de Flutter: testeables en puro Dart.
+// Cualquier cambio pasa por GraphController con copyWith.
+import 'package:flutter/foundation.dart';
 
-class VnOption {
-  String label;
-  String nextId;
-  bool isDanger;
-  VnOption({required this.label, required this.nextId, this.isDanger = false});
+/// Tipo de nodo del canvas, con el mismo vocabulario de la referencia.
+enum VnNodeType {
+  /// Punto de entrada verde de la historia.
+  start,
+
+  /// Personaje visible (ej. Yui) con entrada y pose.
+  sprite,
+
+  /// Bocadillo de diálogo con hablante y texto.
+  dialogue,
+
+  /// Bifurcación con 2+ opciones (cyan normal, roja peligrosa).
+  choice,
+
+  /// Efecto o música de fondo.
+  sound,
 }
 
+/// Opción elegible dentro de un nodo [VnNodeType.choice].
+@immutable
+class VnOption {
+  /// Crea una opción de diálogo.
+  const new({required this.label, required this.nextId, this.isDanger = false});
+
+  /// Texto del botón, ej. '1: Believe her'.
+  final String label;
+
+  /// Id del nodo destino al elegirla.
+  final String nextId;
+
+  /// Si es true se pinta roja y su arista también.
+  final bool isDanger;
+
+  @override
+  bool operator ==(Object other) =>
+      other is VnOption &&
+      other.label == label &&
+      other.nextId == nextId &&
+      other.isDanger == isDanger;
+
+  @override
+  int get hashCode => Object.hash(label, nextId, isDanger);
+}
+
+/// Nodo del grafo con posición en el canvas y payload según su tipo.
+@immutable
 class VnNode {
-  String id;
-  VnNodeType type;
-  String title;
-  double x;
-  double y;
-  // Payload genérico según tipo:
-  String speaker;
-  String text;
-  String pose;
-  String enterFrom;
-  List<VnOption> options;
-  VnNode({
+  /// Crea un nodo inmutable.
+  const new({
     required this.id,
     required this.type,
     required this.title,
@@ -31,50 +61,155 @@ class VnNode {
     this.text = '',
     this.pose = 'Happy',
     this.enterFrom = 'Enter Left',
+    this.options = const [],
+  });
+
+  /// Identificador único estable (clave de widgets e índice).
+  final String id;
+
+  /// Tipo que define qué tarjeta se dibuja.
+  final VnNodeType type;
+
+  /// Título visible en la tarjeta.
+  final String title;
+
+  /// Posición X en coordenadas de escena.
+  final double x;
+
+  /// Posición Y en coordenadas de escena.
+  final double y;
+
+  /// Hablante del diálogo o dueño del sprite.
+  final String speaker;
+
+  /// Texto del diálogo.
+  final String text;
+
+  /// Pose del sprite (ej. 'Happy').
+  final String pose;
+
+  /// Animación de entrada (ej. 'Enter Left').
+  final String enterFrom;
+
+  /// Opciones si [type] es [VnNodeType.choice].
+  final List<VnOption> options;
+
+  /// Copia con los campos indicados reemplazados.
+  VnNode copyWith({
+    String? id,
+    VnNodeType? type,
+    String? title,
+    double? x,
+    double? y,
+    String? speaker,
+    String? text,
+    String? pose,
+    String? enterFrom,
     List<VnOption>? options,
-  }) : options = options ?? [];
+  }) {
+    return VnNode(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      title: title ?? this.title,
+      x: x ?? this.x,
+      y: y ?? this.y,
+      speaker: speaker ?? this.speaker,
+      text: text ?? this.text,
+      pose: pose ?? this.pose,
+      enterFrom: enterFrom ?? this.enterFrom,
+      options: options ?? this.options,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is VnNode &&
+      other.id == id &&
+      other.type == type &&
+      other.title == title &&
+      other.x == x &&
+      other.y == y &&
+      other.speaker == speaker &&
+      other.text == text &&
+      other.pose == pose &&
+      other.enterFrom == enterFrom &&
+      listEquals(other.options, options);
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    type,
+    title,
+    x,
+    y,
+    speaker,
+    text,
+    pose,
+    enterFrom,
+    Object.hashAll(options),
+  );
 }
 
+/// Conexión dirigida entre dos nodos.
+@immutable
 class VnEdge {
-  String fromId;
-  String? fromOption; // label de opción si sale de un Choice
-  String toId;
-  bool isDanger;
-  VnEdge({
+  /// Crea una arista inmutable.
+  const new({
     required this.fromId,
     required this.toId,
     this.fromOption,
     this.isDanger = false,
   });
+
+  /// Id del nodo origen.
+  final String fromId;
+
+  /// Etiqueta de opción si sale de un Choice.
+  final String? fromOption;
+
+  /// Id del nodo destino.
+  final String toId;
+
+  /// Si es true se dibuja roja.
+  final bool isDanger;
+
+  @override
+  bool operator ==(Object other) =>
+      other is VnEdge &&
+      other.fromId == fromId &&
+      other.fromOption == fromOption &&
+      other.toId == toId &&
+      other.isDanger == isDanger;
+
+  @override
+  int get hashCode => Object.hash(fromId, fromOption, toId, isDanger);
 }
 
+/// Proyecto completo: título + nodos + aristas.
+@immutable
 class VnProject {
-  String title;
-  List<VnNode> nodes;
-  List<VnEdge> edges;
-  VnProject({required this.title, required this.nodes, required this.edges});
+  /// Crea un proyecto inmutable.
+  const new({required this.title, required this.nodes, required this.edges});
 
   /// Proyecto demo que replica la imagen de referencia.
-  factory VnProject.demo() {
+  factory demo() {
     final nodes = [
-      VnNode(
+      const VnNode(
         id: 'start',
         type: VnNodeType.start,
         title: 'Start',
         x: 40,
         y: 260,
       ),
-      VnNode(
+      const VnNode(
         id: 'sprite_yui',
         type: VnNodeType.sprite,
         title: 'Sprite: Yui',
         x: 220,
         y: 180,
         speaker: 'Yui',
-        pose: 'Happy',
-        enterFrom: 'Enter Left',
       ),
-      VnNode(
+      const VnNode(
         id: 'dlg_01',
         type: VnNodeType.dialogue,
         title: 'Dialogue - 01',
@@ -83,7 +218,7 @@ class VnProject {
         speaker: 'Yui',
         text: 'Hey there! Did you hear about the rumor?',
       ),
-      VnNode(
+      const VnNode(
         id: 'choice_01',
         type: VnNodeType.choice,
         title: 'Choices',
@@ -94,7 +229,7 @@ class VnProject {
           VnOption(label: '2: Laugh it off', nextId: 'dlg_l', isDanger: true),
         ],
       ),
-      VnNode(
+      const VnNode(
         id: 'dlg_c',
         type: VnNodeType.dialogue,
         title: 'Dialogue - C',
@@ -103,7 +238,7 @@ class VnProject {
         speaker: 'Yui',
         text: 'Can true... Believe too?',
       ),
-      VnNode(
+      const VnNode(
         id: 'dlg_l',
         type: VnNodeType.dialogue,
         title: 'Dialogue - L',
@@ -113,7 +248,7 @@ class VnProject {
         text: 'Hey th... Laugh.',
       ),
     ];
-    final edges = [
+    const edges = [
       VnEdge(fromId: 'start', toId: 'sprite_yui'),
       VnEdge(fromId: 'sprite_yui', toId: 'dlg_01'),
       VnEdge(fromId: 'dlg_01', toId: 'choice_01'),
@@ -130,10 +265,10 @@ class VnProject {
 
   /// Proyecto de estrés: 500 nodos en rejilla con aristas en cadena.
   /// Sirve para probar que el canvas no tira lag.
-  factory VnProject.stress500() {
+  factory stress500() {
     final nodes = <VnNode>[];
     const cols = 25;
-    for (int i = 0; i < 500; i++) {
+    for (var i = 0; i < 500; i++) {
       final col = i % cols;
       final row = i ~/ cols;
       nodes.add(
@@ -149,10 +284,33 @@ class VnProject {
       );
     }
     final edges = <VnEdge>[
-      for (int i = 0; i < 499; i++) VnEdge(fromId: 'n_$i', toId: 'n_${i + 1}'),
+      for (var i = 0; i < 499; i++) VnEdge(fromId: 'n_$i', toId: 'n_${i + 1}'),
     ];
     return VnProject(title: 'Stress 500', nodes: nodes, edges: edges);
   }
 
+  /// Título visible en el AppBar y en el HTML exportado.
+  final String title;
+
+  /// Nodos del canvas.
+  final List<VnNode> nodes;
+
+  /// Aristas del canvas.
+  final List<VnEdge> edges;
+
+  /// Copia con los campos indicados reemplazados.
+  VnProject copyWith({
+    String? title,
+    List<VnNode>? nodes,
+    List<VnEdge>? edges,
+  }) {
+    return VnProject(
+      title: title ?? this.title,
+      nodes: nodes ?? this.nodes,
+      edges: edges ?? this.edges,
+    );
+  }
+
+  /// Busca un nodo por id. Lanza [StateError] si no existe.
   VnNode byId(String id) => nodes.firstWhere((n) => n.id == id);
 }

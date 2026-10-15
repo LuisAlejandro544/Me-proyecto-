@@ -6,15 +6,25 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../models/vn_models.dart';
+import 'package:me_proyecto/core/theme/app_theme.dart';
+import 'package:me_proyecto/features/graph/models/vn_models.dart';
 
+/// Pinta un tile del grid. Los tiles son fijos: memoria constante.
 class GridTilePainter extends CustomPainter {
+  /// Crea el painter del tile ([tx], [ty]).
+  const new({required this.tx, required this.ty});
+
+  /// Columna del tile en la rejilla.
   final int tx;
+
+  /// Fila del tile en la rejilla.
   final int ty;
+
+  /// Lado del tile en píxeles de escena.
   static const double tile = 512;
+
+  /// Separación de líneas del grid.
   static const double step = 40;
-  const GridTilePainter({required this.tx, required this.ty});
 
   @override
   void paint(Canvas c, Size s) {
@@ -24,11 +34,11 @@ class GridTilePainter extends CustomPainter {
     final ox = tx * tile;
     final oy = ty * tile;
     // Alineado al grid global para que las líneas no se corten entre tiles.
-    var startX = ox - (ox % step);
+    final startX = ox - (ox % step);
     for (var x = startX; x <= ox + tile; x += step) {
       c.drawLine(Offset(x - ox, 0), Offset(x - ox, tile), p);
     }
-    var startY = oy - (oy % step);
+    final startY = oy - (oy % step);
     for (var y = startY; y <= oy + tile; y += step) {
       c.drawLine(Offset(0, y - oy), Offset(tile, y - oy), p);
     }
@@ -39,13 +49,16 @@ class GridTilePainter extends CustomPainter {
       old.tx != tx || old.ty != ty;
 }
 
+/// Pinta todas las aristas en lote (2 paths + puntos).
 class EdgePainter extends CustomPainter {
+  /// Crea el painter para [project]; repinta solo si cambia [version].
+  new({required this.project, required this.version});
+
+  /// Proyecto cuyas aristas se dibujan.
   final VnProject project;
+
+  /// Versión de datos; [shouldRepaint] compara contra la anterior.
   final int version;
-  // La versión se sube solo al soltar un nodo / agregar / borrar:
-  // las aristas se repintan 1 vez por gesto, nunca durante el arrastre
-  // ni por pan/zoom (eso lo aplica la GPU como matriz).
-  EdgePainter({required this.project, required this.version});
 
   Offset _out(VnNode n) =>
       Offset(n.x + (n.type == VnNodeType.start ? 110 : 190), n.y + 40);
@@ -67,12 +80,12 @@ class EdgePainter extends CustomPainter {
       final p1 = _out(a);
       final p2 = _inp(b);
       final mid = (p1.dx + p2.dx) / 2;
-      final path = e.isDanger ? redPath : cyanPath;
-      path.moveTo(p1.dx, p1.dy);
-      path.cubicTo(mid, p1.dy, mid, p2.dy, p2.dx, p2.dy);
-      final pts = e.isDanger ? redPts : cyanPts;
-      pts.add(p2.dx);
-      pts.add(p2.dy);
+      (e.isDanger ? redPath : cyanPath)
+        ..moveTo(p1.dx, p1.dy)
+        ..cubicTo(mid, p1.dy, mid, p2.dy, p2.dx, p2.dy);
+      (e.isDanger ? redPts : cyanPts)
+        ..add(p2.dx)
+        ..add(p2.dy);
     }
     final cyanLine = Paint()
       ..color = AppColors.cyan
@@ -82,8 +95,9 @@ class EdgePainter extends CustomPainter {
       ..color = AppColors.danger
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
-    canvas.drawPath(cyanPath, cyanLine);
-    canvas.drawPath(redPath, redLine);
+    canvas
+      ..drawPath(cyanPath, cyanLine)
+      ..drawPath(redPath, redLine);
     _dots(canvas, cyanPts, AppColors.cyan);
     _dots(canvas, redPts, AppColors.danger);
   }

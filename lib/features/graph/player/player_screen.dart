@@ -2,12 +2,16 @@
 // Funciona igual en Android y PC (Linux/Windows/Web). Usa AppColors.
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../models/vn_models.dart';
+import 'package:me_proyecto/core/theme/app_theme.dart';
+import 'package:me_proyecto/features/graph/models/vn_models.dart';
 
+/// Pantalla del reproductor jugable de la historia.
 class PlayerScreen extends StatefulWidget {
+  /// Crea el reproductor para el [project] dado.
+  const new({required this.project, super.key});
+
+  /// Proyecto a jugar (se recorre desde 'start').
   final VnProject project;
-  const PlayerScreen({super.key, required this.project});
 
   @override
   State<PlayerScreen> createState() => _PlayerScreenState();

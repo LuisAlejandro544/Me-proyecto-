@@ -32,6 +32,9 @@ lib/
 5. **Sin dependencias externas**: el APK no carga ni inicializa nada de terceros;
    arranca más rápido y compila offline.
 6. Archivos <500 líneas, `flutter analyze` limpio, tests unitarios + widget.
+   Estándar: `very_good_analysis`, `package:` imports, modelos inmutables
+   con `copyWith` + igualdad por valor, docs en toda API pública,
+   `dart format` verificado en CI y `flutter_lints` solo como referencia.
 7. **Loteo de aristas** (`painters.dart`): 2 `drawPath` + 2 `drawRawPoints`
    en vez de 500+500 llamadas. Micro-bench: 5.14 → 1.60 ms (−69%).
 8. **Grid por tiles** de 512px alineados al grid global: solo existen los

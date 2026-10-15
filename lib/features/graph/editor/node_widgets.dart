@@ -2,19 +2,27 @@
 // Mover un nodo repinta solo ese nodo; usa AppColors, cero hex.
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../models/vn_models.dart';
+import 'package:me_proyecto/core/theme/app_theme.dart';
+import 'package:me_proyecto/features/graph/models/vn_models.dart';
 
+/// Tarjeta arrastrable de un nodo del canvas.
 class DraggableNode extends StatefulWidget {
-  final VnNode node;
-  final void Function(double dx, double dy) onDragEnd;
-  final VoidCallback onDelete;
-  const DraggableNode({
-    super.key,
+  /// Crea la tarjeta con sus callbacks de gesto.
+  const new({
     required this.node,
     required this.onDragEnd,
     required this.onDelete,
+    super.key,
   });
+
+  /// Nodo a dibujar (contenido; la posición la publica el controlador).
+  final VnNode node;
+
+  /// Se llama UNA vez al soltar el arrastre con el delta total.
+  final void Function(double dx, double dy) onDragEnd;
+
+  /// Se llama con long-press para borrar el nodo.
+  final VoidCallback onDelete;
 
   @override
   State<DraggableNode> createState() => _DraggableNodeState();
@@ -61,8 +69,8 @@ class _DraggableNodeState extends State<DraggableNode> {
 
 // Cuerpo puro (Stateless): no guarda estado, se cachea por Flutter.
 class _NodeBody extends StatelessWidget {
+  const new({required this.node});
   final VnNode node;
-  const _NodeBody({required this.node});
 
   @override
   Widget build(BuildContext context) {

@@ -1,18 +1,21 @@
 // Pantalla del editor: UI fina sobre GraphController.
 // Culling por viewport + arrastre con estado local + tokens AppColors.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:me_proyecto/core/perf/fps_chip.dart';
+import 'package:me_proyecto/core/theme/app_theme.dart';
+import 'package:me_proyecto/features/graph/editor/node_widgets.dart';
+import 'package:me_proyecto/features/graph/editor/painters.dart';
+import 'package:me_proyecto/features/graph/export/html_exporter.dart';
+import 'package:me_proyecto/features/graph/models/vn_models.dart';
+import 'package:me_proyecto/features/graph/player/player_screen.dart';
+import 'package:me_proyecto/features/graph/state/graph_controller.dart';
 
-import '../../../core/perf/fps_chip.dart';
-import '../../../core/theme/app_theme.dart';
-import '../models/vn_models.dart';
-import '../player/player_screen.dart';
-import '../export/html_exporter.dart';
-import '../state/graph_controller.dart';
-import 'node_widgets.dart';
-import 'painters.dart';
-
+/// Pantalla del editor de nodos sobre [GraphController].
 class EditorScreen extends StatefulWidget {
-  const EditorScreen({super.key});
+  /// Crea la pantalla del editor.
+  const new({super.key});
 
   @override
   State<EditorScreen> createState() => _EditorScreenState();
@@ -46,7 +49,7 @@ class _EditorScreenState extends State<EditorScreen> {
 
   void _zoomBy(double d) {
     final s = (zoom.value.getMaxScaleOnAxis() + d).clamp(0.4, 2.5);
-    zoom.value = Matrix4.identity()..scaleByDouble(s, s, s, 1.0);
+    zoom.value = Matrix4.identity()..scaleByDouble(s, s, s, 1);
   }
 
   // Rect visible en coordenadas de escena, con margen de precarga.
@@ -67,30 +70,32 @@ class _EditorScreenState extends State<EditorScreen> {
 
   void _showHtml() {
     final html = buildPlayableHtml(graph.project);
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text(
-          'Web .html generado',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: SizedBox(
-          width: 500,
-          height: 300,
-          child: SingleChildScrollView(
-            child: SelectableText(
-              html,
-              style: const TextStyle(color: Colors.white70, fontSize: 11),
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: AppColors.surface,
+          title: const Text(
+            'Web .html generado',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: SizedBox(
+            width: 500,
+            height: 300,
+            child: SingleChildScrollView(
+              child: SelectableText(
+                html,
+                style: const TextStyle(color: Colors.white70, fontSize: 11),
+              ),
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cerrar'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
       ),
     );
   }
@@ -119,7 +124,7 @@ class _EditorScreenState extends State<EditorScreen> {
           ],
         ),
         actions: [
-          _topBtn(Icons.share, 'Share', () => _showHtml()),
+          _topBtn(Icons.share, 'Share', _showHtml),
           _topBtn(
             Icons.window,
             '.exe',
@@ -135,7 +140,7 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(
+                MaterialPageRoute<void>(
                   builder: (_) => PlayerScreen(project: project),
                 ),
               ),
@@ -149,8 +154,8 @@ class _EditorScreenState extends State<EditorScreen> {
           Expanded(
             child: LayoutBuilder(
               builder: (ctx, cons) => AnimatedBuilder(
-                // El pan/zoom lo mueve la GPU sin reconstruir nada: el filtro
-                // solo se recalcula al SOLTAR (onInteractionEnd) o cambiar datos.
+                // El pan/zoom lo mueve la GPU sin reconstruir nada.
+                // El filtro se recalcula al SOLTAR o al cambiar datos.
                 animation: Listenable.merge([
                   graph.edgeVersion,
                   graph.viewVersion,
@@ -169,8 +174,7 @@ class _EditorScreenState extends State<EditorScreen> {
                     constrained: false,
                     boundaryMargin: const EdgeInsets.all(400),
                     minScale: 0.4,
-                    maxScale: 2.5,
-                    // Al soltar el pan/zoom se recalcula el culling una sola vez.
+                    // Al soltar el pan/zoom se recalcula el culling.
                     onInteractionEnd: (_) => graph.bumpView(),
                     // Importante: el hijo NO se reconstruye al hacer pan/zoom,
                     // Flutter solo aplica la matriz (gratis en GPU).
@@ -207,7 +211,6 @@ class _EditorScreenState extends State<EditorScreen> {
                             child: CustomPaint(
                               size: size,
                               isComplex: true,
-                              willChange: false,
                               painter: EdgePainter(
                                 project: project,
                                 version: graph.edgeVersion.value,
