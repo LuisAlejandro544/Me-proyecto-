@@ -8,6 +8,7 @@ export const ctx: {
   state: VNState;
   activePresetKey: string;
   selectedNodeId: string;
+  selectedWireId: string | null;
   historyStack: GraphSnapshot[];
   redoStack: GraphSnapshot[];
   sfxEnabled: boolean;
@@ -18,6 +19,7 @@ export const ctx: {
   state: JSON.parse(JSON.stringify(PRESET_SORA)) as VNState,
   activePresetKey: 'sora',
   selectedNodeId: 'start_scene_1',
+  selectedWireId: null,
   historyStack: [],
   redoStack: [],
   sfxEnabled: true,

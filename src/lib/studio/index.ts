@@ -130,7 +130,7 @@ export function initStudio() {
       });
       document.getElementById('btnVnToggleAudio').addEventListener('click', (e) => {
         ctx.sfxEnabled = !ctx.sfxEnabled;
-        e.currentTarget.textContent = ctx.sfxEnabled ? '🔊 Sonido activado' : '🔇 Sonido silenciado';
+        e.currentTarget.textContent = ctx.sfxEnabled ? '🔊 Sonido' : '🔇 Mudo';
       });
 
       // Initial render
