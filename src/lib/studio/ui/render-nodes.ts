@@ -5,9 +5,20 @@ import { findCustomAsset, getCharacterCatalog, resolveCharacter } from '../../as
 import { escapeHtml } from '../domain/geometry';
 import { attachNodeInteractions } from './interactions';
 import { renderWires } from './render-wires';
+import { mount, unmount } from 'svelte';
+import CompactSceneCard from '../../../components/nodes/CompactSceneCard.svelte';
+
+// Fase 2: mounted Svelte cards must unmount before the layer is cleared.
+let mountedCards: object[] = [];
 
 export function renderNodes() {
   const layer = document.getElementById('nodesLayer');
+  for (const app of mountedCards) {
+    try {
+      unmount(app);
+    } catch {}
+  }
+  mountedCards = [];
   layer.innerHTML = '';
 
   ctx.state.nodes.forEach(node => {
@@ -153,28 +164,8 @@ export function renderNodes() {
 
     // 3. COMPACT SCENE NODE (e.g., "Forest Scene" in Image 1)
     else if (node.type === 'compact_scene') {
-      el.innerHTML = `
-        <div class="p-4 relative vn-node-pad-ports">
-          <!-- Input Port -->
-          <div class="vn-port ${node.inColor === 'coral' ? 'vn-port-coral' : 'vn-port-cyan'} vn-port-in"
-               style="left: -9px; top: 24px;"
-                data-node-id="${node.id}"
-                data-port-id="in_main"
-                data-port-dir="in"
-                data-port-color="${node.inColor || 'cyan'}"></div>
-
-          <div class="text-sm font-bold text-white mb-2 editable-field" data-field="title">${escapeHtml(node.title || 'Escena')}</div>
-          <div class="text-xs text-slate-200 leading-relaxed whitespace-pre-line editable-field" data-field="dialogue">${escapeHtml(node.dialogue)}</div>
-
-          <!-- Output Port -->
-          <div class="vn-port vn-port-cyan vn-port-out"
-               style="right: -9px; top: 50%; transform: translateY(-50%);"
-                data-node-id="${node.id}"
-                data-port-id="out_main"
-                data-port-dir="out"
-                data-port-color="cyan"></div>
-        </div>
-      `;
+      // Fase 2 slice 1: Svelte component (same DOM contract as legacy template).
+      mountedCards.push(mount(CompactSceneCard, { target: el, props: { node } }));
     }
 
     // 4. CHARACTER SELECTOR NODE (Exact match to bottom-right node in Image 1)
