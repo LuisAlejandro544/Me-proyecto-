@@ -13,7 +13,7 @@ export function exportStandaloneHtml() {
     nodes: ctx.state.nodes,
     wires: ctx.state.wires,
     assets: catalog
-  });
+  }).replace(/</g, '\\u003c'); // un diálogo con </script> rompería el HTML exportado
 
   const standaloneHtml = `<!DOCTYPE html>
 <html lang="es">
