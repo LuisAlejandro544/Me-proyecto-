@@ -57,3 +57,5 @@ android/.gradle/
 android/local.properties
 android/app/release/
 release/
+qt/build/
+cpp/build/

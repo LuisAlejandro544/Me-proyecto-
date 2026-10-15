@@ -103,3 +103,9 @@ export interface DragState {
 }
 
 export type SfxKind = 'click' | 'connect' | 'choice';
+
+// Point in unscaled canvas-world coordinates.
+export interface Point {
+  x: number;
+  y: number;
+}

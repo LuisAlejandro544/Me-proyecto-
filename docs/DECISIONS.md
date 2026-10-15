@@ -31,3 +31,10 @@ grafo (`renderWires`); durante el gesto `body.vn-gesturing` apaga blur/glow y en
 táctil no se usan filtros gaussianos. La matemática
 (`screenToWorld`, `zoomAtPoint`, drag ÷ zoom) no cambió.
 **Consecuencia:** nítido de 35% a 200% y 60fps en móvil; verificado con build + check.
+
+## ADR-007 — Shell C++ sin Qt, UI 100% web
+**Contexto:** se evaluó portar la UI a Qt Widgets y se descartó (curva + framework extra).
+**Decisión:** binario C++ (`cpp/`, librería `webview`) que hospeda `dist/`; cero rewrite de UI.
+**Raíz del blanco:** `file://` es origen `null` y todos los motores bloquean su CSS/JS por CORS
+(reproducido con errores exactos). Fix: `cpp/` sirve `dist/` por HTTP local
+(`serve.h` + cpp-httplib, verificado con `testserve` y captura del `dist` por HTTP).
