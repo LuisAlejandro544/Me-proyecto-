@@ -60,6 +60,13 @@
       cursor: grab;
       z-index: 10;
       touch-action: none;
+      overflow: visible;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+    .vn-node > .vn-node-toolbar + div,
+    .vn-node-pad-ports {
+      overflow: visible;
     }
     .vn-node:active {
       cursor: grabbing;
@@ -74,7 +81,7 @@
       background: linear-gradient(165deg, rgba(44, 52, 82, 0.92) 0%, rgba(26, 32, 54, 0.95) 100%);
       border: 1.5px solid rgba(148, 163, 215, 0.34);
     }
-    /* Connection Ports */
+    /* Connection Ports — centrados en el borde, siempre visibles y táctiles */
     .vn-port {
       width: 14px;
       height: 14px;
@@ -82,9 +89,15 @@
       position: absolute;
       cursor: crosshair;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
-      z-index: 30;
+      z-index: 40;
       touch-action: none;
+      pointer-events: auto;
     }
+    .vn-port-in { box-shadow: 0 0 10px currentColor; }
+    .vn-port-out { box-shadow: 0 0 10px currentColor; }
+    .vn-port-dim { opacity: 0.55; }
+    .vn-node:hover .vn-port-dim, .vn-node.selected .vn-port-dim { opacity: 1; }
+    .vn-choice-row { overflow: visible; }
     /* Bigger invisible hit area so ports are easy to grab on touch */
     .vn-port::after {
       content: '';
@@ -225,6 +238,109 @@
       stroke-width: 5px;
       filter: brightness(1.35);
     }
+    /* ---- Barra de acciones del nodo (editar / eliminar) ---- */
+    .vn-node-toolbar {
+      position: absolute;
+      top: -14px;
+      right: 10px;
+      display: flex;
+      gap: 6px;
+      z-index: 45;
+      opacity: 0;
+      transform: translateY(2px);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      pointer-events: none;
+    }
+    .vn-node:hover .vn-node-toolbar,
+    .vn-node.selected .vn-node-toolbar {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    @media (pointer: coarse) {
+      .vn-node-toolbar {
+        opacity: 1;
+        transform: none;
+        pointer-events: auto;
+        top: -16px;
+      }
+    }
+    .vn-node-btn {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      min-height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      line-height: 1;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 215, 0.4);
+      background: rgba(13, 18, 38, 0.95);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .vn-node-btn:active { transform: scale(0.94); }
+    .vn-node-btn-edit:hover { border-color: rgba(0, 242, 254, 0.7); }
+    .vn-node-btn-delete:hover { border-color: rgba(255, 117, 107, 0.8); }
+    .editable-field, .editable-option {
+      cursor: text;
+      border-radius: 6px;
+      padding: 1px 3px;
+      margin: -1px -3px;
+    }
+    .editable-field:hover, .editable-option:hover {
+      outline: 1px dashed rgba(0, 242, 254, 0.55);
+      outline-offset: 2px;
+    }
 /* Svelte root fills viewport like original body */
 html, body, #app { height: 100%; }
 body { margin: 0; overflow: hidden; background: #0d1124; }
+
+/* ---- Pulido móvil (header / footer / lienzo / modales) ---- */
+#drawerModalBody { -webkit-overflow-scrolling: touch; }
+.nav-tab-btn { min-height: 48px; touch-action: manipulation; }
+button { touch-action: manipulation; }
+
+@media (max-width: 640px) {
+  .vn-node { max-width: min(78vw, 320px); }
+  .vn-port { width: 18px; height: 18px; }
+  #canvasViewport { cursor: default; }
+  #drawerModal > div { max-height: 92dvh; }
+  .svelte-toast-pill { bottom: 6.5rem; }
+  #wirePopover {
+    max-width: calc(100vw - 24px);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  #playtestModal > div { border-radius: 0; }
+}
+@media (max-width: 380px) {
+  .vn-node { max-width: 82vw; }
+}
+
+/* Modo "jugar por enlace": oculta el editor y deja solo el reproductor */
+body.shared-play-mode header,
+body.shared-play-mode main,
+body.shared-play-mode footer { display: none !important; }
+body.shared-play-mode #playtestModal { display: flex !important; }
+body.shared-play-mode #playtestModal > div {
+  max-width: none;
+  width: 100%;
+  height: 100dvh;
+  max-height: none;
+  border-radius: 0;
+  border: 0;
+}
+
+/* Pantalla de carga del nivel compartido */
+#shareLoadingBar { transition: width 0.3s ease; }
+.share-loader-spin {
+  width: 54px; height: 54px; border-radius: 9999px;
+  border: 4px solid rgba(0, 242, 254, 0.2);
+  border-top-color: #00f2fe;
+  animation: share-spin 0.9s linear infinite;
+}
+@keyframes share-spin { to { transform: rotate(360deg); } }
