@@ -1,6 +1,8 @@
 # Changelog — formato Keep a Changelog
 
 ## [Unreleased]
+### Changed
+- Chrome a componentes Svelte (TopBar, CanvasChrome, BottomNav, modales, toast); ids intactos, paridad verificada
 ### Added
 - Bloque de vídeo (`video_scene` 🎬): reproduce vídeos de la carpeta con autoplay/bucle/silencio/controles; tarjeta, editor, playtest y export `.html`
 - Nodo complemento de sonido (`sound_cue` 🔊): dispara audio al entrar (volumen + bucle); audio extra opcional en cualquier escena

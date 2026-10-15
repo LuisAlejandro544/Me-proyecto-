@@ -35,7 +35,10 @@ src/lib/studio/
                     # transform, minimap, editors, playtest, workspace,
                     # exporter, load-preset, toast
 src/components/
-└── StudioShell.svelte  # chrome estático + onMount(initStudio)
+├── StudioShell.svelte  # compone todo + onMount(initStudio)
+├── TopBar.svelte, CanvasChrome.svelte, BottomNav.svelte
+├── DrawerModal.svelte, PlaytestModal.svelte, ShareLoading.svelte, ToastBanner.svelte
+└── (Fase 2: NodeCard/* por tipo de nodo)
 ```
 
 **Fase 2 (pendiente):** migrar cada tipo de nodo a componente Svelte (`NodeCard/*`) y el estado a stores (`lib/stores/project.svelte.ts`); `context.ts` es el seam para hacerlo por slices.
