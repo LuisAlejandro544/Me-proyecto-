@@ -21,7 +21,40 @@ function fromB64Url(s: string): string {
   return decodeURIComponent(escape(atob(b64)));
 }
 
-export function buildShareUrl(permission: SharePermission = 'jugar'): string {
+const SHARE_BASE_KEY = 'vn_share_base_url_v1';
+/** Heurística de despliegue público para este repo (GitHub Pages). */
+function defaultPublicBase(): string {
+  return 'https://luisalejandro544.github.io/Me-proyecto-/';
+}
+
+export function isLocalOrPrivateHost(host = location.hostname): boolean {
+  const h = (host || '').toLowerCase();
+  if (!h || h === 'localhost' || h === '127.0.0.1' || h === '::1' || h === '[::1]') return true;
+  if (h.endsWith('.local') || h.endsWith('.lan') || h.endsWith('.internal')) return true;
+  if (/^192\.168\./.test(h) || /^10\./.test(h)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return true;
+  if (location.protocol === 'file:') return true;
+  return false;
+}
+
+export function getShareBaseUrl(): string {
+  try {
+    const saved = (localStorage.getItem(SHARE_BASE_KEY) || '').trim();
+    if (saved) return saved.replace(/\/?$/, '/');
+  } catch {}
+  // Si estamos en local, el enlace localhost NO se puede compartir:
+  // se usa la URL pública por defecto (editable en el modal).
+  if (isLocalOrPrivateHost()) return defaultPublicBase();
+  return `${location.origin}${location.pathname}`.replace(/\/?$/, '/');
+}
+
+export function setShareBaseUrl(base: string): void {
+  try {
+    localStorage.setItem(SHARE_BASE_KEY, (base || '').trim());
+  } catch {}
+}
+
+export function buildShareUrl(permission: SharePermission = 'jugar', baseOverride?: string): string {
   const payload = {
     v: 1,
     permiso: permission,
@@ -36,7 +69,7 @@ export function buildShareUrl(permission: SharePermission = 'jugar'): string {
       wires: ctx.state.wires
     }
   };
-  const base = `${location.origin}${location.pathname}`;
+  const base = (baseOverride ?? getShareBaseUrl()).replace(/\/?$/, '/');
   return `${base}#nivel=${toB64Url(JSON.stringify(payload))}`;
 }
 
@@ -60,19 +93,28 @@ export function openShareModal() {
   titleEl.textContent = 'Compartir tu nivel con un amigo';
 
   const render = (permiso: SharePermission) => {
+    const base = getShareBaseUrl();
     let url = '';
     try {
-      url = buildShareUrl(permiso);
+      url = buildShareUrl(permiso, base);
     } catch {
       url = '';
     }
     const tooLong = url.length > 7800;
+    const local = isLocalOrPrivateHost();
     bodyEl.innerHTML = `
       <div class="space-y-4">
         <p class="text-xs text-slate-400 leading-relaxed">
           Tu amigo abrirá el enlace, verá pantallas de carga y jugará tu nivel
           <strong class="text-slate-200">a pantalla completa</strong> (sin editor).
         </p>
+        ${local ? `<p class="text-[11px] leading-relaxed rounded-xl border border-amber-400/40 bg-amber-400/10 text-amber-200 p-3">⚠️ Estás en <b>${escapeHtml(location.hostname || 'localhost')}</b>: un enlace <i>localhost</i> <b>no se puede compartir</b> (solo existe en tu PC). Por eso la URL ya usa tu dirección pública. Si aún no despliegas, usa «📦 Descargar .html jugable» y envía ese archivo: funciona sin servidor.</p>` : ''}
+        <label class="block">
+          <span class="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Dirección pública del juego (editable)</span>
+          <input id="shareBase" value="${escapeHtml(base)}" spellcheck="false"
+            class="w-full rounded-xl bg-[#0f1428] border border-slate-600 px-3 py-2.5 text-xs text-white font-mono outline-none focus:border-emerald-400 min-h-[44px]" />
+          <span class="block text-[11px] text-slate-500 mt-1">Ej.: tu GitHub Pages, Netlify o Vercel con <b>/</b> al final. Se guarda en este navegador.</span>
+        </label>
         <label class="block">
           <span class="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Permiso del enlace</span>
           <select id="sharePerm" class="w-full rounded-xl bg-[#0f1428] border border-slate-600 px-3 py-2.5 text-sm text-white min-h-[44px]">
@@ -81,13 +123,14 @@ export function openShareModal() {
           <span class="block text-[11px] text-slate-500 mt-1">Por ahora solo existe «Solo jugar». Más permisos (editar, comentar) llegarán en el roadmap.</span>
         </label>
         <label class="block">
-          <span class="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Tu enlace</span>
+          <span class="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Tu enlace compartible</span>
           <textarea id="shareUrl" rows="3" readonly class="w-full rounded-xl bg-[#0f1428] border border-cyan-500/40 p-3 text-xs text-cyan-200 font-mono break-all">${escapeHtml(url)}</textarea>
         </label>
-        ${tooLong ? `<p class="text-[11px] text-amber-300">⚠️ El nivel es muy grande (${(url.length / 1024).toFixed(1)} KB de URL). Algunos navegadores recortan enlaces de más de ~8 KB. Prueba a quitar imágenes pesadas o dividir el nivel.</p>` : ''}
+        ${tooLong ? `<p class="text-[11px] text-amber-300">⚠️ El nivel es muy grande (${(url.length / 1024).toFixed(1)} KB de URL; los vídeos pesan mucho). Algunos navegadores recortan enlaces de más de ~8 KB. Usa «📦 Descargar .html jugable» para compartirlo como archivo.</p>` : ''}
         <div class="text-[11px] text-slate-500">Incluye ${ctx.state.nodes.length} nodo(s) y ${ctx.state.wires.length} conexión(es).</div>
         <div class="flex flex-wrap justify-end gap-2 pt-1">
           <button id="shareClose" class="px-4 py-2.5 rounded-xl bg-slate-800 text-xs font-semibold text-slate-300 min-h-[44px]">Cerrar</button>
+          <button id="shareHtml" class="px-4 py-2.5 rounded-xl bg-indigo-500 text-xs font-bold text-white min-h-[44px]">📦 .html jugable</button>
           <button id="sharePreview" class="px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-600 text-xs font-semibold text-slate-200 min-h-[44px]">👁 Probar como invitado</button>
           <button id="shareCopy" class="px-5 py-2.5 rounded-xl bg-emerald-500 text-xs font-bold text-slate-950 min-h-[44px]">🔗 Copiar URL</button>
         </div>
@@ -95,9 +138,18 @@ export function openShareModal() {
     modal.classList.remove('hidden');
     (document.getElementById('shareClose') as HTMLElement).onclick = () => modal.classList.add('hidden');
     (document.getElementById('sharePerm') as HTMLSelectElement).onchange = (e) => render((e.target as HTMLSelectElement).value as SharePermission);
+    const baseInput = document.getElementById('shareBase') as HTMLInputElement | null;
+    baseInput?.addEventListener('change', () => {
+      setShareBaseUrl(baseInput.value);
+      render(permiso);
+      showToast('Dirección pública guardada 🔗');
+    });
     (document.getElementById('sharePreview') as HTMLElement).onclick = () => {
       modal.classList.add('hidden');
       enterSharedPlayMode({ permiso, state: JSON.parse(JSON.stringify(ctx.state)), proyecto: ctx.state.projectName }, { demo: true });
+    };
+    (document.getElementById('shareHtml') as HTMLElement).onclick = () => {
+      downloadPlayableHtml();
     };
     (document.getElementById('shareCopy') as HTMLElement).onclick = async () => {
       const ta = document.getElementById('shareUrl') as HTMLTextAreaElement;
@@ -119,8 +171,23 @@ export function openShareModal() {
   render('jugar');
 }
 
-function setLoading(show: boolean, msg = '', pct = 5) {
-  const overlay = document.getElementById('shareLoading');
+/** Descarga un .html jugable con el nivel incrustado: se puede enviar por chat/correo sin servidor. */
+export function downloadPlayableHtml() {
+  try {
+    const payload = { v: 1, permiso: 'jugar', proyecto: ctx.state.projectName, state: ctx.state };
+    const json = JSON.stringify(payload).replace(/</g, '\\u003c');
+    const html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>' + payload.proyecto.replace(/</g, '') + ' — Nivel jugable</title><style>body{margin:0;font-family:system-ui;background:#0b0f1f;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh} .s{width:min(960px,96vw);background:#101528;border:2px solid #00f2fe;border-radius:18px;padding:20px} video,img{max-width:100%;border-radius:12px} button{background:#00f2fe;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;margin:4px} .c{display:flex;flex-direction:column;gap:8px;margin-top:10px}</style></head><body><div class="s"><h2 id="t"></h2><div id="m"></div><p id="d"></p><div id="c" class="c"></div></div><script>const P=' + json + ';let cur=P.state.nodes[0]?.id;function go(id){const n=P.state.nodes.find(x=>x.id===id)||P.state.nodes[0];if(!n)return;cur=n.id;document.getElementById("t").textContent=n.badge||n.headerBar||n.title||"Escena";document.getElementById("d").textContent=n.dialogue||n.title||"";const m=document.getElementById("m");m.innerHTML="";const outs=P.state.wires.filter(w=>w.fromNode===n.id);const c=document.getElementById("c");c.innerHTML="";if(n.videoAssetId){const v=document.createElement("video");v.controls=true;v.playsInline=true;v.src=n.videoAssetId;const a=P.state; c.appendChild(v);} if(n.type==="choice"&&n.options){n.options.forEach(o=>{const w=outs.find(x=>x.fromPort==="out_"+o.id);const b=document.createElement("button");b.textContent=o.label;b.onclick=()=>w?go(w.toNode):alert("Fin de rama");c.appendChild(b);});}else if(outs.length){const b=document.createElement("button");b.textContent="Continuar →";b.onclick=()=>go(outs[0].toNode);c.appendChild(b);}}go(cur);<\/script></body></html>';
+    const blob = new Blob([html], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'nivel-jugable.html';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    showToast('📦 .html jugable descargado: envíalo como archivo');
+  } catch { showToast('No se pudo generar el .html'); }
+}
+
+function setLoading(show: boolean, msg = '', pct = 5) {  const overlay = document.getElementById('shareLoading');
   if (!overlay) return;
   overlay.classList.toggle('hidden', !show);
   overlay.classList.toggle('flex', show);

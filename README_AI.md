@@ -19,7 +19,8 @@ npm run build && npm run check  # verificación obligatoria (0 errores)
 4. **Nodos**: plantilla en `ui/render-nodes.ts`, edición en `ui/node-editor.ts`,
    cables en `ui/render-wires.ts` + `domain/geometry.ts`.
 5. **Compartir**: `ui/share.ts` codifica `{ permiso:'jugar', state }` en
-   `#nivel=<base64url>` y lo abre con carga + fullscreen (`shared-play-mode`).
+   `#nivel=<base64url>` con base pública (nunca `localhost`) y lo abre con
+   carga + fullscreen (`shared-play-mode`); hay `.html` jugable sin servidor.
 
 ## Recetas
 

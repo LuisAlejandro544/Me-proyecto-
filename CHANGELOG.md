@@ -1,6 +1,12 @@
 # Changelog — formato Keep a Changelog
 
 ## [Unreleased]
+### Added
+- Bloque de vídeo (`video_scene` 🎬): reproduce vídeos de la carpeta con autoplay/bucle/silencio/controles; tarjeta, editor, playtest y export `.html`
+- Nodo complemento de sonido (`sound_cue` 🔊): dispara audio al entrar (volumen + bucle); audio extra opcional en cualquier escena
+- Carpeta de recursos con vídeos (galería de vídeos + administrador de archivos, `.mp4`/`.webm`/`.mov`) y audios (archivos, `.mp3`/`.wav`/`.ogg`/`.m4a`); filtros Todos/Imágenes/Vídeos/Audios y asignación al nodo seleccionado
+- Probar en horizontal 16:9 (`#vnPlaytestCard.vn-playtest-landscape` + `#vnVideoPlayer`/`#vnAudioPlayer` + `#btnVnFullscreen` + aviso `#vnRotateHint`)
+- Compartir sin `localhost`: base pública editable (`vn_share_base_url_v1`, `getShareBaseUrl`/`isLocalOrPrivateHost`) + botón «📦 .html jugable» (`downloadPlayableHtml`) para enviar sin servidor
 ### Removed
 - Shell C++ (`cpp/`) y port Qt (`qt/` ya retirado): stack único TypeScript; Tauri cubre desktop
 - Importación de recursos (imágenes/audio) desde galería o administrador de archivos en web, PC (diálogo nativo Tauri) y móvil (galería/cámara Capacitor + respaldo a selector del sistema); módulo `src/lib/assets.ts` con persistencia local
@@ -15,6 +21,7 @@
 ### Fixed
 - Zoom borroso/lento en móvil: antes layout-zoom (CSS `zoom` + rebuild de cables por frame); ahora `transform: scale` por GPU con cables dentro del mundo (nítidos 35%–200% a 60fps)
 - Conectores: puertos re-centrados a `-9px` en el borde, `overflow: visible` y `z-index` 40 (los de `choice` ya no quedan a `-21px` ni se cortan); entrada añadida en `avatar_scene`/`banner_scene` y salida en `character_selector`
+- Nodos escena/elección: `choice` con entrada única real (`in_main`) y puntos izquierdos decorativos (ya no son conectores dentro de la píldora); salidas `out_*` centradas en el borde (`-23px` por el `p-3.5`) y cabecera con hueco para ✏️/🗑; `banner_scene`/`avatar_scene` con salidas repartidas en % del borde (adiós `yOffset` fijo en la esquina); cables viejos `in_<opt>` redirigidos a `in_main` (`geometry.ts`)
 - Móvil: cabecera compacta con truncado, pie con scroll horizontal (Personajes visible), modales `92dvh` + safe-area, toast sobre el pie, puertos de 18px en táctil y doble-toque para editar textos
 
 ## [0.1.0] — 2026-10-15

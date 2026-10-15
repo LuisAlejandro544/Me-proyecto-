@@ -1,9 +1,8 @@
 # Roadmap — Visual Novel Node Studio
 
-> Estado a 2026-10-15. Hecho reciente: editor completo de nodos (✏️/🗑 + Supr),
-> puertos re-centrados y visibles, lienzo rápido por GPU en móvil (pan/pinch/zoom
-> a 60fps), pulido móvil y compartir por URL (permiso «Solo jugar» + pantallas
-> de carga + jugar a pantalla completa).
+> Estado a 2026-10-15. Hecho reciente: bloque de vídeo 🎬 + complemento de sonido 🔊
+> (carpeta con galería de vídeos y audios), reproductor de prueba en horizontal 16:9
+> y enlaces compartibles (adiós `localhost` + `.html` jugable).
 
 ## Ahora (v0.2) — compartir y pulir
 
@@ -22,8 +21,12 @@
 - [x] Lienzo rápido en móvil: zoom por GPU (`transform: scale`), pan/pinch/zoom sin
   rebuild de cables, drag con `updateWirePaths`, minimapa diferido y sin
   blur/glow durante el gesto.
+- [x] Bloque de vídeo (`video_scene`) + nodo complemento de sonido (`sound_cue`);
+  carpeta con vídeos (galería/archivos) y audios; editor y playtest los reproducen.
+- [x] Probar en horizontal 16:9 + pantalla completa + aviso de rotación.
+- [x] Compartir sin `localhost`: base pública editable + «📦 .html jugable»;
+  aviso de URL larga (>8 KB, típico con vídeos).
 - [ ] Pruebas visuales del modo invitado en Android (WebView) y iOS (Safari).
-- [ ] Aviso de URL larga con opción «descargar `.html` en su lugar» cuando supere 8 KB.
 
 ## Siguiente (v0.3) — niveles y permisos
 
@@ -39,7 +42,7 @@
 - [ ] Refactor a componentes Svelte (`TopBar`, `Canvas`, `NodeCard`, `PlaytestModal`)
   con stores en vez de `ctx` mutable + `// @ts-nocheck`.
 - [ ] Historial por nodo y portapapeles (copiar/pegar nodos con Ctrl+C/V).
-- [ ] Audio por escena y transiciones de fondo.
+- [x] Audio por escena (campo opcional) y nodo de sonido; pendiente: transiciones de fondo.
 - [ ] Paquete Tauri firmado (.exe) y APK release en CI.
 - [ ] i18n (es/en) y temas claro/oscuro.
 - [ ] Tests: `svelte-check` + pruebas de geometría de puertos y de codificar/decoficar
@@ -49,4 +52,4 @@
 
 - Multi-jugador en tiempo real.
 - Tienda o cuentas de usuario.
-- Motor 3D o video.
+- Motor 3D.

@@ -19,13 +19,24 @@ para jugar a pantalla completa**.
 - **Elegir personaje**: selector en el propio nodo, en el editor completo o en las
   pestañas *Recursos* / *Personajes* (incluye importar tus fotos desde galería,
   archivos o cámara en móvil).
+- **Bloque de vídeo 🎬**: nodo `video_scene` que reproduce un vídeo de la carpeta
+  (galería de vídeos o administrador de archivos, `.mp4`/`.webm`/`.mov`) con
+  autoplay, bucle, silencio y controles configurables.
+- **Complemento de sonido 🔊**: nodo `sound_cue` que dispara un audio al entrar
+  (música, ambiente o SFX, con volumen y bucle); cualquier escena admite además
+  un audio extra opcional.
+- **Probar en horizontal**: el botón Probar abre el reproductor en formato
+  apaisado 16:9 (como se juega de verdad), con botón ⛶ de pantalla completa,
+  aviso de girar el móvil y reproducción de vídeo/audio.
 - **Eliminar nodos**: botón 🗑 en cada nodo, botón «Eliminar nodo» en el editor o
   tecla `Supr` / `Retroceso` (elimina también sus cables, con Deshacer disponible).
 - **Conectar nodos**: arrastra desde cualquier puerto (●) hasta otro puerto.
   Clic en un cable para cambiar color o quitarlo; `Shift+Clic` o doble-clic lo borra.
-- **Compartir nivel**: botón **Compartir** en la cabecera → elige permiso
-  (por ahora *Solo jugar*) → copia la URL → tu amigo ve pantallas de carga y juega
-  a pantalla completa sin editor.
+- **Compartir nivel**: botón **Compartir** en la cabecera → se genera una URL
+  **compartible** (nunca `localhost`: si estás en local se usa tu dirección
+  pública editable, p. ej. GitHub Pages) → tu amigo ve pantallas de carga y juega
+  a pantalla completa sin editor. Si el nivel pesa mucho (vídeos), usa
+  «📦 .html jugable» para enviarlo como archivo sin servidor.
 - **Exportar**: Web autónoma (`.html`), manifiesto Windows (`.bat`, binario real vía
   Tauri) y JSON del proyecto.
 
@@ -69,12 +80,19 @@ el minimapa se oculta y los puertos crecen para el dedo (`pointer: coarse`).
 
 ## Enlace para jugar
 
-Formato: `https://tu-dominio/#nivel=<base64url>` con `{ v, permiso, proyecto, state }`.
+Formato: `https://tu-dominio-publico/#nivel=<base64url>` con `{ v, permiso, proyecto, state }`.
 
 - Permiso actual: `jugar` (ver + jugar a pantalla completa, sin editar).
 - Al abrirlo: pantalla de carga con progreso → reproductor a pantalla completa
   (`body.shared-play-mode` oculta editor/cabecera/pie).
-- Límite práctico: ~8 KB de URL; si el nivel es enorme se avisa en el modal.
+- **Adiós al `localhost`**: si desarrollas en `localhost`/IP local/`file://`, el
+  modal ya no genera enlaces locales (que nadie más puede abrir). Usa tu URL
+  pública (por defecto `https://luisalejandro544.github.io/Me-proyecto-/`,
+  editable y guardada en `localStorage` → `vn_share_base_url_v1`).
+- Sin servidor: botón «📦 .html jugable» (nivel incrustado, con vídeo/audio)
+  para enviar por chat/correo.
+- Límite práctico: ~8 KB de URL; con vídeos se supera rápido y el modal avisa
+  y recomienda el `.html`.
 
 ## Estructura resumida
 

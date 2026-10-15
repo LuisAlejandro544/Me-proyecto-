@@ -28,7 +28,8 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
 - Estado: `context.ts` → `ctx.state: VNState { projectName, zoom, panX, panY,
   variables, nodes, wires }`.
 - Nodos (`ui/render-nodes.ts`): `banner_scene`, `choice`, `compact_scene`,
-  `character_selector`, `avatar_scene`, `branch_scene`. Cada tarjeta lleva
+  `character_selector`, `avatar_scene`, `branch_scene`, `video_scene` (🎬),
+  `sound_cue` (🔊 complemento). Cada tarjeta lleva
   `.vn-node-toolbar` (✏️ `edit-node`, 🗑 `delete-node`) y `.vn-port` a `-9px` con
   `data-node-id/data-port-id/data-port-dir/data-port-color`.
 - Edición: `ui/node-editor.ts` (`openNodeEditor`, `deleteNode`, `duplicateNode`) +
@@ -44,9 +45,14 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
   coalescada en un rAF, rect del viewport cacheado) + `ui/transform.ts`
   (`panLayer` translate GPU + `canvasWorld` scale GPU). Durante el gesto se pone
   `body.vn-gesturing` (apaga `backdrop-filter`, glow y transiciones).
-- Compartir: `ui/share.ts` — `buildShareUrl('jugar')` → `#nivel=<b64url>` →
+- Compartir: `ui/share.ts` — `getShareBaseUrl()` (nunca localhost en local;
+  base pública editable) → `buildShareUrl('jugar')` → `#nivel=<b64url>` →
   `parseShareHash` → `enterSharedPlayMode` (pantallas `#shareLoading` + clase
   `body.shared-play-mode` + `renderPlaytestStep`) → `checkSharedPlayModeOnBoot`.
+  Alternativa sin servidor: `downloadPlayableHtml()`.
+- Playtest horizontal: `#vnPlaytestCard.vn-playtest-landscape` (16:9) +
+  `#vnVideoPlayer`/`#vnAudioPlayer` + `#btnVnFullscreen`/`closePlaytest()`;
+  assets con vídeo: `lib/assets.ts` (`imagen|video|audio`).
 - Plataforma: `lib/platform.ts`; assets: `lib/assets.ts` + `studio/data/assets.ts`.
 
 ## Patrones de edición
@@ -63,7 +69,8 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
 
 ## Límites conocidos
 
-- URL compartida ~8 KB máximo práctico; con imágenes base64 grandes avisa en el modal.
+- URL compartida ~8 KB máximo práctico; con imágenes/vídeos base64 grandes avisa
+  en el modal y ofrece el `.html` jugable.
 - `getPortPosition` depende del DOM: tras cambiar nodos llama `renderNodes()` y deja
   que `requestAnimationFrame(renderWires)` re-calcule.
 - No commitear: `node_modules/`, `dist/`, `src-tauri/target/`, `src-tauri/gen/`,

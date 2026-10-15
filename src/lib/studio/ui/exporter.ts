@@ -4,15 +4,18 @@ import { ctx } from '../context';
 import { playSynthSfx } from '../domain/audio';
 import { escapeHtml } from '../domain/geometry';
 import { showToast } from './toast';
-import { getCharacterCatalog } from '../../assets';
+import { getCharacterCatalog, getCustomAssets } from '../../assets';
 
 export function exportStandaloneHtml() {
   playSynthSfx('connect');
   const catalog = getCharacterCatalog();
+  const customs = {};
+  for (const a of getCustomAssets()) customs[a.id] = { dataUrl: a.dataUrl, mime: a.mime, kind: a.kind, name: a.name };
   const serialized = JSON.stringify({
     nodes: ctx.state.nodes,
     wires: ctx.state.wires,
-    assets: catalog
+    assets: catalog,
+    customs
   }).replace(/</g, '\\u003c'); // un diálogo con </script> rompería el HTML exportado
 
   const standaloneHtml = `<!DOCTYPE html>
@@ -25,6 +28,7 @@ export function exportStandaloneHtml() {
   body { margin:0; font-family: system-ui, sans-serif; background:#0b0f1f; color:#fff; display:flex; align-items:center; justify-content:center; height:100vh; overflow:hidden; }
   .stage { width:min(920px, 96vw); height:min(540px, 90vh); background:radial-gradient(circle at 50% 30%, #263566, #0b0f1f); border:2px solid #00f2fe; border-radius:20px; display:flex; flex-direction:column; justify-content:space-between; padding:24px; box-sizing:border-box; box-shadow:0 0 40px rgba(0,242,254,0.25); position:relative; }
   .sprite { max-height:240px; border-radius:16px; border:2px solid rgba(255,255,255,0.25); align-self:center; margin-top:20px; }
+  .vplayer { max-width:100%; max-height:240px; border-radius:16px; border:2px solid rgba(232,121,249,0.5); align-self:center; margin-top:20px; background:#000; }
   .box { background:rgba(15,20,40,0.92); border:1px solid rgba(0,242,254,0.45); border-radius:16px; padding:20px; }
   .speaker { font-weight:700; color:#ff758c; margin-bottom:6px; }
   .choices { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
@@ -35,6 +39,8 @@ export function exportStandaloneHtml() {
 <body>
 <div class="stage">
   <img id="sp" class="sprite" />
+  <video id="vp" class="vplayer" controls playsinline style="display:none"></video>
+  <audio id="ap" style="display:none"></audio>
   <div class="box">
 <div id="spk" class="speaker"></div>
 <div id="dlg"></div>
@@ -47,8 +53,40 @@ function go(id) {
   const n = DATA.nodes.find(x => x.id === id) || DATA.nodes[0];
   if (!n) return;
   const c = DATA.assets[n.characterId || n.selectedCharId || 'sora'] || DATA.assets.sora;
-  document.getElementById('sp').src = c.avatar;
-  document.getElementById('spk').textContent = n.speaker || c.name;
+  const sp = document.getElementById('sp');
+  const vp = document.getElementById('vp');
+  const ap = document.getElementById('ap');
+  try { vp.pause(); vp.style.display = 'none'; sp.style.display = ''; } catch {}
+  try { ap.pause(); } catch {}
+  const customOf = (id) => (DATA.customs || {})[id];
+  if (n.type === 'video_scene') {
+    const v = customOf(n.videoAssetId);
+    if (v) {
+      sp.style.display = 'none';
+      vp.style.display = '';
+      vp.src = v.dataUrl;
+      vp.loop = !!n.videoLoop;
+      vp.muted = !!n.videoMuted;
+      vp.controls = n.videoControls !== false;
+      if (n.videoAutoplay !== false) { const p = vp.play(); if (p) p.catch(() => {}); }
+      document.getElementById('spk').textContent = n.videoName || v.name || 'Vídeo';
+    } else {
+      document.getElementById('spk').textContent = '🎬 Sin vídeo asignado';
+    }
+  } else {
+    sp.src = c.avatar;
+    document.getElementById('spk').textContent = n.type === 'sound_cue' ? (n.soundName || n.audioName || '🔊 Sonido') : (n.speaker || c.name);
+  }
+  const sndId = n.type === 'sound_cue' ? (n.soundAssetId || n.audioAssetId) : n.audioAssetId;
+  if (sndId) {
+    const s = customOf(sndId);
+    if (s) {
+      ap.src = s.dataUrl;
+      ap.loop = !!n.loop;
+      try { ap.volume = Math.max(0, Math.min(1, (n.volume ?? 100) / 100)); } catch {}
+      const p = ap.play(); if (p) p.catch(() => {});
+    }
+  }
   document.getElementById('dlg').textContent = n.dialogue || n.title || '';
   const ch = document.getElementById('ch');
   ch.innerHTML = '';

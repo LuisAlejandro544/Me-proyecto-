@@ -6,6 +6,7 @@ import { applyTransform } from './ui/transform';
 import { renderNodes } from './ui/render-nodes';
 import { loadPreset } from './ui/load-preset';
 import { startPlaytest } from './ui/playtest';
+import { closePlaytest } from './ui/playtest';
 import { exportStandaloneHtml } from './ui/exporter';
 import { openExeExportModal } from './ui/exporter';
 import { openWorkspaceTab } from './ui/workspace';
@@ -125,9 +126,7 @@ export function initStudio() {
       });
 
       // Playtest modal controls
-      document.getElementById('btnClosePlaytest').addEventListener('click', () => {
-        document.getElementById('playtestModal').classList.add('hidden');
-      });
+      document.getElementById('btnClosePlaytest').addEventListener('click', closePlaytest);
       document.getElementById('btnVnRestart').addEventListener('click', () => {
         if (ctx.state.nodes[0]) renderPlaytestStep(ctx.state.nodes[0].id);
       });
