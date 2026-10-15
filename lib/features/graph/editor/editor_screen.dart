@@ -13,11 +13,22 @@ import 'package:me_proyecto/features/graph/export/html_exporter.dart';
 import 'package:me_proyecto/features/graph/models/vn_models.dart';
 import 'package:me_proyecto/features/graph/player/player_screen.dart';
 import 'package:me_proyecto/features/graph/state/graph_controller.dart';
+import 'package:me_proyecto/features/projects/data/project_storage.dart';
 
 /// Pantalla del editor de nodos sobre [GraphController].
 class EditorScreen extends StatefulWidget {
   /// Crea la pantalla del editor.
-  const new({super.key});
+  ///
+  /// [initialProject] es el proyecto a editar (demo si es null).
+  /// [slotIndex] es el slot local (0..2) donde se guarda. Si es null,
+  /// al pulsar Guardar se pedirá elegir slot.
+  const new({super.key, this.initialProject, this.slotIndex});
+
+  /// Proyecto inicial para editar.
+  final VnProject? initialProject;
+
+  /// Slot de guardado asociado.
+  final int? slotIndex;
 
   @override
   State<EditorScreen> createState() => _EditorScreenState();
@@ -30,11 +41,17 @@ class _EditorScreenState extends State<EditorScreen>
   late final AnimationController _zoomAnim;
   Size _viewSize = Size.zero;
   int lastVisible = 0;
+  int? _slot;
+  bool _saving = false;
+  bool _dirty = false;
 
   @override
   void initState() {
     super.initState();
-    graph = GraphController.demo();
+    graph = widget.initialProject == null
+        ? GraphController.demo()
+        : GraphController.fromProject(widget.initialProject!);
+    _slot = widget.slotIndex;
     graph.addListener(_onGraphChanged);
     _zoomAnim = AnimationController(
       duration: const Duration(milliseconds: 220),
@@ -43,7 +60,59 @@ class _EditorScreenState extends State<EditorScreen>
   }
 
   void _onGraphChanged() {
+    _dirty = true;
     if (mounted) setState(() {});
+  }
+
+  /// Guarda el proyecto actual en el slot local.
+  /// Si no hay slot asignado, pide elegir uno (1..3).
+  Future<void> _save() async {
+    if (_saving) return;
+    var slot = _slot;
+    if (slot == null) {
+      slot = await _pickSlot();
+      if (slot == null) return;
+    }
+    setState(() => _saving = true);
+    try {
+      final storage = await ProjectStorage.load();
+      await storage.saveSlot(slot, graph.project);
+      if (!mounted) return;
+      setState(() {
+        _slot = slot;
+        _dirty = false;
+        _saving = false;
+      });
+      _snack('Guardado en Slot ${slot + 1} ✓');
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      _snack('No se pudo guardar');
+    }
+  }
+
+  /// Diálogo para elegir slot cuando el editor no tiene uno asignado.
+  Future<int?> _pickSlot() {
+    return showDialog<int>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text(
+          'Guardar en…',
+          style: TextStyle(color: Colors.white),
+        ),
+        children: [
+          for (var i = 0; i < ProjectStorage.slotCount; i++)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(ctx, i),
+              child: Text(
+                'Slot ${i + 1}',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -145,6 +214,9 @@ class _EditorScreenState extends State<EditorScreen>
   @override
   Widget build(BuildContext context) {
     final project = graph.project;
+    final slotLabel = _slot == null
+        ? 'Sin guardar${_dirty ? ' •' : ''}'
+        : 'Slot ${_slot! + 1}${_dirty ? ' • sin guardar' : ' ✓'}';
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
@@ -159,13 +231,48 @@ class _EditorScreenState extends State<EditorScreen>
                 color: Colors.white,
               ),
             ),
-            FpsChip(
-              visibleOf: () => lastVisible,
-              totalOf: () => project.nodes.length,
+            Row(
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _slot == null
+                        ? Colors.white10
+                        : AppColors.cyanSoft,
+                    borderRadius: BorderRadius.circular(20),
+                    border: BorderSide(
+                      color: _slot == null
+                          ? AppColors.line
+                          : AppColors.cyan,
+                    ),
+                  ),
+                  child: Text(
+                    slotLabel,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+                FpsChip(
+                  visibleOf: () => lastVisible,
+                  totalOf: () => project.nodes.length,
+                ),
+              ],
             ),
           ],
         ),
         actions: [
+          _topBtn(
+            _saving ? Icons.hourglass_empty : Icons.save_outlined,
+            'Save',
+            _saving ? () {} : _save,
+            active: true,
+          ),
           _topBtn(Icons.share, 'Share', _showHtml),
           _topBtn(
             Icons.folder_open,

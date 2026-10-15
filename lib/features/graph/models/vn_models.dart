@@ -36,6 +36,20 @@ class VnOption {
   /// Si es true se pinta roja y su arista también.
   final bool isDanger;
 
+  /// Serializa a JSON para guardado local.
+  Map<String, Object?> toJson() => {
+    'label': label,
+    'nextId': nextId,
+    'isDanger': isDanger,
+  };
+
+  /// Reconstruye desde JSON. Tolera mapas parciales.
+  factory VnOption.fromJson(Map<String, dynamic> json) => VnOption(
+    label: json['label'] as String? ?? '',
+    nextId: json['nextId'] as String? ?? '',
+    isDanger: json['isDanger'] as bool? ?? false,
+  );
+
   @override
   bool operator ==(Object other) =>
       other is VnOption &&
@@ -121,6 +135,45 @@ class VnNode {
     );
   }
 
+  /// Serializa a JSON para guardado local.
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'type': type.name,
+    'title': title,
+    'x': x,
+    'y': y,
+    'speaker': speaker,
+    'text': text,
+    'pose': pose,
+    'enterFrom': enterFrom,
+    'options': options.map((o) => o.toJson()).toList(),
+  };
+
+  /// Reconstruye desde JSON. Tolera campos ausentes.
+  factory VnNode.fromJson(Map<String, dynamic> json) {
+    final typeName = json['type'] as String? ?? 'dialogue';
+    final type = VnNodeType.values.firstWhere(
+      (t) => t.name == typeName,
+      orElse: () => VnNodeType.dialogue,
+    );
+    final rawOptions = json['options'] as List? ?? const [];
+    return VnNode(
+      id: json['id'] as String? ?? 'node',
+      type: type,
+      title: json['title'] as String? ?? '',
+      x: (json['x'] as num?)?.toDouble() ?? 0,
+      y: (json['y'] as num?)?.toDouble() ?? 0,
+      speaker: json['speaker'] as String? ?? '',
+      text: json['text'] as String? ?? '',
+      pose: json['pose'] as String? ?? 'Happy',
+      enterFrom: json['enterFrom'] as String? ?? 'Enter Left',
+      options: rawOptions
+          .whereType<Map<String, dynamic>>()
+          .map(VnOption.fromJson)
+          .toList(),
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       other is VnNode &&
@@ -172,6 +225,22 @@ class VnEdge {
 
   /// Si es true se dibuja roja.
   final bool isDanger;
+
+  /// Serializa a JSON para guardado local.
+  Map<String, Object?> toJson() => {
+    'fromId': fromId,
+    'fromOption': fromOption,
+    'toId': toId,
+    'isDanger': isDanger,
+  };
+
+  /// Reconstruye desde JSON.
+  factory VnEdge.fromJson(Map<String, dynamic> json) => VnEdge(
+    fromId: json['fromId'] as String? ?? '',
+    fromOption: json['fromOption'] as String?,
+    toId: json['toId'] as String? ?? '',
+    isDanger: json['isDanger'] as bool? ?? false,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -289,6 +358,17 @@ class VnProject {
     return VnProject(title: 'Stress 500', nodes: nodes, edges: edges);
   }
 
+  /// Proyecto nuevo vacío: solo el nodo Start.
+  factory VnProject.blank({String title = 'Nuevo proyecto'}) {
+    return VnProject(
+      title: title,
+      nodes: const [
+        VnNode(id: 'start', type: VnNodeType.start, title: 'Start', x: 40, y: 260),
+      ],
+      edges: const [],
+    );
+  }
+
   /// Título visible en el AppBar y en el HTML exportado.
   final String title;
 
@@ -297,6 +377,30 @@ class VnProject {
 
   /// Aristas del canvas.
   final List<VnEdge> edges;
+
+  /// Serializa a JSON para guardado local.
+  Map<String, Object?> toJson() => {
+    'title': title,
+    'nodes': nodes.map((n) => n.toJson()).toList(),
+    'edges': edges.map((e) => e.toJson()).toList(),
+  };
+
+  /// Reconstruye desde JSON. Tolera listas ausentes.
+  factory VnProject.fromJson(Map<String, dynamic> json) {
+    final rawNodes = json['nodes'] as List? ?? const [];
+    final rawEdges = json['edges'] as List? ?? const [];
+    return VnProject(
+      title: json['title'] as String? ?? 'Sin título',
+      nodes: rawNodes
+          .whereType<Map<String, dynamic>>()
+          .map(VnNode.fromJson)
+          .toList(),
+      edges: rawEdges
+          .whereType<Map<String, dynamic>>()
+          .map(VnEdge.fromJson)
+          .toList(),
+    );
+  }
 
   /// Copia con los campos indicados reemplazados.
   VnProject copyWith({

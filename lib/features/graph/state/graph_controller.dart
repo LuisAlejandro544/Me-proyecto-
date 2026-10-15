@@ -12,6 +12,11 @@ class GraphController extends ChangeNotifier {
     _rebuildAll();
   }
 
+  /// Crea el controlador con un proyecto ya existente (cargado o nuevo).
+  new fromProject(VnProject initial) : project = initial {
+    _rebuildAll();
+  }
+
   /// Proyecto actual (se reemplaza, nunca se muta).
   VnProject project;
 

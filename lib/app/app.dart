@@ -1,8 +1,8 @@
-// Raíz visual de la app: tema + pantalla del editor.
+// Raíz visual de la app: tema + menú principal.
 // El main.dart solo hace bootstrap para probes y testing.
 import 'package:flutter/material.dart';
 import 'package:me_proyecto/core/theme/app_theme.dart';
-import 'package:me_proyecto/features/graph/editor/editor_screen.dart';
+import 'package:me_proyecto/features/home/home_screen.dart';
 
 /// Widget raíz de Manga Maker / My Novel.
 class MyNovelApp extends StatelessWidget {
@@ -15,7 +15,7 @@ class MyNovelApp extends StatelessWidget {
       title: 'Manga Maker - My Novel',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: const EditorScreen(),
+      home: const HomeScreen(),
     );
   }
 }
