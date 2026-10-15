@@ -1,6 +1,8 @@
 # Changelog — formato Keep a Changelog
 
 ## [Unreleased]
+### Fixed
+- Auto-actualizaciones: descargar el `.zip` NO actualizaba nada (solo guardaba el archivo). Ahora la pantalla `#updateModal` descarga el **instalador nativo de tu plataforma y lo abre** (Tauri vía `plugin-opener`, Android vía APK) para actualizar de verdad; en web el botón **Recargar app** hace hard-reload con limpieza de caché; el `.zip` queda como portable y la app lo dice claro cuando no hay instalador. Incluye barra de progreso/estado, plan B a `update.json` directo si la API de GitHub va con rate-limit y manifiestos `update.json`/`latest.json` + `SHA256SUMS.txt` con versión = tag
 ### Added
 - Editor de composición 🎨 a pantalla completa independiente (`components/CompositionStudio.svelte` `#composerScreen` + `lib/compositions.ts`): pestaña *Componer* en el pie, lienzo 16:9 con fondo (Recursos, sprites incluidos, galería o archivos) + sprites superpuestos arrastrables (tamaño, opacidad, espejo, orden, duplicar) y **Guardar PNG** (1280×720) en la carpeta de Recursos con etiquetas
 - Etiquetas 🏷 en la carpeta (`CustomAsset.tags` + `normalizeTags`/`setAssetTags`/`getAllAssetTags`/`saveCustomAssetFromDataUrl`): chips `#etiqueta · N` para filtrar, buscador por nombre/etiqueta y edición inline (🏷) por tarjeta

@@ -3,9 +3,14 @@ name: Auto-update (releases con zip)
 # Canal de auto-actualización de la app:
 # - Al PUBLICAR un release en GitHub (Releases > Draft new release > Publish)
 #   empaqueta TODA la app web en un .zip y lo sube a ese mismo release
-#   junto a un manifiesto `update.json`.
-# - La app escanea `GET /repos/{owner}/{repo}/releases/latest`, compara
-#   `tag_name` con su versión y muestra la pantalla "Nueva actualización".
+#   junto a los manifiestos `update.json` + `latest.json` (+ `.sha256`).
+# - La app escanea `GET /repos/{owner}/{repo}/releases/latest` (con plan B
+#   directo a `update.json` si la API va con rate-limit), compara `tag_name`
+#   con su versión y muestra la pantalla "Nueva actualización".
+# - Lo importante: la app ya NO finge que el .zip actualiza solo. Si el
+#   release trae instalador nativo (.exe/.msi, .AppImage/.deb, .dmg, .apk),
+#   la app lo descarga y lo ABRE para actualizar de verdad; en web la vía
+#   real es recargar Pages (el .zip es solo el portable).
 # - También se puede lanzar a mano desde Actions > Run workflow.
 #
 # Disparadores: SOLO `release` publicado y `workflow_dispatch` (manual).
@@ -61,13 +66,17 @@ jobs:
             -o "release/me-proyecto-studio-source-${TAG}.zip"
           ls -lh release/
 
-      - name: Generar manifiesto update.json
+      - name: Generar manifiestos update.json + latest.json
         run: |
           TAG="${{ steps.tag.outputs.tag }}"
-          VERSION="${{ steps.tag.outputs.version }}"
+          # La versión manda el TAG (v0.2.0 → 0.2.0), no package.json:
+          # así el comparador de la app nunca se desincroniza del release.
+          VERSION="${TAG#v}"
+          VERSION="${VERSION#V}"
           WEBZIP=$(ls release/my-novel-studio-web-*.zip | head -n 1 | xargs basename)
           SRCZIP="me-proyecto-studio-source-${TAG}.zip"
           REPO="${{ github.repository }}"
+          (cd release && sha256sum *.zip > SHA256SUMS.txt && cat SHA256SUMS.txt)
           node -e "
             const fs = require('fs');
             const m = {
@@ -75,7 +84,7 @@ jobs:
               version: '${VERSION}',
               tag: '${TAG}',
               published_at: new Date().toISOString(),
-              notes: 'Actualización ${TAG}: descarga el .zip web y reinstala/recarga.',
+              notes: 'Actualización ${TAG}.',
               repo: '${REPO}',
               assets: {
                 web_zip: '${WEBZIP}',
@@ -83,13 +92,23 @@ jobs:
                 source_zip: '${SRCZIP}',
                 source_url: 'https://github.com/${REPO}/releases/download/${TAG}/${SRCZIP}'
               },
-              // La app web/Tauri NO se auto-sobreescribe en caliente: descarga el
-              // .zip y guía al usuario (web: recargar Pages; desktop: instalar
-              // el nuevo build). El updater nativo real (Tauri Updater) llegará
-              // con firma de binarios en el roadmap.
-              install_hint: 'Descarga el .zip web o espera al instalador de tu plataforma.'
+              // Cómo se aplica de verdad en cada plataforma (el .zip NO se
+              // auto-instala): escritorio = descargar el instalador del release
+              // (.exe/.msi, .AppImage/.deb, .dmg) y ejecutarlo; Android = instalar
+              // el .apk; web = recargar Pages (hard-reload). El updater silencioso
+              // firmado de Tauri llegará con claves de firma (ver docs/RELEASING.md).
+              install: {
+                tauri: 'Descarga el instalador de tu sistema desde el release y ejecútalo.',
+                android: 'Descarga el .apk del release e instálalo.',
+                web: 'Recarga la app (la nueva versión ya está en Pages). El .zip es el portable.'
+              },
+              install_hint: 'El .zip es el portable y no se auto-instala: ejecuta el instalador de tu plataforma o recarga la web.'
             };
             fs.writeFileSync('release/update.json', JSON.stringify(m, null, 2));
+            // latest.json: mismo manifiesto, nombre estable para el plan B de la
+            // app (GET .../releases/latest/download/update.json) y base del futuro
+            // updater firmado de Tauri.
+            fs.writeFileSync('release/latest.json', JSON.stringify(m, null, 2));
             console.log(fs.readFileSync('release/update.json', 'utf8'));
           "
 
@@ -98,7 +117,7 @@ jobs:
           name: auto-update-${{ steps.tag.outputs.tag }}
           path: release/*
 
-      - name: Publicar / adjuntar assets al Release (zip web + zip fuente + update.json)
+      - name: Publicar / adjuntar assets al Release (zips + manifiestos + sha256)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -109,7 +128,9 @@ jobs:
 
           La app detecta este release al arrancar y muestra la pantalla «Nueva actualización disponible».
 
-          - \`my-novel-studio-web-*.zip\`: app web completa (\`dist/\` + html legacy) — la app lo descarga desde el botón Actualizar.
+          - \`my-novel-studio-web-*.zip\`: portable web (\`dist/\` + html legacy). OJO: descargarlo NO actualiza solo; en web pulsa «Recargar app».
           - \`me-proyecto-studio-source-*.zip\`: código completo de la app.
-          - \`update.json\`: manifiesto (versión, tag, URLs) para el chequeo automático." \
+          - \`update.json\` / \`latest.json\`: manifiestos (versión = tag, URLs) para el chequeo automático + plan B sin rate-limit.
+          - \`SHA256SUMS.txt\`: huellas de los zips.
+          - Instaladores nativos (.exe/.msi, .AppImage/.deb, .dmg, .apk): si existen en el release, la app los descarga y los ABRE para actualizar de verdad." \
           || gh release upload "$TAG" release/* --clobber

@@ -108,11 +108,19 @@ Formato: `https://tu-dominio-publico/#nivel=<base64url>` con `{ v, permiso, proy
 - La app revisa `releases/latest` en GitHub al arrancar (1 vez/24h) y con el
   botón **Buscar actualizaciones** (`#btnCheckUpdates` en la cabecera).
 - Si hay versión nueva muestra la pantalla **«Nueva actualización disponible»**
-  (`#updateModal`): Descargar .zip / Recargar app / Ver release / Omitir /
-  Recordar mañana. El repo a vigilar se cambia en Ajustes o con `VITE_UPDATE_REPO`.
+  (`#updateModal`) con barra de progreso y estado: **Instalar actualización**
+  (escritorio: descarga el instalador de tu sistema y lo abre para actualizar
+  de verdad; Android: descarga el APK y abre el instalador) / **Recargar app**
+  (web: aplica la versión ya publicada, con limpieza de caché) / Ver release /
+  Omitir / Recordar mañana. El repo a vigilar se cambia en Ajustes o con `VITE_UPDATE_REPO`.
+- Ojo honesto: el `.zip` es el **portable y NO se auto-instala** (descargarlo
+  no actualiza nada por sí solo). Si el release no trae instalador de tu
+  plataforma, la app lo dice en vez de fingir.
 - El canal lo alimenta el workflow **`Auto-update`**: SOLO corre al publicar un
   release o manual (nunca por commits/PRs) y adjunta al release el `.zip` web
-  de toda la app + `.zip` del código + `update.json`. Detalle en
+  de toda la app + `.zip` del código + `update.json`/`latest.json` +
+  `SHA256SUMS.txt` (versión = tag). Si compilas instaladores nativos y los
+  subes al release, la app los usa para actualizar. Detalle en
   `docs/RELEASING.md`.
 
 ## Estructura resumida
