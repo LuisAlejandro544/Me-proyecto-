@@ -34,3 +34,9 @@ captures/
 build/
 flutter_*.png
 flutter_*.jpg
+package-lock.json
+src-tauri/Cargo.lock
+src-tauri/icons/android/
+src-tauri/icons/ios/
+src-tauri/icons/Square*.png
+src-tauri/icons/StoreLogo.png
