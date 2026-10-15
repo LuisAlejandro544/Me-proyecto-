@@ -7,6 +7,8 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 export default defineConfig({
   plugins: [svelte()],
   clearScreen: false,
+  // Relative asset paths: dist/ must also load over file:// (C++ shell, Capacitor).
+  base: './',
   server: {
     port: 1420,
     strictPort: true
