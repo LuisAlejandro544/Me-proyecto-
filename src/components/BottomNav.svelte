@@ -56,6 +56,17 @@
       </div>
     </button>
 
+    <!-- Tab: Escenas -->
+    <button data-tab="scenes" class="nav-tab-btn group relative flex items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-white font-medium text-xs sm:text-sm transition shrink-0">
+      <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h10M4 18h7"/>
+      </svg>
+      <div class="text-left">
+        <div>Escenas</div>
+        <div class="hidden md:block text-[10px] text-slate-500 font-normal">Actos y saltos</div>
+      </div>
+    </button>
+
     <!-- Tab: Diálogos -->
     <button data-tab="dialogues" class="nav-tab-btn group relative flex items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-white font-medium text-xs sm:text-sm transition shrink-0">
       <svg class="w-5 h-5 text-fuchsia-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

@@ -1,6 +1,9 @@
 # Roadmap — Visual Novel Node Studio
 
-> Estado a 2026-10-15. Hecho reciente: bloque de vídeo 🎬 + complemento de sonido 🔊
+> Estado a 2026-10-16. Hecho reciente: cuadros de diálogo personalizables 💬
+> (biblioteca + tipografías + animaciones, tema global + por nodo) + **sistema de
+> escenas 🎬** (nombre propio + nodo de fin/inicio + saltos desde decisiones y
+> Continuar) + bloque de vídeo 🎬 + complemento de sonido 🔊
 > (carpeta con galería de vídeos y audios), reproductor de prueba en horizontal 16:9,
 > enlaces compartibles (adiós `localhost` + `.html` jugable), canal de
 > auto-actualizaciones (workflow `Auto-update` solo en release publicado o manual
@@ -50,6 +53,14 @@
   tamaño estimado y paquetes funcionales Windows (`.html` + `.bat`) y Linux
   (`.html` + `.sh` + `.desktop`); binario nativo vía Rust/Tauri en workflow
   manual `bundle-desktop.yml` (Windows NSIS/MSI + Linux .deb/.AppImage).
+- [x] Cuadros de diálogo personalizables (`lib/dialogue-themes.ts` + `ui/dialogue.ts`):
+  6 diseños base + propios con imagen, 14 tipografías, 8 animaciones de letras;
+  tema global (`VNState.dialogueThemeId`) + override por nodo; en Probar,
+  invitado y compilados.
+- [x] Sistema de escenas (`types.VNScene` + `domain/scenes.ts` + `ui/scenes.ts`):
+  nombre personalizable + nodo de fin/inicio por escena + `nextSceneId` al
+  continuar + `gotoSceneId` por opción de decisión (salto directo sin cable);
+  etiquetas en tarjetas, validación, persistencia y exportados.
 - [ ] Pruebas visuales del modo invitado en Android (WebView) y iOS (Safari).
 
 ## Siguiente (v0.3) — niveles y permisos

@@ -14,7 +14,8 @@
 ## Casos a tocar a mano (todos los targets)
 - Cambiar preset Sora ↔ Aoi, crear proyecto en blanco
 - Añadir nodo, deshacer, rehacer
-- Playtest: Preview → avanzar diálogos → cerrar
-- Export Web (.html) y abrir el archivo resultante
+- Escenas: pestaña Escenas → renombrar «Escena 2», cambiar su inicio/fin, jugar desde ahí; en ✏️ asignar escena + marcar fin; en una decisión poner «Ir a escena» sin cable y comprobar el salto en Probar
+- Playtest: Preview → avanzar diálogos → Continuar salta a la siguiente escena → cerrar
+- Export Web (.html) y abrir el archivo resultante (mismos saltos de escena + `🎬 Escena`)
 - Zoom mín/máx, paneo hasta los bordes, recargar (el estado es de sesión)
 - Actualizaciones: cabecera → «Buscar actualizaciones» abre `#updateModal` si hay release nuevo; en Ajustes se ve la versión y se cambia el repo vigilado

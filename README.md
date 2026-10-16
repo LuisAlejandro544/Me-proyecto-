@@ -39,6 +39,18 @@ para jugar a pantalla completa**.
   aviso de girar el móvil y reproducción de vídeo/audio.
 - **Eliminar nodos**: botón 🗑 en cada nodo, botón «Eliminar nodo» en el editor o
   tecla `Supr` / `Retroceso` (elimina también sus cables, con Deshacer disponible).
+- **Escenas con nombre 🎬**: pestaña inferior **Escenas** → crea actos con nombre
+  propio («Prólogo», «Bosque de noche»…), elige en qué nodo **termina** cada escena
+  y en qué nodo **empieza** la siguiente; al jugar, «Continuar» sin cable salta
+  solo a la siguiente escena. Desde ✏️ Editar nodo asignas su escena, marcas su
+  inicio/fin y defines «al continuar, ir a…»; en los nodos de **decisión** cada
+  opción puede **ir directo a otra escena** sin cable. Las tarjetas muestran la
+  etiqueta 🎬 con marcas INICIO/FIN y el reproductor indica `🎬 Escena · paso N`.
+- **Cuadros de diálogo personalizables 💬**: pestaña inferior **Diálogos** (+ tarjeta
+  en Ajustes + botón en ✏️ Editar nodo) con 6 diseños base + diseños propios con
+  imagen de fondo importada, 14 tipografías y 8 animaciones de letras
+  (máquina de escribir, fundido, ola, rebote, arcoíris…); tema global del proyecto
+  + override por nodo; se aplica en Probar, modo invitado y `.html`/`.vn.json`.
 - **Conectar nodos**: arrastra desde cualquier puerto (●) hasta otro puerto.
   Clic en un cable para cambiar color o quitarlo; `Shift+Clic` o doble-clic lo borra.
 - **Compartir nivel**: botón **Compartir** en la cabecera → se genera una URL
@@ -150,14 +162,19 @@ Formato: `https://tu-dominio-publico/#nivel=<base64url>` con `{ v, permiso, proy
 ```text
 src/App.svelte                  shell mínimo
 src/components/StudioShell.svelte  chrome (ids intactos, NO renombrar)
-src/lib/types.ts                VNNode, VNWire, VNState
+src/components/BottomNav.svelte    pie con pestañas (Nodos, Recursos, Componer, Cronología, Personajes, Escenas, Diálogos, Probar, Ajustes)
+src/lib/types.ts                VNNode, VNWire, VNState (+startNodeId, +scenes/VNScene), VNScene
+src/lib/dialogue-themes.ts      biblioteca de diseños de diálogo + tipografías + animaciones
 src/lib/assets.ts               galería/cámara/archivos + etiquetas (#tag) de assets
 src/lib/compositions.ts         composiciones fondo+sprites + render a PNG 1280×720
 src/components/CompositionStudio.svelte  editor de escenas a pantalla completa (#composerScreen)
 src/lib/studio/context.ts       estado mutable único
-src/lib/studio/ui/render-nodes.ts  tarjetas + puertos + toolbar ✏️/🗑
-src/lib/studio/ui/node-editor.ts   editor completo + eliminar/duplicar
-src/lib/studio/ui/share.ts         URL para jugar + carga + fullscreen
+src/lib/studio/domain/scenes.ts escenas (ensure/normalize/create/rename/delete/move + resolución de saltos)
+src/lib/studio/ui/scenes.ts     estudio de escenas (nombre + inicio/fin + jugar desde + reordenar)
+src/lib/studio/ui/render-nodes.ts  tarjetas + puertos + toolbar ✏️/🗑 (+ etiqueta 🎬 de escena)
+src/lib/studio/ui/node-editor.ts   editor completo + eliminar/duplicar (+ escena por nodo + salto por opción)
+src/lib/studio/ui/dialogue.ts      estudio de diálogos personalizados
+src/lib/studio/ui/share.ts         URL para jugar + carga + fullscreen (incluye scenes + startNodeId)
 src/lib/studio/ui/render-wires.ts  cables SVG + popover
 src/lib/studio/ui/compile.ts      compilador (buildStandaloneHtml/buildHistoria/validateStory/saveTextFile + modal + paquetes Win/Linux)
 src/lib/studio/ui/exporter.ts     compat (delega a compile.ts) · ui/share.ts delega el .html al generador único

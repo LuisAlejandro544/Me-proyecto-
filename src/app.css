@@ -370,6 +370,27 @@
     .vn-node.vn-start-node {
       border-color: rgba(52, 211, 153, 0.55);
     }
+    /* Etiqueta de escena: nombre personalizable + marcas INICIO/FIN por nodo */
+    .vn-scene-tag {
+      position: absolute;
+      top: -14px;
+      right: 10px;
+      z-index: 46;
+      max-width: calc(100% - 110px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: #fde68a;
+      background: rgba(40, 26, 4, 0.95);
+      border: 1px solid rgba(251, 191, 36, 0.7);
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+      pointer-events: none;
+      white-space: nowrap;
+    }
     /* Fila de acciones del header en móvil: segunda fila con scroll, sin solapes */
     .topbar-actions { scrollbar-width: none; }
     .topbar-actions::-webkit-scrollbar { display: none; }

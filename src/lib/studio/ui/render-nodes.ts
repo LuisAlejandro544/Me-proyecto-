@@ -5,6 +5,7 @@ import { findCustomAsset, getCharacterCatalog, resolveCharacter } from '../../as
 import { escapeHtml } from '../domain/geometry';
 import { attachNodeInteractions } from './interactions';
 import { renderWires } from './render-wires';
+import { getSceneById, getSceneOfNode } from '../domain/scenes';
 import { mount, unmount } from 'svelte';
 import ChoiceNodeCard from '../../../components/nodes/ChoiceNodeCard.svelte';
 import CompactSceneCard from '../../../components/nodes/CompactSceneCard.svelte';
@@ -25,6 +26,9 @@ export function renderNodes() {
   ctx.state.nodes.forEach(node => {
     const el = document.createElement('div');
     const isStart = (ctx.state as { startNodeId?: string }).startNodeId === node.id;
+    const scene = (node.sceneId && getSceneById(ctx.state, node.sceneId)) || getSceneOfNode(ctx.state, node.id);
+    const isSceneStart = !!scene && scene.startNodeId === node.id;
+    const isSceneEnd = !!scene && scene.endNodeId === node.id;
     el.className = `vn-node ${node.type === 'choice' ? 'vn-node-choice' : ''} ${ctx.selectedNodeId === node.id ? 'selected' : ''} ${isStart ? 'vn-start-node' : ''}`;
     el.style.left = `${node.x}px`;
     el.style.top = `${node.y}px`;
@@ -33,6 +37,9 @@ export function renderNodes() {
 
     // Barra de acciones del nodo (táctil): editar ✏️, inicio ▶ y eliminar 🗑.
     // Siempre visible en móvil; en escritorio aparece al seleccionar / hover.
+    const sceneTag = scene
+      ? `<div class="vn-scene-tag" title="Pertenece a «${escapeHtml(scene.name)}»${isSceneStart ? ' · aquí empieza' : ''}${isSceneEnd ? ' · aquí termina' : ''}">🎬 ${escapeHtml(scene.name)}${isSceneStart ? ' · INICIO' : ''}${isSceneEnd ? ' · FIN' : ''}</div>`
+      : '';
     const toolbar = `
       <div class="vn-node-toolbar" role="toolbar" aria-label="Acciones del nodo">
         <button data-action="edit-node" data-node="${node.id}" title="Editar nodo (pregunta, personaje…)" aria-label="Editar nodo"
@@ -43,6 +50,7 @@ export function renderNodes() {
           class="vn-node-btn vn-node-btn-delete">🗑</button>
       </div>
       ${isStart ? `<div class="vn-start-badge" title="La partida empieza aquí">▶ INICIO</div>` : ''}
+      ${sceneTag}
     `;
 
     // 1. BANNER SCENE NODE (e.g., "Start Scene 1" in Image 1)

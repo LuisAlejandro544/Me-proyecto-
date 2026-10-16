@@ -58,3 +58,15 @@ con workflow manual `bundle-desktop.yml` (Windows NSIS/MSI + Linux .deb/.AppImag
 **Consecuencia:** descarga inmediata que sí juega al doble clic + instalador
 nativo por Actions; `exporter.ts`/`share.ts` delegan al generador único (cero
 duplicidad).
+
+## ADR-010 — Escenas como orden + marcadores, cables primero
+**Contexto:** se pidió nombrar escenas y definir dónde termina la 1 y empieza la
+2, con salto directo desde una decisión.
+**Decisión:** `VNScene { id, name, startNodeId?, endNodeId? }` en `VNState.scenes`
+(orden = orden de juego) + `VNNode.sceneId/nextSceneId` + `ChoiceOption.gotoSceneId`;
+`domain/scenes.ts` resuelve (`resolveSceneStartNode`, `resolveContinueSceneTarget`):
+el cable siempre manda y, sin cable, Continuar usa `nextSceneId` o el fin de
+escena → siguiente en orden, y la decisión usa `gotoSceneId`.
+**Consecuencia:** sin grafo nuevo ni tipos de nodo extra; el mismo algoritmo corre
+en `playtest.ts` y en el `.html` compilado; `validateStory` avisa de escenas
+rotas/vacías en vez de bloquear por defecto.

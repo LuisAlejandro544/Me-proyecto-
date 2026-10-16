@@ -7,6 +7,8 @@ import { escapeHtml } from '../domain/geometry';
 import { pushHistory } from '../domain/history';
 import { startPlaytest } from './playtest';
 import { openDialogueStudio } from './dialogue';
+import { openScenesStudio } from './scenes';
+import { ensureScenes } from '../domain/scenes';
 import { renderNodes } from './render-nodes';
 import { showToast } from './toast';
 import { getProjectDialogueThemeId, getDialogueTheme } from '../../dialogue-themes';
@@ -265,6 +267,13 @@ export function openWorkspaceTab(tabName) {
   if (tabName === 'dialogues' || tabName === 'dialogos' || tabName === 'dialogo') {
     animateTabSwitch('dialogues');
     openDialogueStudio();
+    return;
+  }
+
+  // Estudio de escenas: nombre + nodo de fin/inicio + saltos desde decisiones.
+  if (tabName === 'scenes' || tabName === 'escenas' || tabName === 'escena') {
+    animateTabSwitch('scenes');
+    openScenesStudio();
     return;
   }
 
@@ -657,12 +666,21 @@ export function addNewNodeOfType(type) {
   const id = 'node_' + Date.now().toString(36);
   const offsetX = Math.round((180 - ctx.state.panX) / ctx.state.zoom + (Math.random() * 80));
   const offsetY = Math.round((140 - ctx.state.panY) / ctx.state.zoom + (Math.random() * 60));
+  // Los nodos nuevos heredan la última escena para no quedar huérfanos.
+  let defaultSceneId: string | undefined;
+  try {
+    const scenes = ensureScenes(ctx.state);
+    defaultSceneId = scenes[scenes.length - 1]?.id;
+  } catch {
+    defaultSceneId = undefined;
+  }
 
   if (type === 'banner_scene') {
     ctx.state.nodes.push({
       id,
       type: 'banner_scene',
       badge: `Escena ${ctx.state.nodes.length + 1}`,
+      sceneId: defaultSceneId,
       x: offsetX,
       y: offsetY,
       width: 245,
@@ -679,6 +697,7 @@ export function addNewNodeOfType(type) {
       title: 'Nodo: bifurcación de decisión',
       subtitle: 'Nodo de elección',
       showAddButtons: true,
+      sceneId: defaultSceneId,
       x: offsetX,
       y: offsetY,
       width: 240,
@@ -692,6 +711,7 @@ export function addNewNodeOfType(type) {
       id,
       type: 'character_selector',
       title: 'Selector de personaje',
+      sceneId: defaultSceneId,
       x: offsetX,
       y: offsetY,
       width: 230,
@@ -706,6 +726,7 @@ export function addNewNodeOfType(type) {
       id,
       type: 'video_scene',
       badge: `Vídeo ${ctx.state.nodes.length + 1}`,
+      sceneId: defaultSceneId,
       x: offsetX,
       y: offsetY,
       width: 250,
@@ -721,6 +742,7 @@ export function addNewNodeOfType(type) {
       id,
       type: 'sound_cue',
       badge: '🔊 Sonido',
+      sceneId: defaultSceneId,
       x: offsetX,
       y: offsetY,
       width: 240,
@@ -735,6 +757,7 @@ export function addNewNodeOfType(type) {
       id,
       type: 'branch_scene',
       headerBar: `Nodo ${ctx.state.nodes.length + 1}: Escena nueva`,
+      sceneId: defaultSceneId,
       x: offsetX,
       y: offsetY,
       width: 250,

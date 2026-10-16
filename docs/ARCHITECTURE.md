@@ -30,18 +30,29 @@ Donde viven los elementos de UI:
   solos: pan/pinch/zoom no tocan el DOM; el drag actualiza solo `d`
   (`updateWirePaths`); el minimapa va diferido (`scheduleMinimap`).
 - `src/lib/platform.ts` = puente de export nativo (Tauri dialog/fs, Capacitor Filesystem/Share).
-- Estado canónico del grafo: tipos en `src/lib/types.ts`; estado mutable legacy centralizado en `studio/context.ts`.
+- Estado canónico del grafo: tipos en `src/lib/types.ts` (`VNScene` + `VNNode.sceneId/nextSceneId` + `ChoiceOption.gotoSceneId`); estado mutable legacy centralizado en `studio/context.ts`.
+- Escenas narrativas (`studio/domain/scenes.ts` + `studio/ui/scenes.ts`): nombre
+  personalizable + `startNodeId` (dónde empieza) + `endNodeId` (dónde termina);
+  pestaña `scenes` del footer (`BottomNav.svelte` → `openWorkspaceTab` →
+  `openScenesStudio`); las tarjetas llevan `.vn-scene-tag` 🎬 (INICIO/FIN) y el
+  editor por nodo (`node-editor.ts`) asigna escena + `nextSceneId` + `gotoSceneId`
+  por opción. Jugar (`playtest.ts`) y exportar (`compile.ts`, mismo algoritmo en
+  el `.html`) priorizan el cable y, sin cable, saltan a la escena
+  (`resolveContinueSceneTarget` / `resolveSceneStartNode`); `share.ts` y
+  `.vn.json` incluyen `scenes` + `startNodeId`.
 
 Reproductor: `playtest.ts` abre el modal en horizontal 16:9 (`#vnPlaytestCard`)
-con `<video>` para `video_scene` y `<audio>` para `sound_cue`/`audioAssetId`;
-`share.ts` genera URLs compartibles (base pública, nunca localhost) o un
+con `<video>` para `video_scene` y `<audio>` para `sound_cue`/`audioAssetId`
+(+ insignia `🎬 Escena` y botón `Continuar → 🎬 Siguiente`);
+`share.ts` genera URLs compartibles (base pública, nunca localhost, con `scenes`) o un
 `.html` jugable con el nivel incrustado.
 
 Compilador (`ui/compile.ts`, fuente única): `buildStandaloneHtml()` (novela
-jugable autocontenida `file://`: `startNodeId` real, variables, audio/vídeo,
+jugable autocontenida `file://`: `startNodeId` real, **escenas con saltos
+(`scenes` + `nextSceneId`/`gotoSceneId` + etiqueta `🎬 Escena`)**, variables, audio/vídeo,
 decisiones `out_*`, continuar con teclado, reinicio, contador de pasos y solo
-assets usados) + `buildHistoria()` (`.vn.json` portable: grafo + variables +
-assets) + `validateStory()` (errores que bloquean + avisos) + `saveTextFile()`
+assets usados) + `buildHistoria()` (`.vn.json` portable: grafo + `scenes` + variables +
+assets) + `validateStory()` (errores que bloquean + avisos, incluye escenas: nombres, inicios rotos, vacías) + `saveTextFile()`
 (Tauri `dialog`/`fs` → Capacitor `Filesystem`/`Share` → descarga web) +
 `openCompileModal()` (selector `.html`/`.vn.json`/Windows/Linux, validación
 visible, tamaño estimado, progreso) + `exportWindowsPackage()` (`.html` +
@@ -57,11 +68,13 @@ El `.exe`/`.AppImage`/`.deb` binario real lo compila **Rust** vía Tauri
 src/lib/studio/
 ├── index.ts        # orquesta: initStudio(), getStudioState(), wiring top-bar
 ├── context.ts      # ÚNICO estado mutable legacy (ctx.*)
-├── data/           # assets.ts (sprites), presets.ts (Sora/Aoi)
-├── domain/         # audio.ts, history.ts, geometry.ts (puros + DOM queries)
+├── data/           # assets.ts (sprites), presets.ts (Sora/Aoi con scenes)
+├── domain/         # audio.ts, history.ts, geometry.ts (puros + DOM queries),
+│                   # scenes.ts (VNScene + resolvers de saltos)
 └── ui/             # render-nodes, render-wires, interactions, viewport,
-                    # transform, minimap, editors, playtest, workspace,
-                    # compile (fuente única), exporter (compat), load-preset, share, updater, toast
+                    # transform, minimap, editors, node-editor (+🎬), scenes,
+                    # dialogue, playtest (+saltos), workspace (+scenes),
+                    # compile (fuente única + escenas), exporter (compat), load-preset, share (+scenes), updater, toast
 src/components/
 ├── StudioShell.svelte  # compone todo + onMount(initStudio)
 ├── TopBar.svelte, CanvasChrome.svelte, BottomNav.svelte

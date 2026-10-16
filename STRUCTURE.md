@@ -28,7 +28,7 @@ Me-proyecto-/
 │   │       │   ├── #nodesLayer  (tarjetas .vn-node generadas por render-nodes.ts)
 │   │       │   ├── #btnZoomOutPill #pillZoomLabel #btnCenterCanvas #btnFitGraph
 │   │       │   └── #btnFabAddNode + #minimapSvg #btnMinimapZoomOut/In
-│   │       ├── footer.nav      .nav-tab-btn[data-tab=nodes|assets|compositor|timeline|characters|playtest|settings]
+│   │       ├── footer.nav      .nav-tab-btn[data-tab=nodes|assets|compositor|timeline|characters|scenes|dialogues|playtest|settings]
 │   │       ├── #drawerModal   #drawerModalTitle #drawerModalBody #btnCloseDrawer
 │   │       ├── #playtestModal #vnPlaytestCard.vn-playtest-landscape #vnStageBg
 │   │       │                 #vnCurrentNodeBadge #btnVnRestart #btnVnToggleAudio
@@ -40,7 +40,8 @@ Me-proyecto-/
 │   │       ├── #shareLoading #shareLoadingMsg #shareLoadingBar #shareLoadingGame
 │   │       │   └── #updateModal (pantalla auto-update) + #toastBanner #toastMessage
 │   └── lib/
-│       ├── types.ts          VNNode (+video/audio/sound) VNWire VNState (+startNodeId) GraphSnapshot DragState SfxKind
+│       ├── types.ts          VNNode (+sceneId/nextSceneId/dlg*) VNWire VNScene VNState (+startNodeId/dialogueThemeId/scenes) GraphSnapshot (+scenes) DragState SfxKind
+│       ├── dialogue-themes.ts  biblioteca de diseños de diálogo (6 base + propios) + 14 fuentes + 8 animaciones
 │       ├── platform.ts       isTauri/isCapacitor + saveHtmlExport (dialog/fs, Filesystem/Share)
 │       ├── assets.ts         galería (fotos+vídeos)/cámara/archivos (imagen+vídeo+audio) + catálogos + etiquetas (tags/normalizeTags/setAssetTags/getAllAssetTags/saveCustomAssetFromDataUrl)
 │       ├── compositions.ts   Composition/CompositionLayer (fondo+sprites) + persistencia + renderCompositionToDataUrl (PNG 1280×720)
@@ -57,13 +58,15 @@ Me-proyecto-/
 │           ├── domain/
 │           │   ├── audio.ts    playSynthSfx
 │           │   ├── geometry.ts getPortPosition buildBezierPath escapeHtml
+│           │   ├── scenes.ts   VNScene (ensure/normalize/create/rename/delete/move + resolveSceneStartNode/resolveContinueSceneTarget)
 │           │   └── history.ts  pushHistory (30 pasos)
 │           └── ui/
-│               ├── render-nodes.ts  8 tipos + toolbar ✏️/▶/🗑 + insignia ▶ INICIO + puertos a -9px
+│               ├── render-nodes.ts  8 tipos + toolbar ✏️/▶/🗑 + insignia ▶ INICIO + etiqueta 🎬 de escena (INICIO/FIN) + puertos a -9px
 │               │     banner_scene (in_main + portsOut repartidos %) · choice (in_main + out por opción; punto izq. decorativo)
 │               │     compact_scene · character_selector (in + out) · avatar_scene (in + outs)
 │               │     branch_scene (in + out) · video_scene (in + out, 🎬) · sound_cue (in + out, 🔊)
-│               ├── node-editor.ts   openNodeEditor() por tipo + deleteNode() + duplicateNode()
+│               ├── node-editor.ts   openNodeEditor() por tipo + deleteNode() + duplicateNode() (+ escena por nodo: sceneId/nextSceneId/inicio/fin + gotoSceneId por opción)
+│               ├── scenes.ts        openScenesStudio() (nombre + inicio/fin por nodo + orden + ver/jugar/eliminar)
 │               ├── editors.ts       edición rápida inline (doble-clic / doble-toque)
 │               ├── interactions.ts  drag nodos, drag cables, botones, doble-toque, Supr
 │               ├── render-wires.ts  cables SVG + popover (Quitar/Color) + Shift+Clic borra
@@ -73,10 +76,10 @@ Me-proyecto-/
 │               ├── transform.ts     setZoom/applyTransform (panLayer translate GPU + world scale GPU)
 │               ├── minimap.ts       renderMinimap
 │               ├── load-preset.ts   loadPreset(sora|aoi|blank)
-│               ├── playtest.ts      startPlaytest/closePlaytest/renderPlaytestStep (horizontal 16:9 + <video>/<audio>)
-│               ├── compile.ts       compilador ÚNICO (buildStandaloneHtml/buildHistoria/validateStory/saveTextFile + openCompileModal + exportWindowsPackage/exportLinuxPackage)
+│               ├── playtest.ts      startPlaytest/closePlaytest/renderPlaytestStep (horizontal 16:9 + <video>/<audio> + saltos de escena: Continuar → siguiente, decisión → gotoSceneId)
+│               ├── compile.ts       compilador ÚNICO (buildStandaloneHtml/buildHistoria/validateStory/saveTextFile + openCompileModal + exportWindowsPackage/exportLinuxPackage + escenas en .vn.json/.html/validación)
 │               ├── exporter.ts      compat (delega a compile.ts: exportStandaloneHtml/openExeExportModal)
-│               ├── workspace.ts     openWorkspaceTab + addNewNodeOfType + assets/timeline/chars
+│               ├── workspace.ts     openWorkspaceTab + addNewNodeOfType + assets/timeline/chars (+ pestañas scenes/dialogues/compositor)
 │               ├── share.ts         getShareBaseUrl/isLocalOrPrivateHost/buildShareUrl/
 │               │                         parseShareHash/openShareModal (base editable + .html vía compile.ts)/
 │               │               downloadPlayableHtml/enterSharedPlayMode/checkSharedPlayModeOnBoot
@@ -101,8 +104,9 @@ Me-proyecto-/
 | Cambiar borrar/duplicar | `ui/node-editor.ts` (`deleteNode`/`duplicateNode`) |
 | Cambiar cables/puertos | `ui/render-nodes.ts` (posiciones) + `domain/geometry.ts` + `ui/render-wires.ts` (`renderWires` rebuild completo, `updateWirePaths` en drag) |
 | Cambiar gestos canvas | `ui/viewport.ts` + `ui/transform.ts` (GPU: translate + scale; `body.vn-gesturing` apaga blur/glow) |
-| Cambiar compartir/jugar | `ui/share.ts` + `StudioShell.svelte` (`#btnShareLevel`, `#shareLoading`, `#playtestModal`) + `app.css` (`shared-play-mode`) |
-| Añadir pestaña inferior | `StudioShell.svelte` (footer) + `ui/workspace.ts` (`openWorkspaceTab`) |
+| Cambiar compartir/jugar | `ui/share.ts` + `StudioShell.svelte` (`#btnShareLevel`, `#shareLoading`, `#playtestModal`) + `app.css` (`shared-play-mode`) + `domain/scenes.ts` (el reproductor resuelve Continuar/saltos por escena) |
+| Añadir pestaña inferior | `StudioShell.svelte` (footer) + `ui/workspace.ts` (`openWorkspaceTab`) + `BottomNav.svelte` (`data-tab`) |
+| Sistema de escenas | `lib/types.ts` (`VNScene`, `sceneId/nextSceneId/gotoSceneId`) + `domain/scenes.ts` + `ui/scenes.ts` (`openScenesStudio`) + `ui/node-editor.ts` (sección 🎬) + `ui/playtest.ts` + `ui/compile.ts` (mismos saltos en `.html`) |
 | Nueva pantalla completa (no popup) | `components/*.svelte` montado en `App.svelte` + evento `vn:open-*`/`vn:close-*` + `data-tab` en el footer (ver `CompositionStudio.svelte`) |
 | Etiquetar assets | `lib/assets.ts` (`tags`, `setAssetTags`, `getAllAssetTags`) + chips `[data-tag-filter]` y botón `[data-edit-tags]` en `ui/workspace.ts` |
 | Cambiar export nativo | `lib/platform.ts` + `ui/compile.ts` (generador único) + workflow `bundle-desktop.yml` (solo manual; Rust/Tauri compila el .exe/.deb/.AppImage real) |

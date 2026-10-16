@@ -75,8 +75,20 @@ export function validateStory(): StoryIssue[] {
         issues.push({ level: 'error', msg: `«${label}» es de decisión pero no tiene opciones.` });
       } else {
         for (const o of n.options) {
-          if (!outOf(n.id).some((w) => w.fromPort === `out_${o.id}`)) {
-            issues.push({ level: 'aviso', msg: `«${label}» → «${o.label}» no tiene cable de salida (mostrará fin de rama).` });
+          const hasWire = outOf(n.id).some((w) => w.fromPort === `out_${o.id}`);
+          if (!hasWire && !o.gotoSceneId && !n.nextSceneId) {
+            issues.push({ level: 'aviso', msg: `«${label}» → «${o.label}» no tiene cable ni escena de salto (mostrará fin de rama).` });
+          } else if (!hasWire && (o.gotoSceneId || n.nextSceneId)) {
+            const targetId = o.gotoSceneId || n.nextSceneId;
+            const scene = (ctx.state.scenes ?? []).find((s) => s.id === targetId);
+            if (!scene) {
+              issues.push({ level: 'error', msg: `«${label}» → «${o.label}» apunta a una escena eliminada. Reasígnala.` });
+            } else if (!scene.startNodeId || !ids.has(scene.startNodeId)) {
+              const member = nodes.find((x) => x.sceneId === scene.id);
+              if (!member) {
+                issues.push({ level: 'aviso', msg: `«${label}» → «${o.label}» salta a «${scene.name}», pero esa escena no tiene inicio (no saltará).` });
+              }
+            }
           }
         }
       }
@@ -113,6 +125,31 @@ export function validateStory(): StoryIssue[] {
       break;
     }
   }
+  // Escenas: avisos si el inicio/fin quedó sin asignar o apunta a nodos borrados.
+  try {
+    const scenes = ctx.state.scenes ?? [];
+    const seenNames = new Set<string>();
+    for (const s of scenes) {
+      const nm = (s.name || '').trim();
+      if (!nm) issues.push({ level: 'error', msg: 'Hay una escena sin nombre: ponle uno en la pestaña Escenas.' });
+      else if (seenNames.has(nm.toLowerCase())) {
+        issues.push({ level: 'aviso', msg: `Hay dos escenas llamadas «${nm}»: ponles nombres distintos.` });
+      } else seenNames.add(nm.toLowerCase());
+      if (s.startNodeId && !ids.has(s.startNodeId)) {
+        issues.push({ level: 'error', msg: `«${nm || s.id}» empieza en un nodo borrado. Elige otro inicio.` });
+      }
+      if (s.endNodeId && !ids.has(s.endNodeId)) {
+        issues.push({ level: 'error', msg: `«${nm || s.id}» termina en un nodo borrado. Elige otro fin.` });
+      }
+      if (!s.startNodeId) {
+        issues.push({ level: 'aviso', msg: `«${nm || s.id}» no tiene nodo de inicio (Jugar desde ahí no saltará).` });
+      }
+      const members = nodes.filter((x) => x.sceneId === s.id).length;
+      if (!members && !s.startNodeId && !s.endNodeId) {
+        issues.push({ level: 'aviso', msg: `«${nm || s.id}» está vacía (sin nodos ni inicio/fin).` });
+      }
+    }
+  } catch {}
   return issues;
 }
 
@@ -127,6 +164,7 @@ export function buildHistoria(): Record<string, unknown> {
     v: 1,
     proyecto: ctx.state.projectName || 'Mi Novela',
     startNodeId: getStartNodeId(ctx.state),
+    scenes: ctx.state.scenes ?? [],
     nodes: ctx.state.nodes,
     wires: ctx.state.wires,
     variables: ctx.state.variables ?? {},
@@ -137,7 +175,7 @@ export function buildHistoria(): Record<string, unknown> {
 }
 
 /** Solo los assets usados (el .html pesa menos que incrustando todo el catálogo). */
-function collectUsedPayload(): { nodes: unknown[]; wires: unknown[]; assets: Record<string, unknown>; customs: Record<string, unknown>; dialogueThemes: Record<string, unknown>; dialogueThemeId: string } {
+function collectUsedPayload(): { nodes: unknown[]; wires: unknown[]; assets: Record<string, unknown>; customs: Record<string, unknown>; dialogueThemes: Record<string, unknown>; dialogueThemeId: string; scenes: unknown[] } {
   const fullCatalog = getCharacterCatalog();
   const fallback = fullCatalog.sora ?? CHARACTER_ASSETS.sora;
   const usedChars = new Set<string>();
@@ -182,7 +220,7 @@ function collectUsedPayload(): { nodes: unknown[]; wires: unknown[]; assets: Rec
   if (!dialogueThemes[dialogueThemeId] && allThemes.get(dialogueThemeId)) {
     dialogueThemes[dialogueThemeId] = allThemes.get(dialogueThemeId);
   }
-  return { nodes: ctx.state.nodes, wires: ctx.state.wires, assets, customs, dialogueThemes, dialogueThemeId };
+  return { nodes: ctx.state.nodes, wires: ctx.state.wires, assets, customs, dialogueThemes, dialogueThemeId, scenes: ctx.state.scenes ?? [] };
 }
 
 /**
@@ -192,12 +230,13 @@ function collectUsedPayload(): { nodes: unknown[]; wires: unknown[]; assets: Rec
 export function buildStandaloneHtml(): string {
   const startId = getStartNodeId(ctx.state);
   const project = ctx.state.projectName || 'Mi Novela';
-  const { nodes, wires, assets, customs, dialogueThemes, dialogueThemeId } = collectUsedPayload();
+  const { nodes, wires, assets, customs, dialogueThemes, dialogueThemeId, scenes } = collectUsedPayload();
   const fontStacks: Record<string, string> = {};
   for (const f of DIALOGUE_FONTS) fontStacks[f.id] = f.stack;
   const serialized = JSON.stringify({
     proyecto: project,
     startNodeId: startId,
+    scenes,
     variables: ctx.state.variables ?? {},
     nodes,
     wires,
@@ -263,6 +302,55 @@ var DATA = ${serialized};
 var START = (DATA.startNodeId && DATA.nodes.some(function(n){return n.id===DATA.startNodeId;})) ? DATA.startNodeId : (DATA.nodes[0] && DATA.nodes[0].id);
 var visited = 0;
 function esc(s){ return String(s == null ? "" : s); }
+function sceneOf(nodeId){
+  var nodes = DATA.nodes || [];
+  var cur = null;
+  for (var i=0;i<nodes.length;i++){ if (nodes[i].id===nodeId){ cur = nodes[i]; break; } }
+  var scenes = DATA.scenes || [];
+  if (cur && cur.sceneId) {
+    for (var j=0;j<scenes.length;j++){ if (scenes[j].id===cur.sceneId) return scenes[j]; }
+  }
+  for (var k=0;k<scenes.length;k++){
+    if (scenes[k].startNodeId===nodeId || scenes[k].endNodeId===nodeId) return scenes[k];
+  }
+  return null;
+}
+function sceneById(id){
+  var scenes = DATA.scenes || [];
+  for (var i=0;i<scenes.length;i++){ if (scenes[i].id===id) return scenes[i]; }
+  return null;
+}
+function nodeExists(id){
+  var nodes = DATA.nodes || [];
+  for (var i=0;i<nodes.length;i++){ if (nodes[i].id===id) return true; }
+  return false;
+}
+function sceneStart(id){
+  var s = sceneById(id);
+  if (!s) return null;
+  if (s.startNodeId && nodeExists(s.startNodeId)) return s.startNodeId;
+  var nodes = DATA.nodes || [];
+  for (var i=0;i<nodes.length;i++){ if (nodes[i].sceneId===id) return nodes[i].id; }
+  return null;
+}
+function continueTarget(nodeId){
+  var nodes = DATA.nodes || [];
+  var cur = null;
+  for (var i=0;i<nodes.length;i++){ if (nodes[i].id===nodeId){ cur = nodes[i]; break; } }
+  if (!cur) return null;
+  if (cur.nextSceneId) { var t = sceneStart(cur.nextSceneId); if (t) return t; }
+  var owner = (cur.sceneId && sceneById(cur.sceneId)) || sceneOf(nodeId);
+  if (owner && owner.endNodeId===nodeId) {
+    var scenes = DATA.scenes || [];
+    for (var j=0;j<scenes.length;j++){
+      if (scenes[j].id===owner.id && j+1<scenes.length) {
+        var nx = sceneStart(scenes[j+1].id);
+        if (nx) return nx;
+      }
+    }
+  }
+  return null;
+}
 function go(id) {
   var n = null;
   for (var i=0;i<DATA.nodes.length;i++){ if (DATA.nodes[i].id===id){ n=DATA.nodes[i]; break; } }
@@ -278,9 +366,10 @@ function go(id) {
   vp.style.display = "none"; vp.removeAttribute("src"); sp.style.display = "";
   try { ap.pause(); } catch(e){}
   function customOf(id){ return (DATA.customs || {})[id]; }
+  var sc = sceneOf(n.id);
   var label = n.badge || n.headerBar || n.title || n.topTitle || DATA.proyecto || "Novela";
   document.getElementById("t").textContent = DATA.proyecto || "Novela";
-  document.getElementById("m").textContent = label + " · paso " + visited;
+  document.getElementById("m").textContent = (sc ? ("🎬 " + sc.name + " · ") : "") + label + " · paso " + visited;
   if (n.type === "video_scene") {
     var v = customOf(n.videoAssetId);
     if (v && v.dataUrl) {
@@ -386,10 +475,14 @@ function go(id) {
     n.options.forEach(function(o){
       var w = null;
       for (var i=0;i<outs.length;i++){ if (outs[i].fromPort === "out_" + o.id){ w = outs[i]; break; } }
+      var target = w ? w.toNode : null;
+      var jumpName = "";
+      if (!target && o.gotoSceneId) { target = sceneStart(o.gotoSceneId); var js = sceneById(o.gotoSceneId); if (js) jumpName = js.name; }
+      if (!target && n.nextSceneId) { target = sceneStart(n.nextSceneId); }
       var b = document.createElement("button");
-      b.className = "btn"; b.textContent = o.label;
+      b.className = "btn"; b.textContent = jumpName ? (o.label + "  → 🎬 " + jumpName) : o.label;
       b.onclick = function(){
-        if (w) go(w.toNode);
+        if (target) go(target);
         else { end.style.display = ""; end.textContent = "[Elegido: " + o.label + "] — Fin de esta rama. Conecta un cable de salida en el editor para continuar."; }
       };
       ch.appendChild(b);
@@ -403,9 +496,21 @@ function go(id) {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(outs[0].toNode); }
     };
   } else {
-    end.style.display = "";
-    end.textContent = "✦ Fin de esta rama — ¡gracias por jugar! Pulsa ↻ Reiniciar para volver al inicio.";
-    document.onkeydown = null;
+    var ct = continueTarget(n.id);
+    var cs = ct ? sceneOf(ct) : null;
+    if (ct) {
+      var b2 = document.createElement("button");
+      b2.className = "btn"; b2.textContent = cs ? ("Continuar → 🎬 " + cs.name) : "Continuar →";
+      b2.onclick = function(){ go(ct); };
+      ch.appendChild(b2);
+      document.onkeydown = function(e){
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(ct); }
+      };
+    } else {
+      end.style.display = "";
+      end.textContent = "✦ Fin de esta rama — ¡gracias por jugar! Pulsa ↻ Reiniciar para volver al inicio.";
+      document.onkeydown = null;
+    }
   }
 }
 document.getElementById("restart").onclick = function(){ visited = 0; go(START); };
@@ -647,7 +752,7 @@ export function openCompileModal(initial: CompileFormat = 'html') {
         <div class="p-3.5 rounded-xl bg-[#101528] border border-cyan-500/30 flex items-center justify-between gap-2">
           <div class="min-w-0">
             <div class="font-bold text-cyan-300 text-sm truncate">«${escapeHtml(ctx.state.projectName || 'Mi Novela')}»</div>
-            <div class="text-xs text-slate-400">${ctx.state.nodes.length} nodos · ${ctx.state.wires.length} enlaces · inicio: ${escapeHtml(getStartNodeId(ctx.state) || '—')}</div>
+            <div class="text-xs text-slate-400">${ctx.state.nodes.length} nodos · ${ctx.state.wires.length} enlaces · ${(ctx.state.scenes ?? []).length} escena(s) · inicio: ${escapeHtml(getStartNodeId(ctx.state) || '—')}</div>
           </div>
           <span class="px-2.5 py-1 rounded text-xs font-mono shrink-0 ${errors.length ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}">${errors.length ? 'Bloqueado' : 'Listo'}</span>
         </div>

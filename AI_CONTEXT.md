@@ -28,16 +28,28 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
   `App.svelte` además monta `CompositionStudio.svelte` a pantalla completa con
   los eventos `vn:open-composer` / `vn:close-composer` (la pestaña `compositor`
   del footer NO abre el drawer, dispara el evento desde `openWorkspaceTab`).
-- Estado: `context.ts` → `ctx.state: VNState { projectName, zoom, panX, panY,
+- Estado: `context.ts` → `ctx.state: VNState { projectName, startNodeId,
+  dialogueThemeId, scenes: VNScene[], zoom, panX, panY,
   variables, nodes, wires }`.
+- Escenas (`domain/scenes.ts` + `ui/scenes.ts`): `VNScene { id, name,
+  startNodeId?, endNodeId? }`; nodos con `sceneId` + `nextSceneId`, opciones
+  `choice` con `gotoSceneId` (salto directo sin cable). Continuar sin cable
+  resuelve `resolveContinueSceneTarget()` (explícito → fin de escena → siguiente
+  en orden). Pestaña `scenes` del footer (`BottomNav.svelte` + `openWorkspaceTab`).
 - Nodos (`ui/render-nodes.ts`): `banner_scene`, `choice`, `compact_scene`,
   `character_selector`, `avatar_scene`, `branch_scene`, `video_scene` (🎬),
   `sound_cue` (🔊 complemento). Cada tarjeta lleva
-  `.vn-node-toolbar` (✏️ `edit-node`, 🗑 `delete-node`) y `.vn-port` a `-9px` con
+  `.vn-node-toolbar` (✏️ `edit-node`, ▶ `set-start`, 🗑 `delete-node`),
+  `.vn-scene-tag` (🎬 nombre + INICIO/FIN) + `.vn-port` a `-9px` con
   `data-node-id/data-port-id/data-port-dir/data-port-color`.
-- Edición: `ui/node-editor.ts` (`openNodeEditor`, `deleteNode`, `duplicateNode`) +
+- Edición: `ui/node-editor.ts` (`openNodeEditor`, `deleteNode`, `duplicateNode`,
+  sección 🎬 escena por nodo + `gotoSceneId` por opción) +
   `ui/editors.ts` (inline doble-clic/doble-toque) + `ui/interactions.ts`
   (drag, botones, `Supr`).
+- Cuadros de diálogo (`lib/dialogue-themes.ts` + `ui/dialogue.ts`): biblioteca con
+  diseños base + propios (imagen), tipografías y animaciones; tema global
+  `dialogueThemeId` + override por nodo (`dlgThemeId/dlgFont/dlgAnimation/…`);
+  pestaña `dialogues` del footer y tarjeta en Ajustes.
 - Cables: `domain/geometry.ts` (`getPortPosition` vía DOM + `zoom`, `buildBezierPath`)
   + `ui/render-wires.ts` (glow, hit-area 22px, popover Quitar/Color).
   Rebuild completo solo al cambiar el grafo (`renderWires`); en drag de nodo usa
@@ -49,14 +61,17 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
   (`panLayer` translate GPU + `canvasWorld` scale GPU). Durante el gesto se pone
   `body.vn-gesturing` (apaga `backdrop-filter`, glow y transiciones).
 - Compartir: `ui/share.ts` — `getShareBaseUrl()` (nunca localhost en local;
-  base pública editable) → `buildShareUrl('jugar')` → `#nivel=<b64url>` →
+  base pública editable) → `buildShareUrl('jugar')` (incluye `startNodeId` +
+  `scenes`) → `#nivel=<b64url>` →
   `parseShareHash` → `enterSharedPlayMode` (pantallas `#shareLoading` + clase
   `body.shared-play-mode` + `renderPlaytestStep`) → `checkSharedPlayModeOnBoot`.
   Alternativa sin servidor: `.html` jugable vía `ui/compile.ts`.
 - Compilar (`ui/compile.ts`, fuente única): `buildStandaloneHtml()` (jugable
-  `file://`: inicio real `startNodeId`, variables, audio/vídeo, decisiones
+  `file://`: inicio real `startNodeId`, **escenas** (`scenes` + saltos
+  `nextSceneId`/`gotoSceneId` + etiqueta `🎬 Escena`), variables, audio/vídeo, decisiones
   `out_*`, teclado, reinicio, solo assets usados) + `buildHistoria()`
-  (`.vn.json` portable) + `validateStory()` (errores bloquean, avisos no) +
+  (`.vn.json` portable con `scenes`) + `validateStory()` (errores bloquean, avisos no;
+  incluye escenas: nombres, inicios rotos, vacías) +
   `saveTextFile()` (Tauri `dialog`/`fs` → Capacitor `Filesystem`/`Share` →
   descarga web) + `openCompileModal()` (4 formatos + tamaño estimado) +
   `exportWindowsPackage()` (`.html` + `Iniciar_*.bat`) +
@@ -85,7 +100,9 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
 
 - Nuevo campo de nodo: añade a `VNNode` en `types.ts`, píntalo en
   `render-nodes.ts`, edítalo en `node-editor.ts` (y en `playtest.ts`/`compile.ts`
-  si afecta a jugar/exportar).
+  si afecta a jugar/exportar). Para escenas usa `domain/scenes.ts`
+  (`ensureScenes`/`normalizeScenes` + resolvers) y persiste en `storage.ts`,
+  `history.ts`, undo/redo de `index.ts`, presets y `share.ts`.
 - Nuevo puerto: `data-port-id` único por nodo; respeta convención
   `in_*` (entrada) / `out_*` (salida); en `choice` es `in_<optId>` / `out_<optId>`.
 - Nuevo botón de cabecera/pie: añade en `StudioShell.svelte` con `id`, conéctalo en
