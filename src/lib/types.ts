@@ -31,6 +31,16 @@ export type NodeType =
 
 export type SoundTrigger = 'auto' | 'with_dialogue';
 
+export type DialogueTextAnimation =
+  | 'none'
+  | 'typewriter'
+  | 'fade'
+  | 'slide-up'
+  | 'wave'
+  | 'bounce'
+  | 'blur-in'
+  | 'rainbow';
+
 export interface VNNode {
   id: string;
   type: NodeType;
@@ -72,6 +82,12 @@ export interface VNNode {
   volume?: number;
   loop?: boolean;
   trigger?: SoundTrigger;
+  // Cuadro de diálogo personalizado (override por nodo; 'global' = usa el tema del proyecto).
+  dlgThemeId?: string;
+  dlgFont?: string;
+  dlgAnimation?: DialogueTextAnimation;
+  dlgFontSize?: number;
+  dlgFontColor?: string;
 }
 
 export interface VNWire {
@@ -87,6 +103,8 @@ export interface VNState {
   projectName: string;
   /** Nodo donde empieza la partida (elegible en el editor; fallback: nodes[0]). */
   startNodeId?: string;
+  /** Tema de cuadro de diálogo activo para todo el proyecto. */
+  dialogueThemeId?: string;
   zoom: number;
   panX: number;
   panY: number;

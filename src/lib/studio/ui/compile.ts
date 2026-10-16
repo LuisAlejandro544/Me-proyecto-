@@ -10,6 +10,7 @@ import { showToast } from './toast';
 import { getStartNodeId } from '../storage';
 import { getCharacterCatalog, getCustomAssets } from '../../assets';
 import { CHARACTER_ASSETS } from '../data/assets';
+import { DIALOGUE_FONTS, dialogueAnimationCss, getAllDialogueThemes, getProjectDialogueThemeId } from '../../dialogue-themes';
 
 export type CompileFormat = 'html' | 'vnjson' | 'windows' | 'linux';
 
@@ -129,12 +130,14 @@ export function buildHistoria(): Record<string, unknown> {
     nodes: ctx.state.nodes,
     wires: ctx.state.wires,
     variables: ctx.state.variables ?? {},
+    dialogueThemeId: getProjectDialogueThemeId(ctx.state),
+    dialogueThemes: getAllDialogueThemes(),
     assets: { catalog, customs }
   };
 }
 
 /** Solo los assets usados (el .html pesa menos que incrustando todo el catálogo). */
-function collectUsedPayload(): { nodes: unknown[]; wires: unknown[]; assets: Record<string, unknown>; customs: Record<string, unknown> } {
+function collectUsedPayload(): { nodes: unknown[]; wires: unknown[]; assets: Record<string, unknown>; customs: Record<string, unknown>; dialogueThemes: Record<string, unknown>; dialogueThemeId: string } {
   const fullCatalog = getCharacterCatalog();
   const fallback = fullCatalog.sora ?? CHARACTER_ASSETS.sora;
   const usedChars = new Set<string>();
@@ -163,7 +166,23 @@ function collectUsedPayload(): { nodes: unknown[]; wires: unknown[]; assets: Rec
       }
     }
   }
-  return { nodes: ctx.state.nodes, wires: ctx.state.wires, assets, customs };
+  // Solo los diseños de diálogo usados (global + overrides por nodo).
+  const allThemes = new Map(getAllDialogueThemes().map((t) => [t.id, t]));
+  const dialogueThemeId = getProjectDialogueThemeId(ctx.state);
+  const usedThemeIds = new Set<string>([dialogueThemeId]);
+  for (const n of ctx.state.nodes) {
+    if (n.dlgThemeId && n.dlgThemeId !== 'global') usedThemeIds.add(n.dlgThemeId);
+  }
+  const dialogueThemes = {};
+  for (const id of usedThemeIds) {
+    const t = allThemes.get(id);
+    if (t) dialogueThemes[id] = t;
+  }
+  // Garantiza al menos el tema global aunque la biblioteca haya cambiado.
+  if (!dialogueThemes[dialogueThemeId] && allThemes.get(dialogueThemeId)) {
+    dialogueThemes[dialogueThemeId] = allThemes.get(dialogueThemeId);
+  }
+  return { nodes: ctx.state.nodes, wires: ctx.state.wires, assets, customs, dialogueThemes, dialogueThemeId };
 }
 
 /**
@@ -173,7 +192,9 @@ function collectUsedPayload(): { nodes: unknown[]; wires: unknown[]; assets: Rec
 export function buildStandaloneHtml(): string {
   const startId = getStartNodeId(ctx.state);
   const project = ctx.state.projectName || 'Mi Novela';
-  const { nodes, wires, assets, customs } = collectUsedPayload();
+  const { nodes, wires, assets, customs, dialogueThemes, dialogueThemeId } = collectUsedPayload();
+  const fontStacks: Record<string, string> = {};
+  for (const f of DIALOGUE_FONTS) fontStacks[f.id] = f.stack;
   const serialized = JSON.stringify({
     proyecto: project,
     startNodeId: startId,
@@ -181,7 +202,10 @@ export function buildStandaloneHtml(): string {
     nodes,
     wires,
     assets,
-    customs
+    customs,
+    dialogueThemes,
+    dialogueThemeId,
+    fontStacks
   }).replace(/</g, '\\u003c');
 
   return `<!DOCTYPE html>
@@ -204,9 +228,10 @@ export function buildStandaloneHtml(): string {
   .media { display:flex; justify-content:center; }
   .sprite { max-height:250px; max-width:100%; border-radius:16px; border:2px solid rgba(255,255,255,0.25); }
   .vplayer { max-width:100%; max-height:250px; border-radius:16px; border:2px solid rgba(232,121,249,0.5); background:#000; }
-  .box { background:rgba(15,20,40,0.92); border:1px solid rgba(0,242,254,0.45); border-radius:16px; padding:18px; }
+  .box { background:rgba(15,20,40,0.92); border:1px solid rgba(0,242,254,0.45); border-radius:16px; padding:18px; background-size:cover; background-position:center; }
   .speaker { font-weight:800; color:#ff758c; margin-bottom:6px; }
   .dlg { white-space:pre-wrap; line-height:1.55; }
+${dialogueAnimationCss()}
   .vars { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
   .vars span { font-size:11px; padding:2px 8px; border-radius:999px; background:#1e293b; color:#67e8f9; font-family:ui-monospace,monospace; }
   .choices { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
@@ -225,9 +250,9 @@ export function buildStandaloneHtml(): string {
   <div class="media"><img id="sp" class="sprite" alt="Personaje" /></div>
   <div class="media"><video id="vp" class="vplayer" controls playsinline style="display:none"></video></div>
   <audio id="ap" style="display:none"></audio>
-  <div class="box">
+  <div class="box" id="dlgBox">
     <div id="spk" class="speaker"></div>
-    <div id="dlg" class="dlg"></div>
+    <div id="dlg" class="dlg vn-dlg-letters"></div>
     <div id="ch" class="choices"></div>
     <div id="end" class="end" style="display:none"></div>
     <div id="vars" class="vars"></div>
@@ -285,7 +310,65 @@ function go(id) {
       var q = ap.play(); if (q && q.catch) q.catch(function(){});
     }
   }
-  document.getElementById("dlg").textContent = (n.type === "choice") ? "Elige tu próxima decisión:" : (n.dialogue || n.title || "…");
+  document.getElementById("dlg").textContent = "";
+  (function applyDialogue(n) {
+    var themes = DATA.dialogueThemes || {};
+    var ids = Object.keys(themes);
+    var fallback = ids.length ? themes[ids[0]] : null;
+    var t = (n.dlgThemeId && themes[n.dlgThemeId]) ? themes[n.dlgThemeId] : (themes[DATA.dialogueThemeId] || fallback);
+    if (!t) t = { boxColor:"#0f1428", boxImage:"", borderColor:"#00f2fe", borderWidth:1, borderRadius:16, font:"novela-sans", fontSize:16, fontColor:"#fff", speakerColor:"#ff758c", animation:"typewriter", animSpeed:1 };
+    if (n.dlgFont) t = Object.assign({}, t, { font: n.dlgFont });
+    if (n.dlgAnimation) t = Object.assign({}, t, { animation: n.dlgAnimation });
+    if (typeof n.dlgFontSize === "number" && n.dlgFontSize > 0) t = Object.assign({}, t, { fontSize: n.dlgFontSize });
+    if (n.dlgFontColor) t = Object.assign({}, t, { fontColor: n.dlgFontColor });
+    var stacks = DATA.fontStacks || {};
+    var stack = stacks[t.font] || t.font || "system-ui,sans-serif";
+    var box = document.getElementById("dlgBox");
+    if (box) {
+      box.style.backgroundColor = t.boxColor || "#0f1428";
+      box.style.backgroundImage = t.boxImage ? ("url(\"" + t.boxImage + "\")") : "";
+      box.style.backgroundSize = "cover";
+      box.style.backgroundPosition = "center";
+      box.style.borderColor = t.borderColor || "#00f2fe";
+      box.style.borderWidth = (t.borderWidth == null ? 1 : t.borderWidth) + "px";
+      box.style.borderRadius = (t.borderRadius == null ? 16 : t.borderRadius) + "px";
+    }
+    var spk = document.getElementById("spk");
+    if (spk) { spk.style.fontFamily = stack; if (!n.speakerColor) spk.style.color = t.speakerColor || "#ff758c"; }
+    var dlg = document.getElementById("dlg");
+    var full = (n.type === "choice") ? "Elige tu próxima decisión:" : (n.dialogue || n.title || "…");
+    dlg.style.fontFamily = stack;
+    dlg.style.fontSize = (t.fontSize || 16) + "px";
+    dlg.style.color = t.fontColor || "#fff";
+    dlg.className = "dlg vn-dlg-letters";
+    if (window.__dlgTimer) { clearInterval(window.__dlgTimer); window.__dlgTimer = null; }
+    var anim = t.animation || "none";
+    var speed = Math.max(0.25, Number(t.animSpeed) || 1);
+    if (anim === "none") { dlg.textContent = full; return; }
+    if (anim === "typewriter") {
+      dlg.textContent = "";
+      var i = 0;
+      var step = Math.max(1, Math.round(speed));
+      window.__dlgTimer = setInterval(function(){
+        i += step;
+        dlg.textContent = full.slice(0, i);
+        if (i >= full.length) { clearInterval(window.__dlgTimer); window.__dlgTimer = null; }
+      }, Math.max(8, Math.round(34 / speed)));
+      dlg.onclick = function(){
+        if (window.__dlgTimer) { clearInterval(window.__dlgTimer); window.__dlgTimer = null; dlg.textContent = full; }
+      };
+      return;
+    }
+    dlg.innerHTML = "";
+    dlg.classList.add("vn-dlg-anim-" + anim);
+    var per = (anim === "wave" || anim === "rainbow") ? 0.06 : 0.028 / speed;
+    for (var k = 0; k < full.length; k++) {
+      var s = document.createElement("span");
+      s.textContent = full[k];
+      s.style.animationDelay = (k * per).toFixed(3) + "s";
+      dlg.appendChild(s);
+    }
+  })(n);
   var varsEl = document.getElementById("vars");
   varsEl.innerHTML = "";
   var vars = DATA.variables || {};

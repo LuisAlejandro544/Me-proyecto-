@@ -8,6 +8,7 @@ import { escapeHtml } from '../domain/geometry';
 import { showToast } from './toast';
 import { findCustomAsset, resolveCharacter } from '../../assets';
 import { getStartNodeId } from '../storage';
+import { applyDialogueThemeToPlaytest } from './dialogue';
 
 function stopPlaytestMedia() {
   try {
@@ -188,6 +189,11 @@ export function renderPlaytestStep(nodeId) {
   } else {
     dialogueEl.textContent = node.dialogue || '…';
   }
+
+  // Cuadro de diálogo personalizado: fondo importado + tipografía + animación de letras.
+  try {
+    applyDialogueThemeToPlaytest(node);
+  } catch {}
 
   // Render story variables readout
   const varsEl = document.getElementById('vnVariablesReadout');

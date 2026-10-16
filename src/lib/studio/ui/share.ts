@@ -68,7 +68,8 @@ export function buildShareUrl(permission: SharePermission = 'jugar', baseOverrid
       panY: ctx.state.panY,
       variables: ctx.state.variables,
       nodes: ctx.state.nodes,
-      wires: ctx.state.wires
+      wires: ctx.state.wires,
+      dialogueThemeId: ctx.state.dialogueThemeId
     }
   };
   const base = (baseOverride ?? getShareBaseUrl()).replace(/\/?$/, '/');

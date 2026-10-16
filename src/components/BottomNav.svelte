@@ -56,6 +56,17 @@
       </div>
     </button>
 
+    <!-- Tab: Diálogos -->
+    <button data-tab="dialogues" class="nav-tab-btn group relative flex items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-white font-medium text-xs sm:text-sm transition shrink-0">
+      <svg class="w-5 h-5 text-fuchsia-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8m-8 4h5m7-2a9 9 0 01-9 9H6l-3 3v-6a9 9 0 019-9h5a9 9 0 019 3z"/>
+      </svg>
+      <div class="text-left">
+        <div>Diálogos</div>
+        <div class="hidden md:block text-[10px] text-slate-500 font-normal">Diseños y letras</div>
+      </div>
+    </button>
+
     <!-- Tab 5: Playtest -->
     <button data-tab="playtest" class="nav-tab-btn group relative flex items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-white font-medium text-xs sm:text-sm transition shrink-0">
       <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

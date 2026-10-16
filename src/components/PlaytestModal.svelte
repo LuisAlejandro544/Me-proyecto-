@@ -44,7 +44,7 @@
 
       <!-- Bottom Visual Novel Dialogue Box -->
       <div class="relative z-20 p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div class="bg-[#12172d]/95 border border-cyan-400/40 rounded-2xl p-4 sm:p-5 shadow-2xl backdrop-blur-md">
+        <div id="vnDialogueBox" class="bg-[#12172d]/95 border border-cyan-400/40 rounded-2xl p-4 sm:p-5 shadow-2xl backdrop-blur-md">
           <div class="flex items-center justify-between mb-1.5">
             <span id="vnSpeakerName" class="text-sm sm:text-base font-bold text-rose-400 tracking-wide">Sora</span>
             <span id="vnExpressionTag" class="text-[11px] text-slate-400">Alegre • Escala 100%</span>

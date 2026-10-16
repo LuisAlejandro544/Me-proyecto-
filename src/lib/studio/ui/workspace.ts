@@ -6,8 +6,10 @@ import { playSynthSfx } from '../domain/audio';
 import { escapeHtml } from '../domain/geometry';
 import { pushHistory } from '../domain/history';
 import { startPlaytest } from './playtest';
+import { openDialogueStudio } from './dialogue';
 import { renderNodes } from './render-nodes';
 import { showToast } from './toast';
+import { getProjectDialogueThemeId, getDialogueTheme } from '../../dialogue-themes';
 import { getCurrentVersion, getUpdateRepo, setUpdateRepo, checkForUpdates } from './updater';
 import {
   assetSizeLabel,
@@ -256,6 +258,13 @@ export function openWorkspaceTab(tabName) {
     } catch {}
     animateTabSwitch('compositor');
     window.dispatchEvent(new CustomEvent('vn:open-composer'));
+    return;
+  }
+
+  // Estudio de cuadros de diálogo: diseños importables + tipografías + animaciones.
+  if (tabName === 'dialogues' || tabName === 'dialogos' || tabName === 'dialogo') {
+    animateTabSwitch('dialogues');
+    openDialogueStudio();
     return;
   }
 
@@ -573,6 +582,15 @@ export function openWorkspaceTab(tabName) {
           </div>
           <p class="text-[11px] text-slate-500 mt-2">Canal: workflow «Auto-update» (solo al publicar un release o manual, nunca por commits/PRs). En escritorio descarga el instalador de tu sistema y lo abre para actualizar de verdad; en Android descarga el APK; en web la actualización se aplica con «Recargar app». El .zip es el portable y no se auto-instala.</p>
         </div>
+        <div class="vn-anim-card flex items-center justify-between p-3.5 rounded-xl bg-[#101528] border border-fuchsia-500/30">
+          <div>
+            <div class="font-semibold text-white text-sm">💬 Cuadros de diálogo personalizados</div>
+            <div class="text-xs text-slate-400">Diseños importados + tipografías + animación de letras · global: ${escapeHtml(getDialogueTheme(getProjectDialogueThemeId(ctx.state)).name)}</div>
+          </div>
+          <button id="btnOpenDialogueStudio" class="px-4 py-1.5 rounded-lg bg-fuchsia-500 hover:bg-fuchsia-400 text-xs font-bold text-white min-h-[44px] shrink-0">
+            Personalizar
+          </button>
+        </div>
         <div class="vn-anim-card flex items-center justify-between p-3.5 rounded-xl bg-[#101528] border border-slate-700">
           <div>
             <div class="font-semibold text-white text-sm">Efectos de sonido de la interfaz y la novela</div>
@@ -595,6 +613,9 @@ export function openWorkspaceTab(tabName) {
     `;
     modal.classList.remove('hidden');
     animateTabSwitch(tabName);
+    document.getElementById('btnOpenDialogueStudio')!.onclick = () => {
+      openDialogueStudio();
+    };
     document.getElementById('btnModalToggleSfx').onclick = () => {
       ctx.sfxEnabled = !ctx.sfxEnabled;
       openWorkspaceTab('settings');
