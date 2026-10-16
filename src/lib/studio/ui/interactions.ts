@@ -10,13 +10,16 @@ import { renderNodes } from './render-nodes';
 import { showToast } from './toast';
 import {
   PHOTO_VIDEO_TAPS_REQUIRED,
+  assetFilterForNode,
   confirmPhotoVideoTouch,
   countTouchTap,
   isPhotoVideoNode,
   isTouchMobile,
   photoVideoKindOf,
-  resetTouchTaps
+  resetTouchTaps,
+  shouldOpenAssetsForField
 } from './touch-edit';
+import { wsUi } from './workspace/state';
 import { setStartNodeId } from '../storage';
 import { getCharacterCatalog } from '../../assets';
 
@@ -30,6 +33,25 @@ function lastNodeDragEndMs(): number {
 // Ese clic fantasma no debe abrir editores ni botones: se ignora ~400ms.
 function suppressAfterNodeDrag(): boolean {
   return Date.now() - lastNodeDragEndMs() < 400;
+}
+
+// Doble-clic sobre un foto/vídeo/audio: selecciona el nodo y abre Recursos
+// ya filtrado para elegir el archivo. Import dinámico para no crear un
+// ciclo estático workspace -> tab-assets -> render-nodes -> interactions.
+function openAssetsForNode(nodeId: string) {
+  const node = ctx.state.nodes.find(n => n.id === nodeId);
+  if (!node) return;
+  ctx.selectedNodeId = nodeId;
+  document.querySelectorAll('.vn-node').forEach(n => n.classList.toggle('selected', n.dataset.nodeId === nodeId));
+  try {
+    wsUi.filter = assetFilterForNode(node);
+    wsUi.tab = 'assets';
+  } catch {}
+  const kindLabel = node.type === 'video_scene' ? 'vídeo' : node.type === 'sound_cue' ? 'audio' : 'foto';
+  showToast(`📁 Elige el ${kindLabel} en Recursos — se asigna al nodo seleccionado`);
+  import('./workspace').then(m => m.openWorkspaceTab('assets')).catch(() => {
+    document.querySelector<HTMLButtonElement>('.nav-tab-btn[data-tab="assets"]')?.click();
+  });
 }
 
 // Tap fiable en táctil: `click` a veces no llega (o llega tras un drag que
@@ -150,12 +172,24 @@ export function attachNodeInteractions() {
     // confirmación con popup antes de abrir el editor inline.
     if (kind === 'field' && isPhotoVideoNode(node) && isTouchMobile()) {
       const prop = (fieldEl as HTMLElement).dataset.field;
-      const label = node.badge || node.title || node.topTitle || node.headerBar || node.videoName || node.backgroundName || node.id;
+      const label = node.badge || node.title || node.topTitle || node.headerBar || node.videoName || node.backgroundName || node.soundName || node.audioName || node.id;
       if (!confirmPhotoVideoTouch(`${photoVideoKindOf(node)} · ${label}`, PHOTO_VIDEO_TAPS_REQUIRED, 'editar')) return;
+      // Tras confirmar en un campo de recurso, ir directo a Recursos para
+      // elegir la foto / el vídeo / el audio (no al editor de texto).
+      if (shouldOpenAssetsForField(node, prop)) {
+        openAssetsForNode(node.id);
+        return;
+      }
     }
     if (kind === 'field') {
       const prop = (fieldEl as HTMLElement).dataset.field;
       if (!prop) return;
+      // Los nombres de recurso no se escriben a mano: el doble-clic abre
+      // Recursos (carpeta) para elegir la foto, el vídeo o el audio.
+      if (shouldOpenAssetsForField(node, prop)) {
+        openAssetsForNode(node.id);
+        return;
+      }
       openInlineEditorModal(node, prop, fieldEl.textContent);
     } else {
       const idx = parseInt((fieldEl as HTMLElement).dataset.optIdx || '-1', 10);
@@ -201,6 +235,51 @@ export function attachNodeInteractions() {
         fieldActivated(optEl, 'option');
       } else {
         lastFieldTap = { key, t: now };
+      }
+    });
+  });
+
+  // Doble-clic / doble-toque en la miniatura o el hueco del recurso
+  // (vídeo, foto de fondo, audio): abre Recursos para elegir el archivo.
+  // El doble-clic en textos sigue yendo al editor inline (fieldActivated).
+  const MEDIA_NODE_TYPES = ['video_scene', 'background', 'narration', 'sound_cue'];
+  let lastMediaTap = { key: '', t: 0 };
+  function mediaActivated(nodeEl: Element) {
+    const nodeId = (nodeEl as HTMLElement).dataset.nodeId;
+    const node = ctx.state.nodes.find(n => n.id === nodeId);
+    if (!node || !MEDIA_NODE_TYPES.includes(node.type)) return;
+    if (isTouchMobile()) {
+      const label = node.badge || node.title || node.videoName || node.backgroundName || node.soundName || node.audioName || nodeId;
+      if (!confirmPhotoVideoTouch(`${photoVideoKindOf(node)} · ${label}`, PHOTO_VIDEO_TAPS_REQUIRED, 'editar')) return;
+    }
+    playSynthSfx('click');
+    openAssetsForNode(node.id);
+  }
+  document.querySelectorAll('.vn-node').forEach(nodeEl => {
+    const nodeId = (nodeEl as HTMLElement).dataset.nodeId;
+    const node = ctx.state.nodes.find(n => n.id === nodeId);
+    if (!node || !MEDIA_NODE_TYPES.includes(node.type)) return;
+    const isMediaTarget = (t: Element | null) => {
+      if (!t || !(t instanceof HTMLElement)) return false;
+      if (t.closest('.editable-field, .editable-option, button, select, input, textarea, [data-action], .vn-port')) return false;
+      return !!t.closest('video, img, [data-asset-thumb]');
+    };
+    nodeEl.addEventListener('dblclick', (e) => {
+      if (!isMediaTarget(e.target as Element)) return;
+      e.stopPropagation();
+      mediaActivated(nodeEl);
+    });
+    nodeEl.addEventListener('click', (e) => {
+      if ((e as MouseEvent).detail > 1) return; // el dblclick ya lo gestiona en desktop
+      if (suppressAfterNodeDrag()) return;
+      if (!isMediaTarget(e.target as Element)) return;
+      const now = performance.now();
+      if (lastMediaTap.key === nodeId && now - lastMediaTap.t < 350) {
+        e.stopPropagation();
+        lastMediaTap = { key: '', t: 0 };
+        mediaActivated(nodeEl);
+      } else {
+        lastMediaTap = { key: nodeId, t: now };
       }
     });
   });

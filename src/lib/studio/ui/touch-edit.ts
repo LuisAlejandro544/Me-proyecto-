@@ -28,12 +28,48 @@ export function isPhotoVideoNode(node: { type?: string } | null | undefined): bo
   if (!node?.type) return false;
   if (node.type === 'video_scene') return true;
   // Foto: fondo persistente, narración con fondo opcional y escenas con avatar/banner.
+  // Sonido: también necesita elegir recurso (audio), así que cuenta como
+  // nodo multimedia para el doble-clic hacia Recursos.
+  if (node.type === 'sound_cue' || node.type === 'narration') return true;
   return node.type === 'background' || node.type === 'avatar_scene' || node.type === 'banner_scene';
+}
+
+/** Campos de texto que en realidad son el nombre de un recurso (no se editan a mano). */
+export const ASSET_NAME_FIELDS = ['videoName', 'backgroundName', 'audioName', 'soundName'] as const;
+
+/** true si `prop` es el nombre visible de un foto/vídeo/audio asignado. */
+export function isAssetNameField(prop: string | null | undefined): boolean {
+  if (!prop) return false;
+  return (ASSET_NAME_FIELDS as readonly string[]).includes(prop);
+}
+
+/** Filtro de Recursos que corresponde al nodo (para abrir la carpeta ya filtrada). */
+export function assetFilterForNode(node: { type?: string } | null | undefined): 'imagen' | 'video' | 'audio' | 'todos' {
+  const type = node?.type;
+  if (type === 'video_scene') return 'video';
+  if (type === 'sound_cue') return 'audio';
+  if (type === 'background' || type === 'narration') return 'imagen';
+  return 'todos';
+}
+
+/** ¿Este doble-clic debería abrir Recursos en vez del editor de texto? */
+export function shouldOpenAssetsForField(
+  node: { type?: string } | null | undefined,
+  prop: string | null | undefined
+): boolean {
+  if (!node || !prop) return false;
+  if (!isAssetNameField(prop)) return false;
+  if (prop === 'videoName' && node.type !== 'video_scene') return false;
+  if (prop === 'backgroundName' && node.type !== 'background' && node.type !== 'narration') return false;
+  if ((prop === 'audioName' || prop === 'soundName') && node.type !== 'sound_cue' && node.type !== 'avatar_scene') return false;
+  return true;
 }
 
 function kindLabel(nodeOrKind: { type?: string } | string | null | undefined): string {
   const type = typeof nodeOrKind === 'string' ? nodeOrKind : nodeOrKind?.type;
-  return type === 'video_scene' ? 'vídeo' : 'foto';
+  if (type === 'video_scene') return 'vídeo';
+  if (type === 'sound_cue') return 'audio';
+  return 'foto';
 }
 
 /**
