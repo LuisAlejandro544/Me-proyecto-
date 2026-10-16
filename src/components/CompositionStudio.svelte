@@ -16,6 +16,13 @@
     type Composition,
     type CompositionLayer
   } from '../lib/compositions';
+  import {
+    PHOTO_VIDEO_TAPS_REQUIRED,
+    confirmPhotoVideoTouch,
+    countTouchTap,
+    isTouchMobile,
+    resetTouchTaps
+  } from '../lib/studio/ui/touch-edit';
 
   let compositions: Composition[] = [];
   let current: Composition | null = null;
@@ -93,6 +100,23 @@
     current.bgName = name;
     persist();
     say(`Fondo: «${name}» 🖼`);
+  }
+
+  // Toque en móvil sobre una foto/vídeo del catálogo: cuenta los toques
+  // (1/2) y pide popup de confirmación antes de ponerla como fondo/sprite.
+  // En PC se aplica directo como antes.
+  function tapCatalogPhoto(src: string, name: string) {
+    if (isTouchMobile()) {
+      const taps = countTouchTap(`composer:${sourceTarget}:${name}`);
+      if (taps < PHOTO_VIDEO_TAPS_REQUIRED) {
+        say(`👆 Toque ${taps}/${PHOTO_VIDEO_TAPS_REQUIRED} sobre «${name}» — toca de nuevo para usarla`);
+        return;
+      }
+      resetTouchTaps(`composer:${sourceTarget}:${name}`);
+      if (!confirmPhotoVideoTouch(name, taps, 'asignar')) return;
+    }
+    if (sourceTarget === 'background') setBackground(src, name);
+    else addLayer(src, name);
   }
 
   async function addFromDevice(source: 'gallery' | 'files') {
@@ -375,7 +399,7 @@
           <div class="flex gap-2 overflow-x-auto pb-1 min-w-0 max-w-full" style="scrollbar-width: thin;">
             {#each imageAssets() as a (a.id)}
               <button
-                on:click={() => (sourceTarget === 'background' ? setBackground(a.dataUrl, a.name) : addLayer(a.dataUrl, a.name))}
+                on:click={() => tapCatalogPhoto(a.dataUrl, a.name)}
                 class="shrink-0 w-20 text-center group"
                 title={a.name}
               >
@@ -393,7 +417,7 @@
           <div class="flex gap-2 overflow-x-auto pb-1 min-w-0 max-w-full" style="scrollbar-width: thin;">
             {#each sprites() as s (s.id)}
               <button
-                on:click={() => (sourceTarget === 'background' ? setBackground(s.banner ?? s.avatar, s.name) : addLayer(s.avatar, s.name))}
+                on:click={() => tapCatalogPhoto(s.banner ?? s.avatar, s.name)}
                 class="shrink-0 w-20 text-center group"
                 title={s.name}
               >

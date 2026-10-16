@@ -9,6 +9,13 @@ import { getAllAssetTags, getCustomAssets, assetSizeLabel } from '../../../asset
 import { allCharacterAssets, assetPreviewHtml, handleImportResult, wireFolderActions } from './folder';
 import { renderNodes } from '../render-nodes';
 import { showToast } from '../toast';
+import {
+  PHOTO_VIDEO_TAPS_REQUIRED,
+  confirmPhotoVideoTouch,
+  countTouchTap,
+  isTouchMobile,
+  resetTouchTaps
+} from '../touch-edit';
 
 export function renderAssetsTab(modal: HTMLElement, titleEl: HTMLElement, bodyEl: HTMLElement, reopen: (t: string) => void, tabName: string) {
     titleEl.textContent = '📁 Carpeta de recursos';
@@ -148,6 +155,23 @@ export function renderAssetsTab(modal: HTMLElement, titleEl: HTMLElement, bodyEl
         const cId = (card as HTMLElement).dataset.assignChar;
         const catalogNow = allCharacterAssets();
         const customsNow = getCustomAssets();
+        const customHit = customsNow.find((a) => a.id === cId);
+        const isPhotoVideo = !!customHit
+          ? (customHit.kind === 'imagen' || customHit.kind === 'video')
+          : !!catalogNow[cId];
+        // Foto/vídeo en móvil: contar los toques (1/2) y pedir confirmación
+        // con popup antes de asignar al nodo (evita asignaciones accidentales).
+        if (isPhotoVideo && isTouchMobile()) {
+          const taps = countTouchTap(`assign:${cId}`);
+          if (taps < PHOTO_VIDEO_TAPS_REQUIRED) {
+            const kind = customHit?.kind === 'video' ? 'vídeo' : 'foto';
+            showToast(`👆 Toque ${taps}/${PHOTO_VIDEO_TAPS_REQUIRED} sobre el ${kind} «${customHit?.name ?? catalogNow[cId]?.name ?? ''}» — toca de nuevo para asignar`);
+            return;
+          }
+          resetTouchTaps(`assign:${cId}`);
+          const nm = customHit?.name ?? catalogNow[cId]?.name ?? 'recurso';
+          if (!confirmPhotoVideoTouch(nm, taps, 'asignar')) return;
+        }
         if (node && catalogNow[cId]) {
           pushHistory();
           node.characterId = cId;

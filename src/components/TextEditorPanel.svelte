@@ -6,6 +6,16 @@
   import { getSelectedNode } from '../lib/studio/context';
   import { pushHistory } from '../lib/studio/domain/history';
   import { renderNodes } from '../lib/studio/ui/render-nodes';
+  import { showToast } from '../lib/studio/ui/toast';
+  import {
+    PHOTO_VIDEO_TAPS_REQUIRED,
+    confirmPhotoVideoTouch,
+    countTouchTap,
+    isPhotoVideoNode,
+    isTouchMobile,
+    photoVideoKindOf,
+    resetTouchTaps
+  } from '../lib/studio/ui/touch-edit';
   import type { TextTransition, VNNode } from '../lib/types';
 
   let visible = false;
@@ -40,7 +50,11 @@
 
   function current(): VNNode | null {
     const n = getSelectedNode();
-    return n && typeof n.dialogue === 'string' ? n : null;
+    if (!n) return null;
+    // Foto/vídeo: también editables por toques aunque aún no tengan texto
+    // (p. ej. fondo o vídeo recién creados sin diálogo).
+    if (isPhotoVideoNode(n)) return n;
+    return typeof n.dialogue === 'string' ? n : null;
   }
 
   function sync(fromSelection: boolean) {
@@ -155,6 +169,23 @@
       if (isControl(t)) return;
       const nodeEl = t?.closest('.vn-node');
       if (!nodeEl || (nodeEl as HTMLElement).dataset.nodeId !== id) return;
+      // Foto/vídeo en móvil: contar los toques (1/2) y pedir confirmación
+      // con popup antes de abrir el editor (evita aperturas accidentales).
+      try {
+        const st = getStudioState();
+        const tapped = st?.nodes.find((x) => x.id === id);
+        if (tapped && isPhotoVideoNode(tapped) && isTouchMobile()) {
+          const taps = countTouchTap(`edit:${id}`);
+          if (taps < PHOTO_VIDEO_TAPS_REQUIRED) {
+            const kind = photoVideoKindOf(tapped);
+            showToast(`👆 Toque ${taps}/${PHOTO_VIDEO_TAPS_REQUIRED} sobre el ${kind} — toca de nuevo para editar`);
+            return;
+          }
+          resetTouchTaps(`edit:${id}`);
+          const label = tapped.badge || tapped.title || tapped.topTitle || tapped.headerBar || tapped.videoName || tapped.backgroundName || id;
+          if (!confirmPhotoVideoTouch(`${photoVideoKindOf(tapped)} · ${label}`, taps, 'editar')) return;
+        }
+      } catch {}
       userSelected = true;
       dismissedFor = null;
       // Diferido: la selección (interactions.ts) se actualiza tras este evento.

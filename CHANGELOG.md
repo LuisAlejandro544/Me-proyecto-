@@ -1,6 +1,8 @@
 # Changelog — formato Keep a Changelog
 
 ## [Unreleased]
+### Added
+- Edición por toques para foto y vídeo en móvil con conteo + popup de confirmación (`ui/touch-edit.ts`): los nodos foto (`background`/`avatar_scene`/`banner_scene`) y vídeo (`video_scene`) cuentan los toques (1/2) en táctil y piden `confirm()` antes de abrir el editor (panel por toque, inline por doble-toque, cambio de personaje al tocar el avatar); asignar foto/vídeo desde Recursos (`tab-assets.ts`) y Componer (`CompositionStudio.svelte`) también cuenta 1/2 y confirma. En PC sigue todo con un clic, sin cambios
 ### Fixed
 - Recursos: la pestaña se quedaba en blanco y ya no abría tras añadir archivos y el ✏️ parecía muerto por `ReferenceError` (`assetPreviewHtml`/`assetSizeLabel`/`ctx`/`pushHistory`/`renderNodes` sin importar en `tab-assets.ts`); ahora importa lo que usa, la tarjeta ignora clics de botones/inputs internos, el renombrado usa `CSS.escape`, los vídeos pesados usan portada ligera y `openWorkspaceTab` muestra aviso en vez de romperse. Además los recursos añadidos siempre aparecen en la sesión aunque `localStorage` esté lleno (caché en memoria + aviso de cuota)
 ### Added
