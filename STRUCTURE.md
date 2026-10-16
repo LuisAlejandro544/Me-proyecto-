@@ -61,12 +61,11 @@ Me-proyecto-/
 │           │   ├── geometry.ts getPortPosition buildBezierPath escapeHtml
 │           │   ├── scenes.ts   VNScene (ensure/normalize/create/rename/delete/move + resolveSceneStartNode/resolveContinueSceneTarget)
 │           │   └── history.ts  pushHistory (30 pasos)
-│           └── ui/
-│               ├── render-nodes.ts  8 tipos + toolbar ✏️/▶/🗑 + insignia ▶ INICIO + etiqueta 🎬 de escena (INICIO/FIN) + insignia 🎞 de animación + puertos a -9px
-│               │     banner_scene (in_main + portsOut repartidos %) · choice (in_main + out por opción; punto izq. decorativo)
-│               │     compact_scene · character_selector (in + out) · avatar_scene (in + outs)
+│           └── ui/  (dioses partidos en subcarpeta + barrel fino; detalle abajo)
+│               ├── render-nodes.ts  orquestador + cards/{toolbar,banner,selector,avatar,branch,video,sound}.ts (8 tipos + toolbar ✏️/▶/🗑 + insignia ▶ INICIO + insignia 🎞 + puertos a -9px)
+│               │     banner_scene (in_main + portsOut repartidos %) · choice (in_main + out por opción) · compact_scene · character_selector (in + out) · avatar_scene (in + outs)
 │               │     branch_scene (in + out) · video_scene (in + out, 🎬) · sound_cue (in + out, 🔊)
-│               ├── node-editor.ts   openNodeEditor() por tipo + deleteNode() + duplicateNode() (+ escena por nodo: sceneId/nextSceneId/inicio/fin + gotoSceneId por opción + sección 🎞 assetEnter/assetMotion/sceneTransition)
+│               ├── node-editor.ts   barrel + node-editor/{fields,options,crud,form}.ts (openNodeEditor por tipo + deleteNode/duplicateNode + escena por nodo + sección 🎞)
 │               ├── scenes.ts        openScenesStudio() (nombre + inicio/fin por nodo + transición de entrada + orden + ver/jugar/eliminar)
 │               ├── editors.ts       edición rápida inline (doble-clic / doble-toque)
 │               ├── interactions.ts  drag nodos, drag cables, botones, doble-toque, Supr
@@ -78,14 +77,13 @@ Me-proyecto-/
 │               ├── minimap.ts       renderMinimap
 │               ├── load-preset.ts   loadPreset(sora|aoi|blank)
 │               ├── playtest.ts      startPlaytest/closePlaytest/renderPlaytestStep (horizontal 16:9 + <video>/<audio> + saltos de escena + 🎞 aparición/movimiento/transición por nodo/escena/global)
-│               ├── compile.ts       compilador ÚNICO (buildStandaloneHtml/buildHistoria/validateStory/saveTextFile + openCompileModal + exportWindowsPackage/exportLinuxPackage + escenas y 🎞 animaciones en .vn.json/.html/validación)
+│               ├── compile.ts       barrel + compile/{types,validate,historia,standalone,files,modal}.ts (generador ÚNICO en standalone.ts + buildHistoria/validateStory/saveTextFile + paquetes Win/Linux)
 │               ├── exporter.ts      compat (delega a compile.ts: exportStandaloneHtml/openExeExportModal)
-│               ├── workspace.ts     openWorkspaceTab + addNewNodeOfType + assets/timeline/chars (+ pestañas scenes/dialogues/compositor)
+│               ├── workspace.ts     router fino + workspace/{state,tab-switch,folder,tab-nodes,tab-nodes-factory,tab-assets,tab-timeline,tab-characters,tab-settings}.ts
 │               ├── share.ts         getShareBaseUrl/isLocalOrPrivateHost/buildShareUrl/
 │               │                         parseShareHash/openShareModal (base editable + .html vía compile.ts)/
 │               │               downloadPlayableHtml/enterSharedPlayMode/checkSharedPlayModeOnBoot
-│               ├── updater.ts       check GitHub releases/latest + pantalla #updateModal
-│               │                     + descarga .zip (Tauri save/fs, Capacitor Share)
+│               ├── updater.ts       barrel + updater/{repo,version,assets,screen,check,boot}.ts (releases/latest + pantalla #updateModal + descarga .zip/instalador)
 │               └── toast.ts         showToast
 ├── src-tauri/  tauri.conf.json (frontendDist ../dist, bundle targets all) + src/main.rs (Rust + plugin-fs/dialog/opener) + plugin-fs/dialog
 ├── android/    proyecto Capacitor (generado, no editar a mano; `npx cap sync`)

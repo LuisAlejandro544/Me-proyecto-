@@ -1,6 +1,8 @@
 # Changelog — formato Keep a Changelog
 
 ## [Unreleased]
+### Changed
+- Modularización total sin cambiar conducta: `compile/` (types/validate/historia/standalone/files/modal), `workspace/` (router + 9 módulos por pestaña), `updater/` (repo/version/assets/screen/check/boot), `cards/` (7 tarjetas) y `node-editor/` (fields/options/crud/form) como barrels que re-exportan el contrato; `context.ts` expone `getStudioState/getSelectedNodeId/getSelectedNode/selectNode` (vía preferida, `ctx` queda legacy) y `TextEditorPanel` ya los usa
 ### Added
 - Panel flotante Editor de texto (textarea + transición + sliders tamaño/rotación/escala/posición por nodo; vive en playtest y preview del canvas)
 ### Added
