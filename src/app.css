@@ -429,10 +429,9 @@
     .editable-field, .editable-option {
       cursor: text;
       border-radius: 6px;
-      padding: 1px 3px;
-      /* Solo compensación vertical: el bleed horizontal (-3px) agrandaba
-         la caja 6px más que la tarjeta y el texto envuelto salía ~2px
-         de la caja (se veía en headers como "Nodo 6: …"). */
+      /* Sin padding propio: pisaba (misma especificidad, va después) los
+         paddings de layout de las tarjetas (px-3.5/py-3/pr-*) y dejaba el
+         texto pegado al borde. Solo compensa en vertical. */
       margin: -1px 0;
     }
     .editable-field:hover, .editable-option:hover {
