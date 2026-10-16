@@ -1,10 +1,13 @@
 // @ts-nocheck
 // Workspace: pestaña recursos (extraído de ui/workspace.ts — barrel en ui/workspace.ts).
+import { ctx } from '../../context';
+import { pushHistory } from '../../domain/history';
 import { wsUi } from './state';
 import { animateTabSwitch } from './tab-switch';
 import { escapeHtml } from '../../domain/geometry';
-import { getAllAssetTags, getCustomAssets } from '../../../assets';
-import { allCharacterAssets, handleImportResult, wireFolderActions } from './folder';
+import { getAllAssetTags, getCustomAssets, assetSizeLabel } from '../../../assets';
+import { allCharacterAssets, assetPreviewHtml, handleImportResult, wireFolderActions } from './folder';
+import { renderNodes } from '../render-nodes';
 import { showToast } from '../toast';
 
 export function renderAssetsTab(modal: HTMLElement, titleEl: HTMLElement, bodyEl: HTMLElement, reopen: (t: string) => void, tabName: string) {
@@ -136,8 +139,11 @@ export function renderAssetsTab(modal: HTMLElement, titleEl: HTMLElement, bodyEl
 
     wireFolderActions(() => reopen('assets'), 'assets');
     bodyEl.querySelectorAll('[data-assign-char]').forEach(card => {
-      (card as HTMLElement).onclick = () => {
-        // Si el clic vino de renombrar/eliminar, ese botón ya hizo stopPropagation.
+      (card as HTMLElement).onclick = (ev) => {
+        // Los botones ✏️/🏷/🗑 e inputs internos ya hacen stopPropagation,
+        // pero lo ignoramos también aquí por defensa (si no, el ✏️ parece "no funcionar").
+        const t = ev?.target as HTMLElement | null;
+        if (t?.closest?.('button, input, [data-rename-box], [data-tags-edit]')) return;
         const node = ctx.state.nodes.find(n => n.id === ctx.selectedNodeId);
         const cId = (card as HTMLElement).dataset.assignChar;
         const catalogNow = allCharacterAssets();

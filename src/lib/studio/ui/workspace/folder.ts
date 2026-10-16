@@ -11,11 +11,27 @@ import {
 export function handleImportResult(res: { agregados: number; rechazados: string[] }, okMsg: string, reopen: () => void) {
   if (res.agregados > 0) {
     showToast(`${okMsg}: ${res.agregados} recurso(s) 🎉`);
+    // Si localStorage quedó lleno, avisamos que en esta sesión se ven igual
+    // pero conviene usar archivos pequeños (<2MB) para que persistan.
+    try {
+      localStorage.setItem('__vn_quota_probe__', '1');
+      localStorage.removeItem('__vn_quota_probe__');
+    } catch {
+      showToast('⚠️ Almacenamiento lleno: se ven en esta sesión; usa archivos más pequeños');
+    }
     reopen();
   } else if (res.rechazados.length) {
     showToast(res.rechazados[0]);
   } else {
     showToast('No se eligió ningún archivo');
+  }
+}
+
+function cssEsc(id: string): string {
+  try {
+    return (window as any).CSS?.escape ? (window as any).CSS.escape(id) : String(id).replace(/["\\]/g, '\\$&');
+  } catch {
+    return String(id).replace(/["\\]/g, '\\$&');
   }
 }
 
@@ -38,11 +54,16 @@ export function allCharacterAssets() {
 }
 
 
-export function assetPreviewHtml(a: { kind: string; dataUrl: string; name: string }): string {
+export function assetPreviewHtml(a: { kind: string; dataUrl: string; name: string; size?: number }): string {
   if (a.kind === 'imagen') {
     return `<img src="${a.dataUrl}" loading="lazy" class="w-full h-24 rounded-lg object-cover border border-white/15" alt="${escapeHtml(a.name)}" />`;
   }
   if (a.kind === 'video') {
+    // Vídeos pesados (>8MB como dataURL) congelan la pestaña al inyectar
+    // el src completo: mostramos portada ligera en su lugar.
+    if ((a.size ?? 0) > 8 * 1024 * 1024 || (a.dataUrl?.length ?? 0) > 11_000_000) {
+      return `<div class="w-full h-24 rounded-lg bg-black border border-fuchsia-400/30 flex flex-col items-center justify-center gap-1 text-2xl">🎬<span class="text-[10px] text-slate-300 font-semibold">Vídeo</span></div>`;
+    }
     return `<video src="${a.dataUrl}" muted playsinline preload="metadata" class="w-full h-24 rounded-lg object-cover border border-fuchsia-400/30 bg-black"></video>`;
   }
   return `<div class="w-full h-24 rounded-lg bg-gradient-to-br from-violet-600/40 to-cyan-500/30 border border-white/15 flex flex-col items-center justify-center gap-1 text-2xl">🎵<span class="text-[10px] text-slate-300 font-semibold">Audio</span></div>`;
@@ -107,8 +128,10 @@ export function wireFolderActions(reopen: () => void, scope: 'assets' | 'charact
   bodyEl.querySelectorAll('[data-rename-asset]').forEach((btn) => {
     (btn as HTMLElement).onclick = (e) => {
       e.stopPropagation();
+      e.preventDefault();
       const id = (btn as HTMLElement).dataset.renameAsset;
-      const card = bodyEl.querySelector(`[data-asset-card="${id}"]`);
+      if (!id) return;
+      const card = bodyEl.querySelector(`[data-asset-card="${cssEsc(id)}"]`);
       const label = card?.querySelector('[data-asset-name]');
       if (!card || !label) return;
       const current = getCustomAssets().find((a) => a.id === id)?.name ?? '';
@@ -148,8 +171,10 @@ export function wireFolderActions(reopen: () => void, scope: 'assets' | 'charact
   bodyEl.querySelectorAll('[data-edit-tags]').forEach((btn) => {
     (btn as HTMLElement).onclick = (e) => {
       e.stopPropagation();
+      e.preventDefault();
       const id = (btn as HTMLElement).dataset.editTags;
-      const box = bodyEl.querySelector(`[data-tags-box="${id}"]`);
+      if (!id) return;
+      const box = bodyEl.querySelector(`[data-tags-box="${cssEsc(id)}"]`);
       if (!box) return;
       const current = getCustomAssets().find((a) => a.id === id)?.tags ?? [];
       box.innerHTML = `
@@ -182,7 +207,9 @@ export function wireFolderActions(reopen: () => void, scope: 'assets' | 'charact
   bodyEl.querySelectorAll('[data-remove-custom]').forEach((btn) => {
     (btn as HTMLElement).onclick = (e) => {
       e.stopPropagation();
+      e.preventDefault();
       const id = (btn as HTMLElement).dataset.removeCustom;
+      if (!id) return;
       const name = getCustomAssets().find((a) => a.id === id)?.name ?? 'recurso';
       if (!confirm(`¿Eliminar «${name}» de la carpeta?`)) return;
       removeCustomAsset(id);
