@@ -2,6 +2,11 @@
 import { MAX_ASSET_BYTES, MAX_ASSET_LABEL, STORAGE_KEY, normalizeTags } from './types';
 import type { CustomAsset, CustomAssetKind } from './types';
 import type { ImportResult } from './types';
+// Caché en memoria de la sesión: evita perder recursos si localStorage
+// está lleno (vídeos/audios grandes como dataURL superan la cuota de ~5MB).
+let memoryCache: CustomAsset[] | null = null;
+let quotaWarned = false;
+
 function safeParse(raw: string | null): CustomAsset[] {
   if (!raw) return [];
   try {
@@ -18,18 +23,50 @@ function safeParse(raw: string | null): CustomAsset[] {
 }
 
 export function getCustomAssets(): CustomAsset[] {
+  // Caché en memoria: si localStorage está lleno/corrupto, los recursos
+  // añadidos en esta sesión siguen apareciendo y la pestaña sigue abriendo.
+  if (memoryCache) {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [...memoryCache];
+      const parsed = safeParse(raw);
+      // Si lo persistido coincide en tamaño, es la fuente de verdad;
+      // si no (cuota excedida a mitad), preferimos la memoria (más nueva).
+      if (parsed.length >= memoryCache.length) {
+        memoryCache = parsed;
+        return [...parsed];
+      }
+      return [...memoryCache];
+    } catch {
+      return [...memoryCache];
+    }
+  }
   try {
-    return safeParse(localStorage.getItem(STORAGE_KEY));
+    const parsed = safeParse(localStorage.getItem(STORAGE_KEY));
+    memoryCache = parsed;
+    return [...parsed];
   } catch {
-    return [];
+    return memoryCache ? [...memoryCache] : [];
   }
 }
 
 export function persist(assets: CustomAsset[]): void {
+  memoryCache = [...assets];
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(assets));
-  } catch {
-    // localStorage lleno o no disponible: se sigue en memoria en esta sesión.
+  } catch (err) {
+    // Cuota excedida: avisamos una vez por sesión pero NO perdemos nada en memoria.
+    try {
+      const name = (err as DOMException)?.name ?? '';
+      if (!quotaWarned && (name === 'QuotaExceededError' || name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+        quotaWarned = true;
+        queueMicrotask(() => {
+          try {
+            window.dispatchEvent(new CustomEvent('vn:assets-quota'));
+          } catch { /* noop */ }
+        });
+      }
+    } catch { /* noop */ }
   }
   try {
     window.dispatchEvent(new CustomEvent('vn:assets-changed'));

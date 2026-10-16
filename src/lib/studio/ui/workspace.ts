@@ -56,9 +56,21 @@ export function openWorkspaceTab(tabName) {
   const bodyEl = document.getElementById('drawerModalBody');
   if (!modal || !titleEl || !bodyEl) return;
   const reopen = (t: string) => openWorkspaceTab(t);
-  if (tabName === 'nodes') renderNodesTab(modal, titleEl, bodyEl, reopen, tabName);
-  else if (tabName === 'assets') renderAssetsTab(modal, titleEl, bodyEl, reopen, tabName);
-  else if (tabName === 'timeline') renderTimelineTab(modal, titleEl, bodyEl, reopen, tabName);
-  else if (tabName === 'characters') renderCharactersTab(modal, titleEl, bodyEl, reopen, tabName);
-  else if (tabName === 'settings') renderSettingsTab(modal, titleEl, bodyEl, reopen, tabName);
+  try {
+    if (tabName === 'nodes') renderNodesTab(modal, titleEl, bodyEl, reopen, tabName);
+    else if (tabName === 'assets') renderAssetsTab(modal, titleEl, bodyEl, reopen, tabName);
+    else if (tabName === 'timeline') renderTimelineTab(modal, titleEl, bodyEl, reopen, tabName);
+    else if (tabName === 'characters') renderCharactersTab(modal, titleEl, bodyEl, reopen, tabName);
+    else if (tabName === 'settings') renderSettingsTab(modal, titleEl, bodyEl, reopen, tabName);
+  } catch (err) {
+    console.error('[workspace] no se pudo abrir la pestaña', tabName, err);
+    try {
+      titleEl.textContent = '⚠️ No se pudo abrir esta pestaña';
+      bodyEl.innerHTML = `<div class="p-6 text-center text-sm text-slate-300">
+        <p>Algo falló al dibujar esta sección, pero tus datos están a salvo.</p>
+        <p class="text-xs text-slate-500 mt-1">Reintenta o recarga. Error: ${String((err as Error)?.message ?? err).slice(0, 160)}</p>
+      </div>`;
+      modal.classList.remove('hidden');
+    } catch { /* noop */ }
+  }
 }
