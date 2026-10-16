@@ -45,7 +45,7 @@ export function collectUsedPayload(): { nodes: unknown[]; wires: unknown[]; asse
   const customsAll = new Map(getCustomAssets().map((a) => [a.id, a]));
   const customs: Record<string, unknown> = {};
   for (const n of ctx.state.nodes) {
-    for (const ref of [n.videoAssetId, n.soundAssetId, n.audioAssetId]) {
+    for (const ref of [n.videoAssetId, n.soundAssetId, n.audioAssetId, n.backgroundAssetId]) {
       const a = ref ? customsAll.get(ref) : undefined;
       if (a) customs[a.id] = { dataUrl: a.dataUrl, mime: a.mime, kind: a.kind, name: a.name };
     }

@@ -42,7 +42,44 @@ export type NodeType =
   | 'branch_scene'
   | 'video_scene'
   | 'sound_cue'
+  | 'jump'
+  | 'ending'
+  | 'background'
+  | 'narration'
+  | 'monologue'
+  | 'wait'
+  | 'effect'
   | string;
+
+export type EndingKind = 'bueno' | 'malo' | 'secreto' | 'neutral';
+
+export type EffectKind =
+  | 'flash'
+  | 'fade-black'
+  | 'shake'
+  | 'zoom-punch'
+  | 'hearts'
+  | 'rain'
+  | 'snow'
+  | 'sparkles';
+
+export const EFFECT_KINDS: { id: EffectKind; label: string }[] = [
+  { id: 'flash', label: '⚡ Flash blanco' },
+  { id: 'fade-black', label: '⬛ Fundido a negro' },
+  { id: 'shake', label: '📳 Sacudida' },
+  { id: 'zoom-punch', label: '👊 Golpe de zoom' },
+  { id: 'hearts', label: '💖 Corazones' },
+  { id: 'rain', label: '🌧 Lluvia' },
+  { id: 'snow', label: '❄ Nieve' },
+  { id: 'sparkles', label: '✨ Chispas' }
+];
+
+export const ENDING_KINDS: { id: EndingKind; label: string }[] = [
+  { id: 'bueno', label: '🌅 Final bueno' },
+  { id: 'malo', label: '🌑 Final malo' },
+  { id: 'secreto', label: '🗝 Final secreto' },
+  { id: 'neutral', label: '🌫 Final neutral' }
+];
 
 export type SoundTrigger = 'auto' | 'with_dialogue';
 
@@ -119,6 +156,22 @@ export interface VNNode {
   assetMotion?: string;
   /** Transición de escenario al llegar a este nodo (vacío = escena/global). */
   sceneTransition?: string;
+  // Nodo jump — salto directo sin cable largo por el canvas.
+  /** Escena destino del salto (se juega su inicio). */
+  jumpSceneId?: string;
+  /** Nodo destino concreto (prioridad sobre el cable y la escena). */
+  jumpNodeId?: string;
+  // Nodo ending — final contable (bueno/malo/secreto/neutral + epílogo).
+  endingKind?: EndingKind;
+  endingTitle?: string;
+  // Nodo background — cambia el fondo del escenario.
+  backgroundAssetId?: string;
+  backgroundName?: string;
+  // Nodo wait — pausa dramática antes de continuar (ms).
+  waitMs?: number;
+  // Nodo effect — flash / shake / partículas (clase CSS breve).
+  effectKind?: EffectKind;
+  effectDurationMs?: number;
 }
 
 export interface VNWire {

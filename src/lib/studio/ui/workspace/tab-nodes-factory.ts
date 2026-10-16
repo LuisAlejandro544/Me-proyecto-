@@ -96,6 +96,101 @@ export function addNewNodeOfType(type) {
       trigger: 'auto',
       inColor: 'cyan'
     });
+  } else if (type === 'jump') {
+    ctx.state.nodes.push({
+      id,
+      type: 'jump',
+      badge: '↗️ Salto',
+      title: 'Salto directo',
+      dialogue: 'Salta a otra escena o nodo sin cable largo.',
+      sceneId: defaultSceneId,
+      x: offsetX,
+      y: offsetY,
+      width: 230,
+      jumpSceneId: undefined,
+      jumpNodeId: undefined,
+      inColor: 'cyan'
+    });
+  } else if (type === 'ending') {
+    ctx.state.nodes.push({
+      id,
+      type: 'ending',
+      badge: '🏁 Final',
+      endingKind: 'bueno',
+      endingTitle: 'Final bueno',
+      dialogue: 'Y así termina esta historia… ¡Gracias por jugar!',
+      sceneId: defaultSceneId,
+      x: offsetX,
+      y: offsetY,
+      width: 240,
+      inColor: 'cyan'
+    });
+  } else if (type === 'background') {
+    ctx.state.nodes.push({
+      id,
+      type: 'background',
+      badge: '🖼️ Fondo',
+      dialogue: 'Cambia el fondo del escenario y continúa.',
+      sceneId: defaultSceneId,
+      x: offsetX,
+      y: offsetY,
+      width: 240,
+      backgroundAssetId: undefined,
+      inColor: 'cyan'
+    });
+  } else if (type === 'narration') {
+    ctx.state.nodes.push({
+      id,
+      type: 'narration',
+      badge: '📖 Narración',
+      dialogue: 'La noche caía sobre el bosque y nadie decía nada…',
+      sceneId: defaultSceneId,
+      x: offsetX,
+      y: offsetY,
+      width: 250,
+      inColor: 'cyan'
+    });
+  } else if (type === 'monologue') {
+    ctx.state.nodes.push({
+      id,
+      type: 'monologue',
+      badge: '💭 Monólogo',
+      speaker: 'Sora',
+      speakerColor: '#a78bfa',
+      dialogue: '(¿De verdad debería abrir esa puerta…?)',
+      sceneId: defaultSceneId,
+      x: offsetX,
+      y: offsetY,
+      width: 250,
+      inColor: 'cyan'
+    });
+  } else if (type === 'wait') {
+    ctx.state.nodes.push({
+      id,
+      type: 'wait',
+      badge: '⏳ Pausa',
+      dialogue: 'Un silencio incómodo…',
+      waitMs: 800,
+      sceneId: defaultSceneId,
+      x: offsetX,
+      y: offsetY,
+      width: 220,
+      inColor: 'cyan'
+    });
+  } else if (type === 'effect') {
+    ctx.state.nodes.push({
+      id,
+      type: 'effect',
+      badge: '✨ Efecto',
+      dialogue: '¡La pantalla tiembla!',
+      effectKind: 'shake',
+      effectDurationMs: 600,
+      sceneId: defaultSceneId,
+      x: offsetX,
+      y: offsetY,
+      width: 230,
+      inColor: 'cyan'
+    });
   } else {
     ctx.state.nodes.push({
       id,

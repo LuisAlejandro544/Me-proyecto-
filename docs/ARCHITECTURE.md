@@ -30,7 +30,7 @@ Donde viven los elementos de UI:
   solos: pan/pinch/zoom no tocan el DOM; el drag actualiza solo `d`
   (`updateWirePaths`); el minimapa va diferido (`scheduleMinimap`).
 - `src/lib/platform.ts` = puente de export nativo (Tauri dialog/fs, Capacitor Filesystem/Share).
-- Estado canónico del grafo: tipos en `src/lib/types.ts` (`VNScene` + `VNNode.sceneId/nextSceneId` + `ChoiceOption.gotoSceneId`); estado mutable legacy centralizado en `studio/context.ts`.
+- Estado canónico del grafo: tipos en `src/lib/types.ts` (`VNScene` + `VNNode.sceneId/nextSceneId` + `ChoiceOption.gotoSceneId` + `jumpSceneId`/`jumpNodeId` + `endingKind`/`endingTitle` + `backgroundAssetId` + `waitMs` + `effectKind`/`effectDurationMs` + `EndingKind`/`EffectKind`); estado mutable legacy centralizado en `studio/context.ts`.
 - Escenas narrativas (`studio/domain/scenes.ts` + `studio/ui/scenes.ts`): nombre
   personalizable + `startNodeId` (dónde empieza) + `endNodeId` (dónde termina);
   pestaña `scenes` del footer (`BottomNav.svelte` → `openWorkspaceTab` →
@@ -47,7 +47,12 @@ con `<video>` para `video_scene` y `<audio>` para `sound_cue`/`audioAssetId`
 🎞 (`applyAssetAnimations()`: aparición del medio con `vn-asset-enter-*`,
 movimiento continuo en `#vnSpriteContainer` con `vn-asset-motion-*` y transición
 de `#vnStageBg` con `vn-stage-trans-*` solo al cambiar de escena o forzarla por
-nodo; posición/escala en `translate`/`scale` para no pisar `transform`);
+nodo; posición/escala en `translate`/`scale` para no pisar `transform`) +
+nodos nuevos: `jump` (Continuar resuelve cable → `jumpNodeId` → `jumpSceneId`),
+`ending` (epílogo terminal sin Continuar), `background` (imagen persistente en
+`#vnStageBg`), `narration` (centrada sin hablante), `monologue` (cursiva),
+`wait` (avance solo tras `waitMs` + botón Omitir) y `effect`
+(`playVisualEffect()`: flash/fundido/shake/zoom/partículas);
 `share.ts` genera URLs compartibles (base pública, nunca localhost, con `scenes` +
 defaults de animación) o un `.html` jugable con el nivel incrustado.
 
@@ -63,10 +68,12 @@ resolución `resolveNodeAssetAnim()` (nodo → escena → global), CSS único
 
 Compilador (`ui/compile.ts`, fuente única): `buildStandaloneHtml()` (novela
 jugable autocontenida `file://`: `startNodeId` real, **escenas con saltos
-(`scenes` + `nextSceneId`/`gotoSceneId` + etiqueta `🎬 Escena`)**, variables, audio/vídeo,
+(`scenes` + `nextSceneId`/`gotoSceneId`/`jumpNodeId`/`jumpSceneId` + etiqueta `🎬 Escena`)**,
+fondo persistente de `background`, final 🏁 terminal, espera con avance solo +
+Omitir, efectos `playFx`, variables, audio/vídeo,
 decisiones `out_*`, continuar con teclado, reinicio, contador de pasos y solo
 assets usados) + `buildHistoria()` (`.vn.json` portable: grafo + `scenes` + variables +
-assets) + `validateStory()` (errores que bloquean + avisos, incluye escenas: nombres, inicios rotos, vacías) + `saveTextFile()`
+assets) + `validateStory()` (errores que bloquean + avisos, incluye escenas: nombres, inicios rotos, vacías + saltos rotos + fondos sin imagen + finales terminales) + `saveTextFile()`
 (Tauri `dialog`/`fs` → Capacitor `Filesystem`/`Share` → descarga web) +
 `openCompileModal()` (selector `.html`/`.vn.json`/Windows/Linux, validación
 visible, tamaño estimado, progreso) + `exportWindowsPackage()` (`.html` +
@@ -85,10 +92,10 @@ src/lib/studio/
 ├── data/           # assets.ts (sprites), presets.ts (Sora/Aoi con scenes)
 ├── domain/         # audio.ts, history.ts, geometry.ts (puros + DOM queries),
 │                   # scenes.ts (VNScene + resolvers de saltos)
-└── ui/             # render-nodes (+🎞), render-wires, interactions, viewport,
-                     # transform, minimap, editors, node-editor (+🎬+🎞), scenes (+transición),
-                     # dialogue, playtest (+saltos +🎞), workspace (+scenes +ajustes 🎞),
-                     # compile (fuente única + escenas +🎞), exporter (compat), load-preset, share (+scenes +🎞), updater, toast
+└── ui/             # render-nodes (+🎞 +system con 7 nodos), render-wires, interactions, viewport,
+                     # transform, minimap, editors, node-editor (+🎬+🎞 +jump/ending/background/narration/monologue/wait/effect), scenes (+transición),
+                     # dialogue, playtest (+saltos +🎞 +efectos), workspace (+scenes +ajustes 🎞),
+                     # compile (fuente única + escenas +🎞 +7 nodos), exporter (compat), load-preset, share (+scenes +🎞), updater, toast
 src/components/
 ├── StudioShell.svelte  # compone todo + onMount(initStudio)
 ├── TopBar.svelte, CanvasChrome.svelte, BottomNav.svelte

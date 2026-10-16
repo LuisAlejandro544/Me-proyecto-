@@ -39,7 +39,12 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
   en orden). Pestaña `scenes` del footer (`BottomNav.svelte` + `openWorkspaceTab`).
 - Nodos (`ui/render-nodes.ts`): `banner_scene`, `choice`, `compact_scene`,
   `character_selector`, `avatar_scene`, `branch_scene`, `video_scene` (🎬),
-  `sound_cue` (🔊 complemento). Cada tarjeta lleva
+  `sound_cue` (🔊 complemento), `jump` (↗️ salto a `jumpNodeId`/`jumpSceneId`),
+  `ending` (🏁 terminal contable `endingKind` + `endingTitle`), `background`
+  (🖼️ `backgroundAssetId` persistente), `narration` (📖 sin hablante),
+  `monologue` (💭 cursiva), `wait` (⏳ `waitMs` con avance solo),
+  `effect` (✨ `effectKind` + `effectDurationMs` vía `playVisualEffect`). Tarjetas
+  nuevas en `ui/cards/system.ts`. Cada tarjeta lleva
   `.vn-node-toolbar` (✏️ `edit-node`, ▶ `set-start`, 🗑 `delete-node`),
   `.vn-scene-tag` (🎬 nombre + INICIO/FIN) + `.vn-anim-tag` (🎞 si el nodo tiene
   `assetEnter/assetMotion/sceneTransition`) + `.vn-port` a `-9px` con
@@ -50,7 +55,8 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
   `app.css`, playtest y `.html`); respeta `prefers-reduced-motion`.
 - Edición: `ui/node-editor.ts` (`openNodeEditor`, `deleteNode`, `duplicateNode`,
   sección 🎬 escena por nodo + `gotoSceneId` por opción + sección 🎞
-  `assetEnter/assetMotion/sceneTransition`) +
+  `assetEnter/assetMotion/sceneTransition` + formularios jump/ending/background/
+  narration/monologue/wait/effect) +
   `ui/editors.ts` (inline doble-clic/doble-toque) + `ui/interactions.ts`
   (drag, botones, `Supr`).
 - Cuadros de diálogo (`lib/dialogue-themes.ts` + `ui/dialogue.ts`): biblioteca con
@@ -75,10 +81,13 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
   Alternativa sin servidor: `.html` jugable vía `ui/compile.ts`.
 - Compilar (`ui/compile.ts`, fuente única): `buildStandaloneHtml()` (jugable
   `file://`: inicio real `startNodeId`, **escenas** (`scenes` + saltos
-  `nextSceneId`/`gotoSceneId` + etiqueta `🎬 Escena`), variables, audio/vídeo, decisiones
+  `nextSceneId`/`gotoSceneId`/`jumpNodeId`/`jumpSceneId` + etiqueta `🎬 Escena`),
+  fondo persistente de `background`, final 🏁 terminal, espera con avance solo,
+  efectos `playFx`, variables, audio/vídeo, decisiones
   `out_*`, teclado, reinicio, solo assets usados) + `buildHistoria()`
   (`.vn.json` portable con `scenes`) + `validateStory()` (errores bloquean, avisos no;
-  incluye escenas: nombres, inicios rotos, vacías) +
+  incluye escenas: nombres, inicios rotos, vacías + saltos rotos + fondos sin
+  imagen + finales terminales) +
   `saveTextFile()` (Tauri `dialog`/`fs` → Capacitor `Filesystem`/`Share` →
   descarga web) + `openCompileModal()` (4 formatos + tamaño estimado) +
   `exportWindowsPackage()` (`.html` + `Iniciar_*.bat`) +

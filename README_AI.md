@@ -17,12 +17,15 @@ npm run build && npm run check  # verificación obligatoria (0 errores)
 3. **Estado en `ctx`** (`lib/studio/context.ts`): muta con `pushHistory()` antes y
    `renderNodes()` después (el snapshot incluye `scenes`, `startNodeId`,
    `dialogueThemeId` para deshacer/rehacer).
-4. **Nodos**: plantilla en `ui/render-nodes.ts` (con `.vn-scene-tag` 🎬 y
-   `.vn-anim-tag` 🎞), edición en `ui/node-editor.ts` (sección 🎬 + `gotoSceneId`
-   por opción + sección 🎞 `assetEnter/assetMotion/sceneTransition`), cables en
-   `ui/render-wires.ts` + `domain/geometry.ts`, escenas en `domain/scenes.ts` +
-   `ui/scenes.ts` (pestaña `scenes`, con transición de entrada por escena) y
-   animaciones en `lib/asset-animations.ts` (globales en Ajustes).
+4. **Nodos**: plantilla en `ui/render-nodes.ts` (+ `cards/system.ts` con
+    `jump`/`ending`/`background`/`narration`/`monologue`/`wait`/`effect`, con
+    `.vn-scene-tag` 🎬 y `.vn-anim-tag` 🎞), edición en `ui/node-editor.ts` (sección 🎬 + `gotoSceneId`
+    por opción + sección 🎞 `assetEnter/assetMotion/sceneTransition` +
+    formularios de salto/final/fondo/pausa/efecto), cables en
+    `ui/render-wires.ts` + `domain/geometry.ts`, escenas en `domain/scenes.ts` +
+    `ui/scenes.ts` (pestaña `scenes`, con transición de entrada por escena) y
+    animaciones en `lib/asset-animations.ts` (globales en Ajustes); tipos nuevos
+    `EndingKind`/`EffectKind` en `types.ts`.
 5. **Compartir**: `ui/share.ts` codifica `{ permiso:'jugar', state }` (con
    `startNodeId` + `scenes` + defaults de animación) en
    `#nivel=<base64url>` con base pública (nunca `localhost`) y lo abre con
@@ -73,8 +76,9 @@ entrada) o en Ajustes (globales + duración); resuelve con
 
 **Compilar novela (`.html` / `.vn.json` / Windows / Linux):**
 `ui/compile.ts → openCompileModal()` — valida con `validateStory()` (incluye
-escenas), genera con
-`buildStandaloneHtml()` / `buildHistoria()` (ambos con `scenes` + animaciones), guarda con `saveTextFile()` y
+escenas + saltos rotos + fondos sin imagen + finales terminales), genera con
+`buildStandaloneHtml()` / `buildHistoria()` (ambos con `scenes` + animaciones +
+fondo persistente + final 🏁 + espera con avance solo + efectos), guarda con `saveTextFile()` y
 arma paquetes (`exportWindowsPackage` / `exportLinuxPackage`). Los 3 botones
 (`#btnExportExe`/`#btnExportHtml`/`#btnExportLinux`) van a este modal desde
 `index.ts`. No dupliques el generador: `exporter.ts`/`share.ts` delegan aquí.
