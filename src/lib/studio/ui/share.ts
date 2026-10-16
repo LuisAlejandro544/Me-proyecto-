@@ -71,7 +71,11 @@ export function buildShareUrl(permission: SharePermission = 'jugar', baseOverrid
       variables: ctx.state.variables,
       nodes: ctx.state.nodes,
       wires: ctx.state.wires,
-      dialogueThemeId: ctx.state.dialogueThemeId
+      dialogueThemeId: ctx.state.dialogueThemeId,
+      defaultAssetEnter: ctx.state.defaultAssetEnter,
+      defaultAssetMotion: ctx.state.defaultAssetMotion,
+      defaultSceneTransition: ctx.state.defaultSceneTransition,
+      animDurationMs: ctx.state.animDurationMs
     }
   };
   const base = (baseOverride ?? getShareBaseUrl()).replace(/\/?$/, '/');

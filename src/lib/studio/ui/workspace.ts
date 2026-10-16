@@ -12,6 +12,8 @@ import { ensureScenes } from '../domain/scenes';
 import { renderNodes } from './render-nodes';
 import { showToast } from './toast';
 import { getProjectDialogueThemeId, getDialogueTheme } from '../../dialogue-themes';
+import { ASSET_ENTER_ANIMATIONS, ASSET_MOTIONS, SCENE_TRANSITIONS, getProjectAssetDefaults } from '../../asset-animations';
+import { scheduleAutosave } from '../storage';
 import { getCurrentVersion, getUpdateRepo, setUpdateRepo, checkForUpdates } from './updater';
 import {
   assetSizeLabel,
@@ -600,6 +602,35 @@ export function openWorkspaceTab(tabName) {
             Personalizar
           </button>
         </div>
+        <div class="vn-anim-card p-3.5 rounded-xl bg-[#101528] border border-cyan-500/30 space-y-2.5">
+          <div class="font-semibold text-white text-sm">🎞 Animaciones globales de assets y escenarios</div>
+          <p class="text-xs text-slate-400">Aparición del sprite, movimiento en bucle y transición entre escenarios. Cada nodo y cada escena pueden overriding estos valores.</p>
+          ${(() => { const d = getProjectAssetDefaults(ctx.state); return `
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <label class="block">
+              <span class="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Aparición</span>
+              <select id="setAssetEnter" class="w-full rounded-xl bg-[#0f1428] border border-slate-600 px-2.5 py-2 text-xs text-white min-h-[44px]">
+                ${ASSET_ENTER_ANIMATIONS.map((a) => `<option value="${a.id}" ${d.enter === a.id ? 'selected' : ''}>${a.label}</option>`).join('')}
+              </select>
+            </label>
+            <label class="block">
+              <span class="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Movimiento</span>
+              <select id="setAssetMotion" class="w-full rounded-xl bg-[#0f1428] border border-slate-600 px-2.5 py-2 text-xs text-white min-h-[44px]">
+                ${ASSET_MOTIONS.map((a) => `<option value="${a.id}" ${d.motion === a.id ? 'selected' : ''}>${a.label}</option>`).join('')}
+              </select>
+            </label>
+            <label class="block">
+              <span class="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Transición</span>
+              <select id="setSceneTrans" class="w-full rounded-xl bg-[#0f1428] border border-slate-600 px-2.5 py-2 text-xs text-white min-h-[44px]">
+                ${SCENE_TRANSITIONS.map((a) => `<option value="${a.id}" ${d.transition === a.id ? 'selected' : ''}>${a.label}</option>`).join('')}
+              </select>
+            </label>
+          </div>
+          <label class="block">
+            <span class="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Duración (${d.durationMs} ms)</span>
+            <input id="setAnimDur" type="range" min="120" max="2000" step="10" value="${d.durationMs}" class="vn-slider mt-3" />
+          </label>`; })()}
+        </div>
         <div class="vn-anim-card flex items-center justify-between p-3.5 rounded-xl bg-[#101528] border border-slate-700">
           <div>
             <div class="font-semibold text-white text-sm">Efectos de sonido de la interfaz y la novela</div>
@@ -625,6 +656,25 @@ export function openWorkspaceTab(tabName) {
     document.getElementById('btnOpenDialogueStudio')!.onclick = () => {
       openDialogueStudio();
     };
+    {
+      const enterSel = document.getElementById('setAssetEnter') as HTMLSelectElement | null;
+      const motionSel = document.getElementById('setAssetMotion') as HTMLSelectElement | null;
+      const transSel = document.getElementById('setSceneTrans') as HTMLSelectElement | null;
+      const durRange = document.getElementById('setAnimDur') as HTMLInputElement | null;
+      const saveGlobals = () => {
+        pushHistory();
+        if (enterSel) (ctx.state as Record<string, unknown>).defaultAssetEnter = enterSel.value || undefined;
+        if (motionSel) (ctx.state as Record<string, unknown>).defaultAssetMotion = motionSel.value || undefined;
+        if (transSel) (ctx.state as Record<string, unknown>).defaultSceneTransition = transSel.value || undefined;
+        if (durRange) (ctx.state as Record<string, unknown>).animDurationMs = Number(durRange.value) || undefined;
+        scheduleAutosave();
+        showToast('Animaciones globales guardadas 🎞');
+      };
+      if (enterSel) enterSel.onchange = saveGlobals;
+      if (motionSel) motionSel.onchange = saveGlobals;
+      if (transSel) transSel.onchange = saveGlobals;
+      if (durRange) durRange.onchange = saveGlobals;
+    }
     document.getElementById('btnModalToggleSfx').onclick = () => {
       ctx.sfxEnabled = !ctx.sfxEnabled;
       openWorkspaceTab('settings');

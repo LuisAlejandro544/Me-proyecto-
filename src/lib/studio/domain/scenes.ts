@@ -102,11 +102,29 @@ export function ensureScenes(state: VNState): VNScene[] {
 export function normalizeScenes(state: VNState): VNScene[] {
   const scenes = getScenes(state);
   const ids = new Set(state.nodes.map((n) => n.id));
+  const validTransitions = new Set(['none', 'fade', 'slide-left', 'slide-right', 'slide-up', 'zoom', 'blur', 'wipe']);
   for (const s of scenes) {
     if (typeof s.name !== 'string' || !s.name.trim()) s.name = 'Escena sin nombre';
     s.name = s.name.trim().slice(0, 60);
     if (s.startNodeId && !ids.has(s.startNodeId)) s.startNodeId = undefined;
     if (s.endNodeId && !ids.has(s.endNodeId)) s.endNodeId = undefined;
+    if (s.enterTransition && !validTransitions.has(s.enterTransition)) s.enterTransition = undefined;
+  }
+  // Sanea animaciones por nodo y valores globales del proyecto.
+  const validEnter = new Set(['none', 'fade-in', 'slide-left', 'slide-right', 'slide-up', 'zoom-in', 'bounce-in', 'blur-in', 'flip-in']);
+  const validMotion = new Set(['none', 'float', 'sway', 'bob', 'pulse', 'breathe', 'shake-soft', 'spin-slow']);
+  for (const n of state.nodes) {
+    if (n.assetEnter && !validEnter.has(n.assetEnter)) n.assetEnter = undefined;
+    if (n.assetMotion && !validMotion.has(n.assetMotion)) n.assetMotion = undefined;
+    if (n.sceneTransition && !validTransitions.has(n.sceneTransition)) n.sceneTransition = undefined;
+  }
+  const st = state as VNState & { defaultAssetEnter?: string; defaultAssetMotion?: string; defaultSceneTransition?: string; animDurationMs?: number };
+  if (st.defaultAssetEnter && !validEnter.has(st.defaultAssetEnter)) st.defaultAssetEnter = undefined;
+  if (st.defaultAssetMotion && !validMotion.has(st.defaultAssetMotion)) st.defaultAssetMotion = undefined;
+  if (st.defaultSceneTransition && !validTransitions.has(st.defaultSceneTransition)) st.defaultSceneTransition = undefined;
+  if (st.animDurationMs !== undefined) {
+    const d = Number(st.animDurationMs);
+    st.animDurationMs = Number.isFinite(d) ? Math.max(120, Math.min(2000, Math.round(d))) : undefined;
   }
   const sceneIds = new Set(scenes.map((s) => s.id));
   for (const n of state.nodes) {

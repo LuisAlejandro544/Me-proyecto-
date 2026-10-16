@@ -43,9 +43,23 @@ Donde viven los elementos de UI:
 
 Reproductor: `playtest.ts` abre el modal en horizontal 16:9 (`#vnPlaytestCard`)
 con `<video>` para `video_scene` y `<audio>` para `sound_cue`/`audioAssetId`
-(+ insignia `🎬 Escena` y botón `Continuar → 🎬 Siguiente`);
-`share.ts` genera URLs compartibles (base pública, nunca localhost, con `scenes`) o un
-`.html` jugable con el nivel incrustado.
+(+ insignia `🎬 Escena` y botón `Continuar → 🎬 Siguiente`) + animaciones
+🎞 (`applyAssetAnimations()`: aparición del medio con `vn-asset-enter-*`,
+movimiento continuo en `#vnSpriteContainer` con `vn-asset-motion-*` y transición
+de `#vnStageBg` con `vn-stage-trans-*` solo al cambiar de escena o forzarla por
+nodo; posición/escala en `translate`/`scale` para no pisar `transform`);
+`share.ts` genera URLs compartibles (base pública, nunca localhost, con `scenes` +
+defaults de animación) o un `.html` jugable con el nivel incrustado.
+
+Animaciones (`lib/asset-animations.ts`): 9 apariciones (`assetEnter` por nodo) +
+8 movimientos en bucle (`assetMotion`: flotar, balanceo, saltitos, pulso,
+respirar, temblor, giro…) + 8 transiciones (`sceneTransition` por nodo y
+`enterTransition` por escena, con globales `defaultAssetEnter`/
+`defaultAssetMotion`/`defaultSceneTransition` + `animDurationMs` en Ajustes);
+resolución `resolveNodeAssetAnim()` (nodo → escena → global), CSS único
+`assetAnimationsCss()` (en `app.css`, playtest y `.html` compilado) con
+`prefers-reduced-motion`, insignia `.vn-anim-tag` en tarjetas y saneo en
+`normalizeScenes()`.
 
 Compilador (`ui/compile.ts`, fuente única): `buildStandaloneHtml()` (novela
 jugable autocontenida `file://`: `startNodeId` real, **escenas con saltos
@@ -71,10 +85,10 @@ src/lib/studio/
 ├── data/           # assets.ts (sprites), presets.ts (Sora/Aoi con scenes)
 ├── domain/         # audio.ts, history.ts, geometry.ts (puros + DOM queries),
 │                   # scenes.ts (VNScene + resolvers de saltos)
-└── ui/             # render-nodes, render-wires, interactions, viewport,
-                    # transform, minimap, editors, node-editor (+🎬), scenes,
-                    # dialogue, playtest (+saltos), workspace (+scenes),
-                    # compile (fuente única + escenas), exporter (compat), load-preset, share (+scenes), updater, toast
+└── ui/             # render-nodes (+🎞), render-wires, interactions, viewport,
+                     # transform, minimap, editors, node-editor (+🎬+🎞), scenes (+transición),
+                     # dialogue, playtest (+saltos +🎞), workspace (+scenes +ajustes 🎞),
+                     # compile (fuente única + escenas +🎞), exporter (compat), load-preset, share (+scenes +🎞), updater, toast
 src/components/
 ├── StudioShell.svelte  # compone todo + onMount(initStudio)
 ├── TopBar.svelte, CanvasChrome.svelte, BottomNav.svelte

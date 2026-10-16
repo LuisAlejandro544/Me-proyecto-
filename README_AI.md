@@ -17,12 +17,14 @@ npm run build && npm run check  # verificación obligatoria (0 errores)
 3. **Estado en `ctx`** (`lib/studio/context.ts`): muta con `pushHistory()` antes y
    `renderNodes()` después (el snapshot incluye `scenes`, `startNodeId`,
    `dialogueThemeId` para deshacer/rehacer).
-4. **Nodos**: plantilla en `ui/render-nodes.ts` (con `.vn-scene-tag` 🎬),
-   edición en `ui/node-editor.ts` (sección 🎬 + `gotoSceneId` por opción),
-   cables en `ui/render-wires.ts` + `domain/geometry.ts`, escenas en
-   `domain/scenes.ts` + `ui/scenes.ts` (pestaña `scenes`).
+4. **Nodos**: plantilla en `ui/render-nodes.ts` (con `.vn-scene-tag` 🎬 y
+   `.vn-anim-tag` 🎞), edición en `ui/node-editor.ts` (sección 🎬 + `gotoSceneId`
+   por opción + sección 🎞 `assetEnter/assetMotion/sceneTransition`), cables en
+   `ui/render-wires.ts` + `domain/geometry.ts`, escenas en `domain/scenes.ts` +
+   `ui/scenes.ts` (pestaña `scenes`, con transición de entrada por escena) y
+   animaciones en `lib/asset-animations.ts` (globales en Ajustes).
 5. **Compartir**: `ui/share.ts` codifica `{ permiso:'jugar', state }` (con
-   `startNodeId` + `scenes`) en
+   `startNodeId` + `scenes` + defaults de animación) en
    `#nivel=<base64url>` con base pública (nunca `localhost`) y lo abre con
    carga + fullscreen (`shared-play-mode`); hay `.html` jugable sin servidor.
 6. **Pantallas completas**: `CompositionStudio.svelte` se monta en `App.svelte`
@@ -63,10 +65,16 @@ y nada en pan/pinch/zoom); el minimapa va con `scheduleMinimap()`.
 el invitado entra por `checkSharedPlayModeOnBoot()` → `enterSharedPlayMode()`
 (progreso `#shareLoading`, `body.shared-play-mode`, `renderPlaytestStep`).
 
+**Animar assets (aparición + movimiento + transición):**
+`lib/asset-animations.ts` — elige en ✏️ (sección 🎞), en Escenas (transición de
+entrada) o en Ajustes (globales + duración); resuelve con
+`resolveNodeAssetAnim()` (nodo → escena → global) y se juega igual en
+`playtest.ts` y en el `.html` (`assetAnimationsCss()` + `prefers-reduced-motion`).
+
 **Compilar novela (`.html` / `.vn.json` / Windows / Linux):**
 `ui/compile.ts → openCompileModal()` — valida con `validateStory()` (incluye
 escenas), genera con
-`buildStandaloneHtml()` / `buildHistoria()` (ambos con `scenes`), guarda con `saveTextFile()` y
+`buildStandaloneHtml()` / `buildHistoria()` (ambos con `scenes` + animaciones), guarda con `saveTextFile()` y
 arma paquetes (`exportWindowsPackage` / `exportLinuxPackage`). Los 3 botones
 (`#btnExportExe`/`#btnExportHtml`/`#btnExportLinux`) van a este modal desde
 `index.ts`. No dupliques el generador: `exporter.ts`/`share.ts` delegan aquí.
