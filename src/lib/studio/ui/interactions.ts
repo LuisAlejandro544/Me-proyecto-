@@ -8,6 +8,15 @@ import { openInlineEditorModal, openInlineOptionModal } from './editors';
 import { deleteNode, duplicateNode, openNodeEditor } from './node-editor';
 import { renderNodes } from './render-nodes';
 import { showToast } from './toast';
+import {
+  PHOTO_VIDEO_TAPS_REQUIRED,
+  confirmPhotoVideoTouch,
+  countTouchTap,
+  isPhotoVideoNode,
+  isTouchMobile,
+  photoVideoKindOf,
+  resetTouchTaps
+} from './touch-edit';
 import { setStartNodeId } from '../storage';
 import { getCharacterCatalog } from '../../assets';
 
@@ -137,6 +146,13 @@ export function attachNodeInteractions() {
     const nodeEl = fieldEl.closest('.vn-node');
     const node = ctx.state.nodes.find(n => n.id === nodeEl?.dataset.nodeId);
     if (!node) return;
+    // Foto/vídeo en móvil: el doble-toque ya cuenta 2 toques; pedir
+    // confirmación con popup antes de abrir el editor inline.
+    if (kind === 'field' && isPhotoVideoNode(node) && isTouchMobile()) {
+      const prop = (fieldEl as HTMLElement).dataset.field;
+      const label = node.badge || node.title || node.topTitle || node.headerBar || node.videoName || node.backgroundName || node.id;
+      if (!confirmPhotoVideoTouch(`${photoVideoKindOf(node)} · ${label}`, PHOTO_VIDEO_TAPS_REQUIRED, 'editar')) return;
+    }
     if (kind === 'field') {
       const prop = (fieldEl as HTMLElement).dataset.field;
       if (!prop) return;
@@ -223,6 +239,18 @@ export function attachNodeInteractions() {
       });
     } else if (action === 'cycle-char') {
       wireTap(ctrl, () => {
+        // La foto del avatar cambia de personaje al toque: en móvil se
+        // cuentan los toques (1/2) y se confirma con popup.
+        if (isTouchMobile()) {
+          const taps = countTouchTap(`cycle:${nodeId}`);
+          if (taps < PHOTO_VIDEO_TAPS_REQUIRED) {
+            showToast(`👆 Toque ${taps}/${PHOTO_VIDEO_TAPS_REQUIRED} sobre la foto — toca de nuevo para cambiar de personaje`);
+            return;
+          }
+          resetTouchTaps(`cycle:${nodeId}`);
+          const label = node.speaker || node.characterId || 'personaje';
+          if (!confirmPhotoVideoTouch(`foto · ${label}`, taps, 'editar')) return;
+        }
         pushHistory();
         const catalog = getCharacterCatalog();
         const keys = Object.keys(catalog);
