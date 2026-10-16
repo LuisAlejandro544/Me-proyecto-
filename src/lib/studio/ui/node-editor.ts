@@ -8,6 +8,47 @@ import { pushHistory } from '../domain/history';
 import { renderNodes } from './render-nodes';
 import { showToast } from './toast';
 import { setStartNodeId } from '../storage';
+import { ensureScenes, getSceneById, nodeLabel } from '../domain/scenes';
+import { DIALOGUE_ANIMATIONS, DIALOGUE_FONTS, getAllDialogueThemes, getProjectDialogueThemeId } from '../../dialogue-themes';
+import { openDialogueStudio } from './dialogue';
+
+function dialogueStyleFields(node: any, inputCls: string, field: (label: string, inner: string) => string): string {
+  if (node.type === 'character_selector') return '';
+  const themes = getAllDialogueThemes();
+  const projectId = getProjectDialogueThemeId(ctx.state);
+  const curTheme = node.dlgThemeId ?? 'global';
+  const curFont = node.dlgFont ?? '';
+  const curAnim = node.dlgAnimation ?? '';
+  return `
+    <div class="p-3 rounded-xl bg-fuchsia-500/10 border border-fuchsia-400/40 space-y-2.5">
+      <div class="flex items-center justify-between gap-2">
+        <div class="text-[11px] uppercase tracking-wider text-fuchsia-200 font-bold">💬 Cuadro de diálogo de este nodo</div>
+        <button id="ed_openDlgStudio" type="button" class="px-2.5 py-1.5 rounded-lg bg-fuchsia-500 text-white text-[11px] font-bold shrink-0 min-h-[36px]">Personalizar…</button>
+      </div>
+      ${field('Diseño del cuadro', `<select id="ed_dlgTheme" class="${inputCls}">
+        <option value="global" ${curTheme === 'global' ? 'selected' : ''}>🌐 Tema global (${escapeHtml(themes.find((t) => t.id === projectId)?.name ?? 'Clásico')})</option>
+        ${themes.map((t) => `<option value="${t.id}" ${curTheme === t.id ? 'selected' : ''}>${t.custom ? '🖼️' : '🎨'} ${escapeHtml(t.name)}</option>`).join('')}
+      </select>`)}
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        ${field('Tipografía (override)', `<select id="ed_dlgFont" class="${inputCls}">
+          <option value="">— La del diseño —</option>
+          ${DIALOGUE_FONTS.map((f) => `<option value="${f.id}" ${curFont === f.id ? 'selected' : ''}>${escapeHtml(f.label)}</option>`).join('')}
+        </select>`)}
+        ${field('Animación letras (override)', `<select id="ed_dlgAnim" class="${inputCls}">
+          <option value="">— La del diseño —</option>
+          ${DIALOGUE_ANIMATIONS.map((a) => `<option value="${a.id}" ${curAnim === a.id ? 'selected' : ''}>${escapeHtml(a.label)}</option>`).join('')}
+        </select>`)}
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        ${field(`Tamaño${node.dlgFontSize ? ` (${node.dlgFontSize}px)` : ' (auto)'}`, `<input id="ed_dlgFontSize" type="number" min="0" max="30" placeholder="auto" value="${node.dlgFontSize ?? ''}" class="${inputCls}" />`)}
+        ${field('Color texto (override)', `<input id="ed_dlgFontColor" type="color" value="${escapeHtml(node.dlgFontColor ?? '#f1f5f9')}" class="w-full h-[44px] rounded-xl bg-[#0f1428] border border-slate-600 cursor-pointer" />`)}
+      </div>
+      <label class="flex items-center gap-2 text-[11px] text-slate-400 cursor-pointer">
+        <input id="ed_dlgUseColor" type="checkbox" ${node.dlgFontColor ? 'checked' : ''} class="w-4 h-4 accent-fuchsia-400" />
+        Usar este color de texto en vez del diseño
+      </label>
+    </div>`;
+}
 
 export function deleteNode(nodeId: string) {
   const node = ctx.state.nodes.find((n) => n.id === nodeId);
@@ -20,6 +61,12 @@ export function deleteNode(nodeId: string) {
     (ctx.state as { startNodeId?: string }).startNodeId = ctx.state.nodes[0]?.id ?? '';
     showToast('El nodo inicial se movió al primer nodo ▶');
   }
+  try {
+    for (const s of ctx.state.scenes ?? []) {
+      if (s.startNodeId === nodeId) s.startNodeId = undefined;
+      if (s.endNodeId === nodeId) s.endNodeId = undefined;
+    }
+  } catch {}
   if (ctx.selectedNodeId === nodeId) {
     ctx.selectedNodeId = ctx.state.nodes[0]?.id ?? '';
   }
@@ -116,6 +163,30 @@ export function openNodeEditor(nodeId: string) {
       ${(ctx.state as { startNodeId?: string }).startNodeId === node.id ? '🟢 Este nodo inicia la partida (Jugar empieza aquí)' : '▶ Marcar como nodo inicial de la partida'}
     </button><div class="space-y-3">`;
 
+  // ——— Escena del nodo: pertenencia + salto al continuar + marcas inicio/fin ———
+  try {
+    ensureScenes(ctx.state);
+    const scenes = ctx.state.scenes ?? [];
+    const owner = (node.sceneId && getSceneById(ctx.state, node.sceneId)) || scenes[0];
+    const sceneOpts = (sel?: string) =>
+      `<option value="">— Sin asignar —</option>` +
+      scenes.map((s) => `<option value="${s.id}" ${s.id === sel ? 'selected' : ''}>🎬 ${escapeHtml(s.name)}</option>`).join('');
+    form += `
+    <div class="p-3 rounded-xl bg-amber-400/10 border border-amber-400/40 space-y-2.5">
+      <div class="text-[11px] uppercase tracking-wider text-amber-200 font-bold">🎬 Escena de este nodo</div>
+      ${field('Pertenece a la escena', `<select id="ed_sceneId" class="${inputCls}">${sceneOpts(node.sceneId)}</select>`)}
+      ${field('Al pulsar Continuar sin cable, ir a…', `<select id="ed_nextSceneId" class="${inputCls}">
+        <option value="">— Terminar aquí (fin de rama) —</option>
+        ${scenes.map((s) => `<option value="${s.id}" ${s.id === (node.nextSceneId ?? '') ? 'selected' : ''}>🎬 Ir al inicio de «${escapeHtml(s.name)}»</option>`).join('')}
+      </select>`)}
+      ${owner ? `<div class="flex flex-wrap gap-2">
+        <button id="ed_markSceneStart" type="button" class="flex-1 px-3 py-2 rounded-xl text-[11px] font-bold border min-h-[44px] ${owner.startNodeId === node.id ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-200' : 'bg-slate-800 border-slate-600 text-slate-200'}">${owner.startNodeId === node.id ? '🎬 Es el inicio de «' + escapeHtml(owner.name) + '»' : '🎬 Marcar como inicio de «' + escapeHtml(owner.name) + '»'}</button>
+        <button id="ed_markSceneEnd" type="button" class="flex-1 px-3 py-2 rounded-xl text-[11px] font-bold border min-h-[44px] ${owner.endNodeId === node.id ? 'bg-amber-400/25 border-amber-400/60 text-amber-200' : 'bg-slate-800 border-slate-600 text-slate-200'}">${owner.endNodeId === node.id ? '⛔ Es el fin de «' + escapeHtml(owner.name) + '»' : '⛔ Marcar como fin de «' + escapeHtml(owner.name) + '»'}</button>
+      </div>
+      <p class="text-[11px] text-slate-400">El fin se configura por escena (pestaña <b>Escenas</b>): este nodo puede cerrar «${escapeHtml(owner.name)}» y la historia sigue sola en la siguiente escena.</p>` : ''}
+    </div>`;
+  } catch {}
+
   if (node.type === 'banner_scene') {
     form += field('Etiqueta superior (badge)', `<input id="ed_badge" class="${inputCls}" value="${escapeHtml(node.badge ?? '')}" />`);
     form += field('Personaje', `<select id="ed_characterId" class="${inputCls}">${charOptions(node.characterId)}</select>`);
@@ -125,23 +196,36 @@ export function openNodeEditor(nodeId: string) {
       </div>`;
     form += field('Pregunta / diálogo', `<textarea id="ed_dialogue" rows="3" class="${inputCls}">${escapeHtml(node.dialogue ?? '')}</textarea>`);
   } else if (node.type === 'choice') {
+    const gotoOpts = (sel?: string) => {
+      try {
+        const scenes = ctx.state.scenes ?? [];
+        return `<option value="">— Por cable —</option>` + scenes.map((s) => `<option value="${s.id}" ${s.id === sel ? 'selected' : ''}>🎬 Ir a «${escapeHtml(s.name)}»</option>`).join('');
+      } catch { return `<option value="">— Por cable —</option>`; }
+    };
     form += field('Pregunta', `<input id="ed_title" class="${inputCls}" value="${escapeHtml(node.title ?? '')}" />`);
     form += field('Subtítulo', `<input id="ed_subtitle" class="${inputCls}" value="${escapeHtml(node.subtitle ?? '')}" />`);
     form += `<div class="pt-1">
       <div class="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-2">Opciones de respuesta</div>
       <div class="space-y-2" id="ed_optionsList">
         ${(node.options ?? []).map((o, i) => `
-          <div class="flex items-center gap-2 p-2 rounded-xl bg-[#0f1428] border border-slate-700" data-opt-row="${i}">
-            <input data-opt-label="${i}" class="flex-1 min-w-0 rounded-lg bg-slate-800/80 border border-slate-600 px-2.5 py-2 text-xs text-white min-h-[40px]" value="${escapeHtml(o.label)}" />
-            <select data-opt-style="${i}" class="rounded-lg bg-slate-800/80 border border-slate-600 px-1.5 py-2 text-xs text-white">
-              <option value="coral" ${o.style === 'coral' ? 'selected' : ''}>Coral</option>
-              <option value="teal" ${o.style === 'teal' ? 'selected' : ''}>Turquesa</option>
-              <option value="dark" ${(o.style === 'dark' || !o.style) ? 'selected' : ''}>Oscuro</option>
-            </select>
-            <button data-opt-del="${i}" title="Quitar opción" class="w-9 h-9 shrink-0 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold">×</button>
+          <div class="p-2 rounded-xl bg-[#0f1428] border border-slate-700 space-y-1.5" data-opt-row="${i}">
+            <div class="flex items-center gap-2">
+              <input data-opt-label="${i}" class="flex-1 min-w-0 rounded-lg bg-slate-800/80 border border-slate-600 px-2.5 py-2 text-xs text-white min-h-[40px]" value="${escapeHtml(o.label)}" />
+              <select data-opt-style="${i}" class="rounded-lg bg-slate-800/80 border border-slate-600 px-1.5 py-2 text-xs text-white">
+                <option value="coral" ${o.style === 'coral' ? 'selected' : ''}>Coral</option>
+                <option value="teal" ${o.style === 'teal' ? 'selected' : ''}>Turquesa</option>
+                <option value="dark" ${(o.style === 'dark' || !o.style) ? 'selected' : ''}>Oscuro</option>
+              </select>
+              <button data-opt-del="${i}" title="Quitar opción" class="w-9 h-9 shrink-0 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold">×</button>
+            </div>
+            <label class="flex items-center gap-2 text-[11px] text-slate-400">
+              <span class="shrink-0">🎬 Si no hay cable:</span>
+              <select data-opt-goto="${i}" class="flex-1 min-w-0 rounded-lg bg-slate-800/80 border border-slate-600 px-2 py-1.5 text-[11px] text-white">${gotoOpts(o.gotoSceneId)}</select>
+            </label>
           </div>`).join('')}
       </div>
       <button id="ed_addOption" class="mt-2 w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-slate-200 min-h-[44px]">+ Añadir opción</button>
+      <p class="text-[11px] text-slate-500 pt-1">El cable manda primero; si una opción no tiene cable pero sí escena, salta directo al inicio de esa escena.</p>
     </div>`;
   } else if (node.type === 'character_selector') {
     form += field('Título', `<input id="ed_title" class="${inputCls}" value="${escapeHtml(node.title ?? '')}" />`);
@@ -183,6 +267,8 @@ export function openNodeEditor(nodeId: string) {
     if (node.speaker !== undefined) form += field('Hablante', `<input id="ed_speaker" class="${inputCls}" value="${escapeHtml(node.speaker ?? '')}" />`);
     form += field('Pregunta / diálogo', `<textarea id="ed_dialogue" rows="3" class="${inputCls}">${escapeHtml(node.dialogue ?? '')}</textarea>`);
   }
+
+  form += dialogueStyleFields(node, inputCls, field);
 
   form += `</div>
     <div class="flex flex-wrap justify-between gap-2 pt-4 mt-2 border-t border-slate-700/60">
@@ -244,9 +330,49 @@ export function openNodeEditor(nodeId: string) {
     }
   };
 
+  const openDlgBtn = $('ed_openDlgStudio');
+  if (openDlgBtn) openDlgBtn.onclick = (e) => {
+    e.preventDefault();
+    openDialogueStudio();
+  };
+
+  const markStartBtn = $('ed_markSceneStart');
+  if (markStartBtn) markStartBtn.onclick = () => {
+    pushHistory();
+    try {
+      ensureScenes(ctx.state);
+      const owner = (node.sceneId && getSceneById(ctx.state, node.sceneId)) || (ctx.state.scenes ?? [])[0];
+      if (owner) {
+        owner.startNodeId = owner.startNodeId === node.id ? undefined : node.id;
+        node.sceneId = owner.id;
+        renderNodes();
+        openNodeEditor(node.id);
+        showToast(owner.startNodeId ? `🎬 «${owner.name}» empieza aquí` : `Inicio de «${owner.name}» liberado`);
+      }
+    } catch {}
+  };
+  const markEndBtn = $('ed_markSceneEnd');
+  if (markEndBtn) markEndBtn.onclick = () => {
+    pushHistory();
+    try {
+      ensureScenes(ctx.state);
+      const owner = (node.sceneId && getSceneById(ctx.state, node.sceneId)) || (ctx.state.scenes ?? [])[0];
+      if (owner) {
+        owner.endNodeId = owner.endNodeId === node.id ? undefined : node.id;
+        if (!node.sceneId) node.sceneId = owner.id;
+        renderNodes();
+        openNodeEditor(node.id);
+        showToast(owner.endNodeId ? `⛔ «${owner.name}» termina aquí` : `Fin de «${owner.name}» liberado`);
+      }
+    } catch {}
+  };
+
   $('ed_save')!.onclick = () => {
     pushHistory();
     const val = (id: string) => ($(id) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null)?.value;
+    // Escena del nodo
+    if ($('ed_sceneId')) node.sceneId = val('ed_sceneId')! || undefined;
+    if ($('ed_nextSceneId')) node.nextSceneId = val('ed_nextSceneId')! || undefined;
     if ($('ed_badge')) node.badge = val('ed_badge')!;
     if ($('ed_title')) node.title = val('ed_title')!;
     if ($('ed_subtitle')) node.subtitle = val('ed_subtitle')!;
@@ -299,6 +425,21 @@ export function openNodeEditor(nodeId: string) {
     }
     if ($('ed_volume')) node.volume = Number(val('ed_volume'));
     if ($('ed_loop')) node.loop = !!boolOf('ed_loop');
+    // Cuadro de diálogo personalizado por nodo
+    if ($('ed_dlgTheme')) {
+      const t = val('ed_dlgTheme')!;
+      node.dlgThemeId = t === 'global' ? undefined : t;
+    }
+    if ($('ed_dlgFont')) node.dlgFont = val('ed_dlgFont')! || undefined;
+    if ($('ed_dlgAnim')) node.dlgAnimation = (val('ed_dlgAnim')! || undefined) as any;
+    if ($('ed_dlgFontSize')) {
+      const n = Number(val('ed_dlgFontSize'));
+      node.dlgFontSize = Number.isFinite(n) && n > 0 ? n : undefined;
+    }
+    if ($('ed_dlgFontColor')) {
+      const useColor = ($('ed_dlgUseColor') as HTMLInputElement | null)?.checked;
+      node.dlgFontColor = useColor ? (val('ed_dlgFontColor') as string) : undefined;
+    }
     // Opciones de choice
     bodyEl.querySelectorAll('[data-opt-label]').forEach((inp) => {
       const i = Number((inp as HTMLElement).dataset.optLabel);
@@ -309,6 +450,12 @@ export function openNodeEditor(nodeId: string) {
       if (node.options?.[i]) {
         node.options[i].style = (sel as HTMLSelectElement).value;
         node.options[i].outColor = (sel as HTMLSelectElement).value === 'coral' ? 'coral' : 'cyan';
+      }
+    });
+    bodyEl.querySelectorAll('[data-opt-goto]').forEach((sel) => {
+      const i = Number((sel as HTMLElement).dataset.optGoto);
+      if (node.options?.[i]) {
+        node.options[i].gotoSceneId = (sel as HTMLSelectElement).value || undefined;
       }
     });
     modal.classList.add('hidden');

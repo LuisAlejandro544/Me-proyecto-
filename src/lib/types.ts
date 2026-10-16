@@ -16,6 +16,19 @@ export interface ChoiceOption {
   style: string;
   inColor: PortColor;
   outColor: PortColor;
+  /** Salto directo a una escena (sin necesidad de cable): al elegirla se juega el inicio de esa escena. */
+  gotoSceneId?: string;
+}
+
+/** Agrupación narrativa: la escena 1 termina en un nodo y la 2 empieza en otro. */
+export interface VNScene {
+  id: string;
+  /** Nombre personalizable que elige el usuario («Prólogo», «Bosque de noche»…). */
+  name: string;
+  /** Nodo donde empieza a jugarse esta escena (al entrar / saltar / continuar). */
+  startNodeId?: string;
+  /** Nodo donde termina esta escena (Continuar salta a la siguiente escena). */
+  endNodeId?: string;
 }
 
 export type NodeType =
@@ -30,6 +43,16 @@ export type NodeType =
   | string;
 
 export type SoundTrigger = 'auto' | 'with_dialogue';
+
+export type DialogueTextAnimation =
+  | 'none'
+  | 'typewriter'
+  | 'fade'
+  | 'slide-up'
+  | 'wave'
+  | 'bounce'
+  | 'blur-in'
+  | 'rainbow';
 
 export interface VNNode {
   id: string;
@@ -72,6 +95,16 @@ export interface VNNode {
   volume?: number;
   loop?: boolean;
   trigger?: SoundTrigger;
+  // Cuadro de diálogo personalizado (override por nodo; 'global' = usa el tema del proyecto).
+  dlgThemeId?: string;
+  dlgFont?: string;
+  dlgAnimation?: DialogueTextAnimation;
+  dlgFontSize?: number;
+  dlgFontColor?: string;
+  /** Escena a la que pertenece este nodo (agrupación visual + reproductor). */
+  sceneId?: string;
+  /** Al pulsar Continuar sin cable de salida, saltar al inicio de esta escena. */
+  nextSceneId?: string;
 }
 
 export interface VNWire {
@@ -87,6 +120,10 @@ export interface VNState {
   projectName: string;
   /** Nodo donde empieza la partida (elegible en el editor; fallback: nodes[0]). */
   startNodeId?: string;
+  /** Tema de cuadro de diálogo activo para todo el proyecto. */
+  dialogueThemeId?: string;
+  /** Escenas narrativas ordenadas (nombre personalizable + inicio/fin por nodo). */
+  scenes?: VNScene[];
   zoom: number;
   panX: number;
   panY: number;
@@ -100,6 +137,7 @@ export interface GraphSnapshot {
   nodes: VNNode[];
   wires: VNWire[];
   variables: VNState['variables'];
+  scenes?: VNScene[];
 }
 
 export type DragMode = 'node' | 'wire' | 'pan' | 'pinch';

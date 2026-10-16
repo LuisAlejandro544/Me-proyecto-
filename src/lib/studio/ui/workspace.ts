@@ -6,8 +6,12 @@ import { playSynthSfx } from '../domain/audio';
 import { escapeHtml } from '../domain/geometry';
 import { pushHistory } from '../domain/history';
 import { startPlaytest } from './playtest';
+import { openDialogueStudio } from './dialogue';
+import { openScenesStudio } from './scenes';
+import { ensureScenes } from '../domain/scenes';
 import { renderNodes } from './render-nodes';
 import { showToast } from './toast';
+import { getProjectDialogueThemeId, getDialogueTheme } from '../../dialogue-themes';
 import { getCurrentVersion, getUpdateRepo, setUpdateRepo, checkForUpdates } from './updater';
 import {
   assetSizeLabel,
@@ -256,6 +260,20 @@ export function openWorkspaceTab(tabName) {
     } catch {}
     animateTabSwitch('compositor');
     window.dispatchEvent(new CustomEvent('vn:open-composer'));
+    return;
+  }
+
+  // Estudio de cuadros de diálogo: diseños importables + tipografías + animaciones.
+  if (tabName === 'dialogues' || tabName === 'dialogos' || tabName === 'dialogo') {
+    animateTabSwitch('dialogues');
+    openDialogueStudio();
+    return;
+  }
+
+  // Estudio de escenas: nombre + nodo de fin/inicio + saltos desde decisiones.
+  if (tabName === 'scenes' || tabName === 'escenas' || tabName === 'escena') {
+    animateTabSwitch('scenes');
+    openScenesStudio();
     return;
   }
 
@@ -573,6 +591,15 @@ export function openWorkspaceTab(tabName) {
           </div>
           <p class="text-[11px] text-slate-500 mt-2">Canal: workflow «Auto-update» (solo al publicar un release o manual, nunca por commits/PRs). En escritorio descarga el instalador de tu sistema y lo abre para actualizar de verdad; en Android descarga el APK; en web la actualización se aplica con «Recargar app». El .zip es el portable y no se auto-instala.</p>
         </div>
+        <div class="vn-anim-card flex items-center justify-between p-3.5 rounded-xl bg-[#101528] border border-fuchsia-500/30">
+          <div>
+            <div class="font-semibold text-white text-sm">💬 Cuadros de diálogo personalizados</div>
+            <div class="text-xs text-slate-400">Diseños importados + tipografías + animación de letras · global: ${escapeHtml(getDialogueTheme(getProjectDialogueThemeId(ctx.state)).name)}</div>
+          </div>
+          <button id="btnOpenDialogueStudio" class="px-4 py-1.5 rounded-lg bg-fuchsia-500 hover:bg-fuchsia-400 text-xs font-bold text-white min-h-[44px] shrink-0">
+            Personalizar
+          </button>
+        </div>
         <div class="vn-anim-card flex items-center justify-between p-3.5 rounded-xl bg-[#101528] border border-slate-700">
           <div>
             <div class="font-semibold text-white text-sm">Efectos de sonido de la interfaz y la novela</div>
@@ -595,6 +622,9 @@ export function openWorkspaceTab(tabName) {
     `;
     modal.classList.remove('hidden');
     animateTabSwitch(tabName);
+    document.getElementById('btnOpenDialogueStudio')!.onclick = () => {
+      openDialogueStudio();
+    };
     document.getElementById('btnModalToggleSfx').onclick = () => {
       ctx.sfxEnabled = !ctx.sfxEnabled;
       openWorkspaceTab('settings');
@@ -636,12 +666,21 @@ export function addNewNodeOfType(type) {
   const id = 'node_' + Date.now().toString(36);
   const offsetX = Math.round((180 - ctx.state.panX) / ctx.state.zoom + (Math.random() * 80));
   const offsetY = Math.round((140 - ctx.state.panY) / ctx.state.zoom + (Math.random() * 60));
+  // Los nodos nuevos heredan la última escena para no quedar huérfanos.
+  let defaultSceneId: string | undefined;
+  try {
+    const scenes = ensureScenes(ctx.state);
+    defaultSceneId = scenes[scenes.length - 1]?.id;
+  } catch {
+    defaultSceneId = undefined;
+  }
 
   if (type === 'banner_scene') {
     ctx.state.nodes.push({
       id,
       type: 'banner_scene',
       badge: `Escena ${ctx.state.nodes.length + 1}`,
+      sceneId: defaultSceneId,
       x: offsetX,
       y: offsetY,
       width: 245,
@@ -658,6 +697,7 @@ export function addNewNodeOfType(type) {
       title: 'Nodo: bifurcación de decisión',
       subtitle: 'Nodo de elección',
       showAddButtons: true,
+      sceneId: defaultSceneId,
       x: offsetX,
       y: offsetY,
       width: 240,
@@ -671,6 +711,7 @@ export function addNewNodeOfType(type) {
       id,
       type: 'character_selector',
       title: 'Selector de personaje',
+      sceneId: defaultSceneId,
       x: offsetX,
       y: offsetY,
       width: 230,
@@ -685,6 +726,7 @@ export function addNewNodeOfType(type) {
       id,
       type: 'video_scene',
       badge: `Vídeo ${ctx.state.nodes.length + 1}`,
+      sceneId: defaultSceneId,
       x: offsetX,
       y: offsetY,
       width: 250,
@@ -700,6 +742,7 @@ export function addNewNodeOfType(type) {
       id,
       type: 'sound_cue',
       badge: '🔊 Sonido',
+      sceneId: defaultSceneId,
       x: offsetX,
       y: offsetY,
       width: 240,
@@ -714,6 +757,7 @@ export function addNewNodeOfType(type) {
       id,
       type: 'branch_scene',
       headerBar: `Nodo ${ctx.state.nodes.length + 1}: Escena nueva`,
+      sceneId: defaultSceneId,
       x: offsetX,
       y: offsetY,
       width: 250,

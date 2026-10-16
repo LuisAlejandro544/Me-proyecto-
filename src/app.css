@@ -370,6 +370,27 @@
     .vn-node.vn-start-node {
       border-color: rgba(52, 211, 153, 0.55);
     }
+    /* Etiqueta de escena: nombre personalizable + marcas INICIO/FIN por nodo */
+    .vn-scene-tag {
+      position: absolute;
+      top: -14px;
+      right: 10px;
+      z-index: 46;
+      max-width: calc(100% - 110px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: #fde68a;
+      background: rgba(40, 26, 4, 0.95);
+      border: 1px solid rgba(251, 191, 36, 0.7);
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+      pointer-events: none;
+      white-space: nowrap;
+    }
     /* Fila de acciones del header en móvil: segunda fila con scroll, sin solapes */
     .topbar-actions { scrollbar-width: none; }
     .topbar-actions::-webkit-scrollbar { display: none; }
@@ -499,3 +520,21 @@ body.shared-play-mode #playtestModal > div {
   #vnRotateHint { display: none !important; }
 }
 body.vn-playing { overflow: hidden; }
+
+/* ---- Cuadros de diálogo personalizados: animaciones de letras ---- */
+.vn-dlg-letters span { display: inline-block; white-space: pre; }
+.vn-dlg-anim-fade span { opacity: 0; animation: vn-dlg-fade 0.35s ease forwards; }
+.vn-dlg-anim-slide-up span { opacity: 0; transform: translateY(8px); animation: vn-dlg-rise 0.35s ease forwards; }
+.vn-dlg-anim-bounce span { opacity: 0; animation: vn-dlg-bounce 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.vn-dlg-anim-blur-in span { opacity: 0; filter: blur(6px); animation: vn-dlg-blur 0.45s ease forwards; }
+.vn-dlg-anim-wave span { animation: vn-dlg-wave 1.6s ease-in-out infinite; }
+.vn-dlg-anim-rainbow span { animation: vn-dlg-rainbow 2.4s linear infinite; }
+@keyframes vn-dlg-fade { to { opacity: 1; } }
+@keyframes vn-dlg-rise { to { opacity: 1; transform: translateY(0); } }
+@keyframes vn-dlg-bounce { 0% { opacity: 0; transform: translateY(10px) scale(0.6); } 60% { opacity: 1; transform: translateY(-3px) scale(1.08); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes vn-dlg-blur { to { opacity: 1; filter: blur(0); } }
+@keyframes vn-dlg-wave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes vn-dlg-rainbow { 0% { color: #f87171; } 20% { color: #fb923c; } 40% { color: #facc15; } 60% { color: #4ade80; } 80% { color: #22d3ee; } 100% { color: #f87171; } }
+@media (prefers-reduced-motion: reduce) {
+  .vn-dlg-letters span { opacity: 1 !important; transform: none !important; filter: none !important; animation: none !important; }
+}

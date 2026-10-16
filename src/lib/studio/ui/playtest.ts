@@ -8,6 +8,8 @@ import { escapeHtml } from '../domain/geometry';
 import { showToast } from './toast';
 import { findCustomAsset, resolveCharacter } from '../../assets';
 import { getStartNodeId } from '../storage';
+import { applyDialogueThemeToPlaytest } from './dialogue';
+import { getSceneById, getSceneOfNode, resolveContinueSceneTarget, resolveSceneStartNode } from '../domain/scenes';
 
 function stopPlaytestMedia() {
   try {
@@ -122,8 +124,10 @@ export function renderPlaytestStep(nodeId) {
   const node = ctx.state.nodes.find(n => n.id === nodeId);
   if (!node) return;
 
+  const scene = (node.sceneId && getSceneById(ctx.state, node.sceneId)) || getSceneOfNode(ctx.state, node.id);
+  const scenePrefix = scene ? `🎬 ${scene.name} · ` : '';
   document.getElementById('vnCurrentNodeBadge').textContent =
-    node.badge || node.headerBar || node.title || node.topTitle || node.id;
+    scenePrefix + (node.badge || node.headerBar || node.title || node.topTitle || node.id);
 
   // Check if there is a Character Selector node in the graph for scale/position
   const charSelector = ctx.state.nodes.find(n => n.type === 'character_selector');
@@ -189,6 +193,11 @@ export function renderPlaytestStep(nodeId) {
     dialogueEl.textContent = node.dialogue || '…';
   }
 
+  // Cuadro de diálogo personalizado: fondo importado + tipografía + animación de letras.
+  try {
+    applyDialogueThemeToPlaytest(node);
+  } catch {}
+
   // Render story variables readout
   const varsEl = document.getElementById('vnVariablesReadout');
   varsEl.innerHTML = Object.entries(ctx.state.variables || {})
@@ -208,11 +217,20 @@ export function renderPlaytestStep(nodeId) {
 
     node.options.forEach(opt => {
       const wire = outWires.find(w => w.fromPort === `out_${opt.id}`);
-      const targetNodeId = wire ? wire.toNode : null;
+      let targetNodeId = wire ? wire.toNode : null;
+      // Salto directo a escena sin cable: la decisión lleva al inicio de esa escena.
+      if (!targetNodeId && opt.gotoSceneId) {
+        targetNodeId = resolveSceneStartNode(ctx.state, opt.gotoSceneId) || null;
+      }
+      // Sin cable ni escena: el nodo puede continuar hacia su `nextSceneId`.
+      if (!targetNodeId && node.nextSceneId) {
+        targetNodeId = resolveSceneStartNode(ctx.state, node.nextSceneId) || null;
+      }
+      const gotoName = !wire && opt.gotoSceneId ? (getSceneById(ctx.state, opt.gotoSceneId)?.name ?? '') : '';
       const btn = document.createElement('button');
       btn.className = 'w-full max-w-md px-5 py-3.5 rounded-2xl bg-[#1b2340]/95 hover:bg-cyan-500/25 border-2 border-cyan-400/50 text-sm sm:text-base font-semibold text-white shadow-2xl transition transform hover:scale-[1.02] flex items-center justify-between';
       btn.innerHTML = `
-        <span>${escapeHtml(opt.label)}</span>
+        <span>${escapeHtml(opt.label)}${gotoName ? ` <span class="text-[11px] text-amber-300 font-bold">→ 🎬 ${escapeHtml(gotoName)}</span>` : ''}</span>
         <span class="text-xs text-cyan-300 ml-2">→</span>
       `;
       btn.onclick = () => {
@@ -229,10 +247,18 @@ export function renderPlaytestStep(nodeId) {
   } else {
     choicesOverlay.classList.add('hidden');
     nextBtn.classList.remove('opacity-40', 'pointer-events-none');
+    // Continuar: primero cables, luego salto de escena (fin de escena / nextSceneId).
+    const sceneTarget = resolveContinueSceneTarget(ctx.state, node.id);
+    const goTarget = outWires.length > 0 ? outWires[0].toNode : (sceneTarget || null);
+    const goSceneName = !outWires.length && sceneTarget
+      ? (getSceneOfNode(ctx.state, sceneTarget)?.name ?? '')
+      : '';
+    const nextLabel = nextBtn.querySelector('span') ?? nextBtn;
+    nextLabel.textContent = goSceneName ? `Continuar → 🎬 ${goSceneName}` : 'Continuar';
     nextBtn.onclick = () => {
       playSynthSfx('click');
-      if (outWires.length > 0) {
-        renderPlaytestStep(outWires[0].toNode);
+      if (goTarget) {
+        renderPlaytestStep(goTarget);
       } else {
         showToast('¡Llegaste al final de esta rama de la historia!');
       }

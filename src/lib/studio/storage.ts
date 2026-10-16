@@ -4,6 +4,7 @@
 // quienes lo usan (index, MainMenu, toolbar) renderizan después de aplicar.
 import { ctx } from './context';
 import { showToast } from './ui/toast';
+import { normalizeScenes } from './domain/scenes';
 import type { VNState } from '../types';
 
 export const MAX_SLOTS = 3;
@@ -55,6 +56,9 @@ export function normalizeState(state: VNState): VNState {
   if (typeof s.projectName !== 'string' || !s.projectName.trim()) {
     s.projectName = 'Mi Novela';
   }
+  try {
+    normalizeScenes(state);
+  } catch {}
   return state;
 }
 

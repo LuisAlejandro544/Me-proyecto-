@@ -7,11 +7,16 @@ export const PRESET_SORA = {
   panX: 20,
   panY: 15,
   variables: { affection_sora: 10, visited_forest: false, school_key: false },
+  scenes: [
+    { id: 'escena_1', name: 'Escena 1', startNodeId: 'start_scene_1', endNodeId: 'choice_deciding' },
+    { id: 'escena_2', name: 'Escena 2', startNodeId: 'forest_scene', endNodeId: undefined }
+  ],
   nodes: [
     {
       id: 'start_scene_1',
       type: 'banner_scene',
       badge: 'Escena inicial 1',
+      sceneId: 'escena_1',
       x: 65,
       y: 85,
       width: 245,
@@ -29,11 +34,13 @@ export const PRESET_SORA = {
       type: 'choice',
       title: 'Elección:',
       subtitle: 'Decidiendo',
+      sceneId: 'escena_1',
+      nextSceneId: 'escena_2',
       x: 385,
       y: 135,
       width: 225,
       options: [
-        { id: 'opt_forest', label: 'Ir al bosque', style: 'dark', inColor: 'cyan', outColor: 'cyan' },
+        { id: 'opt_forest', label: 'Ir al bosque', style: 'dark', inColor: 'cyan', outColor: 'cyan', gotoSceneId: 'escena_2' },
         { id: 'opt_school', label: 'Explorar la escuela', style: 'dark', inColor: 'coral', outColor: 'coral' }
       ]
     },
@@ -41,6 +48,7 @@ export const PRESET_SORA = {
       id: 'forest_scene',
       type: 'compact_scene',
       title: 'Escena del bosque',
+      sceneId: 'escena_2',
       x: 695,
       y: 80,
       width: 225,
@@ -53,6 +61,7 @@ export const PRESET_SORA = {
       id: 'char_selector',
       type: 'character_selector',
       title: 'Selector de personaje',
+      sceneId: 'escena_2',
       x: 695,
       y: 265,
       width: 230,
@@ -76,6 +85,10 @@ export const PRESET_AOI = {
   panX: 35,
   panY: 25,
   variables: { patience: 5, teased_aoi: false },
+  scenes: [
+    { id: 'escena_1', name: 'Escena 1', startNodeId: 'node_1_intro', endNodeId: 'node_2_split' },
+    { id: 'escena_2', name: 'Escena 2', startNodeId: 'node_3_apology', endNodeId: undefined }
+  ],
   nodes: [
     {
       id: 'node_1_intro',
@@ -83,6 +96,7 @@ export const PRESET_AOI = {
       topTitle: 'Nodo 1: Introducción',
       topSubtitle: 'Inicio',
       headerBar: 'Escena 1: Encuentro',
+      sceneId: 'escena_1',
       x: 75,
       y: 145,
       width: 250,
@@ -101,11 +115,13 @@ export const PRESET_AOI = {
       title: 'Nodo 2: Bifurcación de decisión',
       subtitle: 'Nodo de elección',
       showAddButtons: true,
+      sceneId: 'escena_1',
+      nextSceneId: 'escena_2',
       x: 405,
       y: 125,
       width: 245,
       options: [
-        { id: 'opt_a', label: 'Opción A: "Sí, una eternidad"', style: 'coral', inColor: 'cyan', outColor: 'coral' },
+        { id: 'opt_a', label: 'Opción A: "Sí, una eternidad"', style: 'coral', inColor: 'cyan', outColor: 'coral', gotoSceneId: 'escena_2' },
         { id: 'opt_b', label: 'Opción B: "Para nada"', style: 'teal', inColor: 'cyan', outColor: 'cyan' }
       ]
     },
@@ -113,6 +129,7 @@ export const PRESET_AOI = {
       id: 'node_3_apology',
       type: 'branch_scene',
       headerBar: 'Nodo 3: Escena 1A (Disculpa)',
+      sceneId: 'escena_2',
       x: 735,
       y: 55,
       width: 255,
@@ -125,6 +142,7 @@ export const PRESET_AOI = {
       id: 'node_4_tease',
       type: 'branch_scene',
       headerBar: 'Nodo 4: Escena 1B (Broma)',
+      sceneId: 'escena_2',
       x: 735,
       y: 265,
       width: 255,

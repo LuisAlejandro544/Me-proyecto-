@@ -146,13 +146,15 @@ export function initStudio() {
           showToast('Nada que deshacer');
           return;
         }
-        ctx.redoStack.push(JSON.parse(JSON.stringify({ nodes: ctx.state.nodes, wires: ctx.state.wires, variables: ctx.state.variables, startNodeId: ctx.state.startNodeId, projectName: ctx.state.projectName })));
+        ctx.redoStack.push(JSON.parse(JSON.stringify({ nodes: ctx.state.nodes, wires: ctx.state.wires, variables: ctx.state.variables, startNodeId: ctx.state.startNodeId, projectName: ctx.state.projectName, dialogueThemeId: ctx.state.dialogueThemeId, scenes: ctx.state.scenes })));
         const prev = ctx.historyStack.pop();
         ctx.state.nodes = prev.nodes;
         ctx.state.wires = prev.wires;
         ctx.state.variables = prev.variables;
         if (typeof prev.startNodeId !== 'undefined') ctx.state.startNodeId = prev.startNodeId;
         if (typeof prev.projectName === 'string') ctx.state.projectName = prev.projectName;
+        if (typeof prev.dialogueThemeId !== 'undefined') ctx.state.dialogueThemeId = prev.dialogueThemeId;
+        if (typeof prev.scenes !== 'undefined') ctx.state.scenes = prev.scenes;
         playSynthSfx('click');
         syncProjectLabel();
         scheduleAutosave();
@@ -165,13 +167,15 @@ export function initStudio() {
           showToast('Nada que rehacer');
           return;
         }
-        ctx.historyStack.push(JSON.parse(JSON.stringify({ nodes: ctx.state.nodes, wires: ctx.state.wires, variables: ctx.state.variables, startNodeId: ctx.state.startNodeId, projectName: ctx.state.projectName })));
+        ctx.historyStack.push(JSON.parse(JSON.stringify({ nodes: ctx.state.nodes, wires: ctx.state.wires, variables: ctx.state.variables, startNodeId: ctx.state.startNodeId, projectName: ctx.state.projectName, dialogueThemeId: ctx.state.dialogueThemeId, scenes: ctx.state.scenes })));
         const next = ctx.redoStack.pop();
         ctx.state.nodes = next.nodes;
         ctx.state.wires = next.wires;
         ctx.state.variables = next.variables;
         if (typeof next.startNodeId !== 'undefined') ctx.state.startNodeId = next.startNodeId;
         if (typeof next.projectName === 'string') ctx.state.projectName = next.projectName;
+        if (typeof next.dialogueThemeId !== 'undefined') ctx.state.dialogueThemeId = next.dialogueThemeId;
+        if (typeof next.scenes !== 'undefined') ctx.state.scenes = next.scenes;
         playSynthSfx('click');
         syncProjectLabel();
         scheduleAutosave();

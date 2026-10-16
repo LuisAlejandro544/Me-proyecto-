@@ -15,10 +15,14 @@ npm run build && npm run check  # verificación obligatoria (0 errores)
 1. **No renombres ids** de `src/components/StudioShell.svelte` — el JS los busca.
 2. **`initStudio()`** corre en `onMount`, es idempotente; el canvas nunca en top-level.
 3. **Estado en `ctx`** (`lib/studio/context.ts`): muta con `pushHistory()` antes y
-   `renderNodes()` después.
-4. **Nodos**: plantilla en `ui/render-nodes.ts`, edición en `ui/node-editor.ts`,
-   cables en `ui/render-wires.ts` + `domain/geometry.ts`.
-5. **Compartir**: `ui/share.ts` codifica `{ permiso:'jugar', state }` en
+   `renderNodes()` después (el snapshot incluye `scenes`, `startNodeId`,
+   `dialogueThemeId` para deshacer/rehacer).
+4. **Nodos**: plantilla en `ui/render-nodes.ts` (con `.vn-scene-tag` 🎬),
+   edición en `ui/node-editor.ts` (sección 🎬 + `gotoSceneId` por opción),
+   cables en `ui/render-wires.ts` + `domain/geometry.ts`, escenas en
+   `domain/scenes.ts` + `ui/scenes.ts` (pestaña `scenes`).
+5. **Compartir**: `ui/share.ts` codifica `{ permiso:'jugar', state }` (con
+   `startNodeId` + `scenes`) en
    `#nivel=<base64url>` con base pública (nunca `localhost`) y lo abre con
    carga + fullscreen (`shared-play-mode`); hay `.html` jugable sin servidor.
 6. **Pantallas completas**: `CompositionStudio.svelte` se monta en `App.svelte`
@@ -29,7 +33,15 @@ npm run build && npm run check  # verificación obligatoria (0 errores)
 
 **Editar un nodo (pregunta/personaje/opciones):**
 `ui/node-editor.ts → openNodeEditor()` — formulario por `node.type`, con
-personaje desde `getCharacterCatalog()` y borrado con `deleteNode()`.
+personaje desde `getCharacterCatalog()`, sección 🎬 (escena, salto al continuar,
+inicio/fin) y `gotoSceneId` por opción de decisión, con borrado con `deleteNode()`.
+
+**Crear/renombrar escenas (fin de una + inicio de la siguiente + salto directo):**
+`ui/scenes.ts → openScenesStudio()` (pestaña `scenes`) — nombre personalizable +
+`startNodeId`/`endNodeId` por escena; lógica en `domain/scenes.ts`
+(`resolveSceneStartNode`/`resolveContinueSceneTarget`); el reproductor
+(`playtest.ts`) y el `.html` (`compile.ts`) resuelven igual (cable primero,
+escena después).
 
 **Eliminar un nodo y sus cables:**
 `deleteNode(id)` (toolbar 🗑, editor o `Supr`) — filtra `nodes` y `wires`,
@@ -52,8 +64,9 @@ el invitado entra por `checkSharedPlayModeOnBoot()` → `enterSharedPlayMode()`
 (progreso `#shareLoading`, `body.shared-play-mode`, `renderPlaytestStep`).
 
 **Compilar novela (`.html` / `.vn.json` / Windows / Linux):**
-`ui/compile.ts → openCompileModal()` — valida con `validateStory()`, genera con
-`buildStandaloneHtml()` / `buildHistoria()`, guarda con `saveTextFile()` y
+`ui/compile.ts → openCompileModal()` — valida con `validateStory()` (incluye
+escenas), genera con
+`buildStandaloneHtml()` / `buildHistoria()` (ambos con `scenes`), guarda con `saveTextFile()` y
 arma paquetes (`exportWindowsPackage` / `exportLinuxPackage`). Los 3 botones
 (`#btnExportExe`/`#btnExportHtml`/`#btnExportLinux`) van a este modal desde
 `index.ts`. No dupliques el generador: `exporter.ts`/`share.ts` delegan aquí.

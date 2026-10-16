@@ -63,12 +63,15 @@ export function buildShareUrl(permission: SharePermission = 'jugar', baseOverrid
     proyecto: ctx.state.projectName,
     state: {
       projectName: ctx.state.projectName,
+      startNodeId: ctx.state.startNodeId,
+      scenes: ctx.state.scenes ?? [],
       zoom: ctx.state.zoom,
       panX: ctx.state.panX,
       panY: ctx.state.panY,
       variables: ctx.state.variables,
       nodes: ctx.state.nodes,
-      wires: ctx.state.wires
+      wires: ctx.state.wires,
+      dialogueThemeId: ctx.state.dialogueThemeId
     }
   };
   const base = (baseOverride ?? getShareBaseUrl()).replace(/\/?$/, '/');
