@@ -5,6 +5,7 @@
 import { ctx } from './context';
 import { showToast } from './ui/toast';
 import { normalizeScenes } from './domain/scenes';
+import { buildCoverThumbnail } from './cover';
 import type { VNState } from '../types';
 
 export const MAX_SLOTS = 3;
@@ -16,6 +17,8 @@ export interface SaveSlot {
   name: string;
   updatedAt: number;
   state: VNState;
+  /** Miniatura del lienzo al guardar (data-URL SVG; ausente en registros viejos). */
+  cover?: string;
 }
 
 function clone<T>(v: T): T {
@@ -104,7 +107,7 @@ export function saveSlot(index: number, name?: string): void {
   normalizeState(state);
   const slotName = (name ?? state.projectName ?? `Historia ${index + 1}`).trim() || `Historia ${index + 1}`;
   state.projectName = slotName;
-  slots[index] = { name: slotName, updatedAt: Date.now(), state };
+  slots[index] = { name: slotName, updatedAt: Date.now(), state, cover: buildCoverThumbnail(state) };
   writeSlots(slots);
   setActiveSlot(index);
   syncProjectLabel();
@@ -115,7 +118,7 @@ export function saveSlotState(index: number, state: VNState, name: string): void
   const copy = clone(state);
   normalizeState(copy);
   copy.projectName = name.trim() || copy.projectName || `Historia ${index + 1}`;
-  slots[index] = { name: copy.projectName, updatedAt: Date.now(), state: copy };
+  slots[index] = { name: copy.projectName, updatedAt: Date.now(), state: copy, cover: buildCoverThumbnail(copy) };
   writeSlots(slots);
 }
 
@@ -143,8 +146,8 @@ export function setActiveSlot(index: number | null): void {
 
 // ---- Autosave / continuar ----
 
-export function loadAutosave(): { name: string; updatedAt: number; state: VNState } | null {
-  const raw = safeParse<{ name: string; updatedAt: number; state: VNState } | null>(readLS(AUTOSAVE_KEY), null);
+export function loadAutosave(): { name: string; updatedAt: number; state: VNState; cover?: string } | null {
+  const raw = safeParse<{ name: string; updatedAt: number; state: VNState; cover?: string } | null>(readLS(AUTOSAVE_KEY), null);
   if (!raw || !raw.state || !Array.isArray(raw.state.nodes) || !raw.state.nodes.length) return null;
   normalizeState(raw.state);
   return raw;
@@ -160,13 +163,13 @@ export function scheduleAutosave(): void {
     try {
       const state = clone(ctx.state);
       normalizeState(state);
-      writeLS(AUTOSAVE_KEY, JSON.stringify({ name: state.projectName, updatedAt: Date.now(), state }));
+      writeLS(AUTOSAVE_KEY, JSON.stringify({ name: state.projectName, updatedAt: Date.now(), state, cover: buildCoverThumbnail(state) }));
       // Si hay un slot activo, lo mantiene sincronizado en silencio.
       const active = getActiveSlot();
       if (active !== null) {
         const slots = loadSlots();
         const prev = slots[active];
-        slots[active] = { name: state.projectName, updatedAt: Date.now(), state };
+        slots[active] = { name: state.projectName, updatedAt: Date.now(), state, cover: buildCoverThumbnail(state) };
         // Conserva el nombre del slot si el usuario lo nombró distinto al proyecto.
         if (prev && prev.name && prev.name !== state.projectName && state.projectName === prev.state?.projectName) {
           slots[active]!.name = prev.name;
@@ -185,7 +188,7 @@ export function saveSessionNow(): void {
   try {
     const state = clone(ctx.state);
     normalizeState(state);
-    writeLS(AUTOSAVE_KEY, JSON.stringify({ name: state.projectName, updatedAt: Date.now(), state }));
+    writeLS(AUTOSAVE_KEY, JSON.stringify({ name: state.projectName, updatedAt: Date.now(), state, cover: buildCoverThumbnail(state) }));
   } catch {}
 }
 
