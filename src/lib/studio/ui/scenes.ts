@@ -99,7 +99,10 @@ export function wireScenePills() {
       }
       const target = resolveSceneStartNode(ctx.state, sceneId);
       if (!target) {
-        showToast('Esta escena aún no tiene nodo de inicio');
+        // La escena existe pero aún no tiene nodos: se abre el estudio para
+        // editarla (renombrar, asignar inicio/fin, añadir el primer nodo).
+        showToast('Esta escena aún no tiene nodos: edítala aquí 🎬');
+        openScenesStudio();
         return;
       }
       centerOnNode(target);
@@ -166,12 +169,14 @@ export function openScenesStudio() {
             </label>
             <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
               <span class="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700">${counts.get(s.id) ?? 0} nodo(s) asignados</span>
+              ${(counts.get(s.id) ?? 0) === 0 ? `<span class="px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-400/40 text-cyan-200">vacía: se puede editar igual ✏️</span>` : ''}
               ${s.endNodeId ? `<span class="px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/40 text-amber-200">⛔ fin: ${escapeHtml(nodeLabel(ctx.state.nodes.find((n) => n.id === s.endNodeId) ?? { id: s.endNodeId } as any))}</span>` : `<span class="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700">sin fin marcado</span>`}
               ${scenes[i + 1] ? `<span>→ sigue: <b class="text-slate-200">${escapeHtml(scenes[i + 1].name)}</b></span>` : `<span class="text-emerald-300">✦ última escena</span>`}
             </div>
             <div class="flex flex-wrap gap-2">
               <button data-scene-play="${s.id}" class="flex-1 px-3 py-2 rounded-xl bg-emerald-500 text-[11px] font-bold text-slate-950 min-h-[44px]">▶ Jugar desde aquí</button>
               <button data-scene-view="${s.id}" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-600 text-[11px] font-semibold text-slate-200 min-h-[44px]">◎ Ver inicio</button>
+              <button data-scene-add="${s.id}" class="px-3 py-2 rounded-xl bg-cyan-500/15 border border-cyan-400/40 text-[11px] font-bold text-cyan-200 min-h-[44px]">＋ Nodo aquí</button>
             </div>
           </section>`
           )
@@ -282,19 +287,69 @@ export function openScenesStudio() {
   bodyEl.querySelectorAll('[data-scene-view]').forEach((btn) => {
     (btn as HTMLElement).addEventListener('click', () => {
       const id = (btn as HTMLElement).dataset.sceneView as string;
-      const target = resolveSceneStartNode(ctx.state, id) || getStartNodeId(ctx.state);
+      // Accesible aunque la escena esté vacía: inicio → miembro → inicio global.
+      // Si no hay nada que mostrar, el estudio queda abierto para editarla.
+      const member = ctx.state.nodes.find((n) => n.sceneId === id)?.id;
+      const target = resolveSceneStartNode(ctx.state, id) || member || getStartNodeId(ctx.state);
+      if (!target) {
+        showToast('Esta escena aún no tiene nodos: renómbrala o añade el primero con ＋ Nodo aquí 🎬');
+        return;
+      }
+      // Si la escena no tiene nodos propios se avisa, pero se muestra igual
+      // el lienzo para no bloquear el acceso.
+      if (!resolveSceneStartNode(ctx.state, id) && !member) {
+        showToast('Esta escena aún no tiene nodos: estás viendo el inicio global 🎬');
+      }
       try {
         (document.getElementById('drawerModal') as HTMLElement)?.classList.add('hidden');
       } catch {}
       centerOnNode(target);
     });
   });
+  bodyEl.querySelectorAll('[data-scene-add]').forEach((btn) => {
+    (btn as HTMLElement).addEventListener('click', () => {
+      const id = (btn as HTMLElement).dataset.sceneAdd as string;
+      const scene = (ctx.state.scenes ?? []).find((s) => s.id === id);
+      if (!scene) return;
+      pushHistory();
+      const nodeId = 'node_' + Date.now().toString(36);
+      const xs = ctx.state.nodes.map((n) => Number(n.x ?? 0));
+      const ys = ctx.state.nodes.map((n) => Number(n.y ?? 0));
+      const node = {
+        id: nodeId,
+        type: 'branch_scene',
+        headerBar: `Nodo 1: ${scene.name}`,
+        sceneId: id,
+        x: xs.length ? Math.max(...xs) + 320 : 100,
+        y: ys.length ? Math.max(...ys) + 40 : 100,
+        width: 250,
+        speaker: 'Narrador',
+        dialogue: '«Primer paso de esta escena: toca ✏️ para editarlo»',
+        inColor: 'cyan'
+      } as any;
+      ctx.state.nodes.push(node);
+      if (!scene.startNodeId) scene.startNodeId = nodeId;
+      try {
+        ctx.selectedNodeId = nodeId;
+        ctx.state.panX = 260 - (node.x ?? 100) * ctx.state.zoom;
+        ctx.state.panY = 200 - (node.y ?? 100) * ctx.state.zoom;
+        applyTransform();
+      } catch {}
+      renderNodes();
+      try {
+        (document.getElementById('drawerModal') as HTMLElement)?.classList.add('hidden');
+      } catch {}
+      centerOnNode(nodeId);
+      showToast(`Primer nodo de «${scene.name}» creado 🎬`);
+    });
+  });
   bodyEl.querySelectorAll('[data-scene-play]').forEach((btn) => {
     (btn as HTMLElement).addEventListener('click', () => {
       const id = (btn as HTMLElement).dataset.scenePlay as string;
-      const target = resolveSceneStartNode(ctx.state, id);
+      const member = ctx.state.nodes.find((n) => n.sceneId === id)?.id;
+      const target = resolveSceneStartNode(ctx.state, id) || member;
       if (!target) {
-        showToast('Esta escena aún no tiene nodo de inicio');
+        showToast('Esta escena aún no tiene nodos para jugar: añade el primero con ＋ Nodo aquí 🎬');
         return;
       }
       try {

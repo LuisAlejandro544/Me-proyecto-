@@ -275,10 +275,11 @@ function go(id) {
       : (n.speakerColor || (c && c.color) || "#94a3b8");
   }
   // Nodo background: el fondo persiste en los pasos siguientes.
-  if (n.type === "background" && n.backgroundAssetId) {
+  // Narración con fondo opcional: solo se muestra en este paso.
+  if ((n.type === "background" || n.type === "narration") && n.backgroundAssetId) {
     var bgc = customOf(n.backgroundAssetId);
     if (bgc && bgc.dataUrl) {
-      __bgUrl = bgc.dataUrl;
+      if (n.type === "background") __bgUrl = bgc.dataUrl;
       var stageBg = document.querySelector(".stage");
       if (stageBg) { stageBg.style.backgroundImage = 'url("' + bgc.dataUrl + '")'; stageBg.style.backgroundSize = "cover"; stageBg.style.backgroundPosition = "center"; }
     }

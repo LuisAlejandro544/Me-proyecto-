@@ -63,6 +63,12 @@ export function renderBackgroundCard(node): string {
 }
 
 export function renderNarrationCard(node): string {
+  const bg = node.backgroundAssetId ? findCustomAsset(node.backgroundAssetId) : undefined;
+  const thumb = bg?.dataUrl
+    ? `<img src="${bg.dataUrl}" alt="" class="w-full h-12 rounded-xl object-cover border border-white/15 mt-2" />`
+    : (node.backgroundAssetId
+      ? `<div class="w-full rounded-xl bg-slate-800 border border-dashed border-slate-600 mt-2 px-2 py-1.5 text-[11px] text-slate-400 truncate">🖼️ ${escapeHtml(node.backgroundName || bg?.name || 'Fondo…')}</div>`
+      : '');
   return `
         <div class="p-3.5 relative vn-node-pad-ports">
           ${inPort(node)}
@@ -70,6 +76,7 @@ export function renderNarrationCard(node): string {
             <span class="editable-field" data-field="badge">${escapeHtml(node.badge || '📖 Narración')}</span>
           </div>
           <div class="text-xs text-slate-100 leading-snug whitespace-pre-line editable-field" data-field="dialogue">${escapeHtml(node.dialogue || 'Narración…')}</div>
+          ${thumb}
           ${outPort(node)}
         </div>`;
 }
