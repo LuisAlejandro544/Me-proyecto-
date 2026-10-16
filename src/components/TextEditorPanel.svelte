@@ -102,10 +102,18 @@
 
   onMount(() => {
     sync(false);
-    const mark = () => {
+    // Solo los clics SOBRE un nodo muestran el panel. Clics en el lienzo
+    // vacío, la barra superior o el propio panel no lo reabren (antes
+    // cualquier pointerdown limpiaba el descarte de la ✕).
+    const mark = (e: PointerEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest('aside')) return;
+      const nodeEl = t?.closest('.vn-node');
+      if (!nodeEl) return;
       userSelected = true;
       dismissedFor = null;
-      sync(false);
+      // Diferido: la selección (interactions.ts) se actualiza tras este evento.
+      requestAnimationFrame(() => sync(true));
     };
     document.addEventListener('pointerdown', mark, { capture: true });
     const layer = document.getElementById('nodesLayer');
