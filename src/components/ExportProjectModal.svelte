@@ -191,7 +191,7 @@
 
             <!-- Icono + Textos -->
             <div class="flex items-center gap-3 pr-5 mt-0.5">
-              <div class="w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 {c.boxClass}">
+              <div class="w-12 h-12 rounded-xl {c.id === 'linux' ? 'border-0' : 'border'} flex items-center justify-center shrink-0 {c.boxClass}">
                 {#if c.id === 'windows'}
                   <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M3 5.5l7.5-1v7H3v-6zm8.5-1.1L21 3v8.5h-9.5V4.4zM3 12.5h7.5v7L3 18.5v-6zm8.5 0H21V21l-9.5-1.4v-7.1z"/>
