@@ -145,12 +145,12 @@
 {#if open}
   <div
     id="exportModal"
-    class="fixed inset-0 bg-black/65 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+    class="fixed inset-0 bg-black/65 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
     role="dialog" aria-modal="true" aria-labelledby="exportModalTitle"
   >
-    <div class="w-full max-w-[650px] rounded-[22px] bg-[#191d30]/95 backdrop-blur-xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden">
+    <div class="w-full max-w-[650px] max-h-[92dvh] flex flex-col rounded-t-[22px] sm:rounded-[22px] bg-[#191d30]/95 backdrop-blur-xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden mb-[env(safe-area-inset-bottom)] sm:mb-0">
       <!-- Cabecera -->
-      <div class="flex items-start justify-between px-7 pt-6 pb-2">
+      <div class="flex items-start justify-between px-5 sm:px-7 pt-5 sm:pt-6 pb-2 shrink-0">
         <div>
           <h2 id="exportModalTitle" class="text-[22px] font-bold text-white tracking-tight">Exportar proyecto</h2>
           <p class="text-[14px] text-[#8e96b8] mt-0.5">Elige la plataforma y el formato de destino.</p>
@@ -166,13 +166,13 @@
       </div>
 
       <!-- Cuadrícula de 6 tarjetas -->
-      <div class="px-7 py-4 grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+      <div class="px-5 sm:px-7 py-4 grid grid-cols-1 sm:grid-cols-3 gap-3.5 overflow-y-auto min-h-0 flex-1">
         {#each cards as c}
           <button
             data-export-target={c.id}
             onclick={() => pick(c.id, c.ready)}
             aria-pressed={target === c.id}
-            class="export-card relative text-left rounded-2xl p-3.5 transition-none min-h-[124px] flex flex-col
+            class="export-card relative text-left rounded-2xl p-3.5 transition-none min-h-[104px] sm:min-h-[124px] flex flex-col
               {target === c.id ? 'is-selected' : 'is-idle hover:border-slate-500/70'}
               {c.ready ? 'cursor-pointer' : 'opacity-75 cursor-not-allowed'}"
           >
@@ -239,7 +239,7 @@
       </div>
 
       <!-- Barra inferior: Destino + Botones -->
-      <div class="px-7 pb-6 pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="px-5 sm:px-7 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pb-6 pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 shrink-0 border-t border-white/10 sm:border-t-0">
         <div class="min-w-0 flex-1">
           <p class="text-[13.5px] text-[#cbd5e1] truncate" title={destFile()}>
             Destino: <span class="text-white font-normal">{destFile()}</span>
@@ -250,10 +250,10 @@
           {/if}
         </div>
 
-        <div class="flex items-center gap-3 shrink-0">
+        <div class="flex items-center gap-3 shrink-0 w-full sm:w-auto">
           <button
             onclick={close}
-            class="px-6 py-2 rounded-full border border-[#4a5270] bg-[#1e2338]/70 text-[14px] font-medium text-[#cbd5e1] hover:text-white hover:border-slate-400 hover:bg-[#282e48] transition min-h-[40px]"
+            class="flex-1 sm:flex-none px-6 py-2 rounded-full border border-[#4a5270] bg-[#1e2338]/70 text-[14px] font-medium text-[#cbd5e1] hover:text-white hover:border-slate-400 hover:bg-[#282e48] transition min-h-[44px] sm:min-h-[40px]"
           >
             Cancelar
           </button>
@@ -261,7 +261,7 @@
             data-action="export-build"
             onclick={run}
             disabled={busy}
-            class="px-6 py-2 rounded-full bg-gradient-to-r from-[#22d3ee] via-[#818cf8] to-[#e879f9] text-[14px] font-semibold text-white shadow-[0_0_24px_rgba(56,189,248,0.45),0_0_24px_rgba(232,121,249,0.35)] hover:brightness-110 transition min-h-[40px] disabled:opacity-60"
+            class="flex-1 sm:flex-none px-6 py-2 rounded-full bg-gradient-to-r from-[#22d3ee] via-[#818cf8] to-[#e879f9] text-[14px] font-semibold text-white shadow-[0_0_24px_rgba(56,189,248,0.45),0_0_24px_rgba(232,121,249,0.35)] hover:brightness-110 transition min-h-[44px] sm:min-h-[40px] disabled:opacity-60"
           >
             {busy ? 'Compilando… ⏳' : 'Exportar y compilar'}
           </button>
