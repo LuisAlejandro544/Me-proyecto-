@@ -11,11 +11,61 @@ import { showToast } from './toast';
 import { setStartNodeId } from '../storage';
 import { getCharacterCatalog } from '../../assets';
 
+function lastNodeDragEndMs(): number {
+  try {
+    return Number((window as unknown as { __vnLastNodeDragEnd?: number }).__vnLastNodeDragEnd || 0);
+  } catch { return 0; }
+}
+
+// El pointerup tras arrastrar un nodo sintetiza un `click` sobre el nodo.
+// Ese clic fantasma no debe abrir editores ni botones: se ignora ~400ms.
+function suppressAfterNodeDrag(): boolean {
+  return Date.now() - lastNodeDragEndMs() < 400;
+}
+
+// Tap fiable en táctil: `click` a veces no llega (o llega tras un drag que
+// lo sintetiza). Se dispara en pointerup si fue toque corto sin mover y el
+// `click` solo actúa como respaldo (teclado/ratón), sin doble disparo.
+function wireTap(ctrl: Element, fn: (e: Event) => void) {
+  const el = ctrl as HTMLElement;
+  let downX = 0;
+  let downY = 0;
+  let downT = 0;
+  let tracking = false;
+  el.addEventListener('pointerdown', (e: PointerEvent) => {
+    tracking = true;
+    downX = e.clientX;
+    downY = e.clientY;
+    downT = performance.now();
+  });
+  el.addEventListener('pointercancel', () => { tracking = false; });
+  el.addEventListener('pointerup', (e: PointerEvent) => {
+    if (!tracking) return;
+    tracking = false;
+    if (suppressAfterNodeDrag()) return;
+    const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
+    if (moved > 12 || performance.now() - downT > 800) return;
+    e.stopPropagation();
+    el.dataset.tapFired = String(Date.now());
+    fn(e);
+  });
+  el.addEventListener('click', (e: MouseEvent) => {
+    const fired = Number(el.dataset.tapFired || 0);
+    if (Date.now() - fired < 900) return; // pointerup ya lo gestionó
+    if (suppressAfterNodeDrag()) {
+      e.stopPropagation();
+      return;
+    }
+    e.stopPropagation();
+    fn(e);
+  });
+}
+
 export function attachNodeInteractions() {
   // Node selection & drag start (touch: single-finger drag, capture pointer for fluid move)
   document.querySelectorAll('.vn-node').forEach(nodeEl => {
     nodeEl.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('.vn-port') || e.target.closest('button') || e.target.closest('select') || e.target.closest('input')) {
+      if (e.target.closest('.vn-port') || e.target.closest('button') || e.target.closest('select') || e.target.closest('input') || e.target.closest('[data-action]')) {
         return;
       }
       // Ignore second finger landing on a node while already dragging/panning.
@@ -104,6 +154,7 @@ export function attachNodeInteractions() {
     });
     fieldEl.addEventListener('click', (e) => {
       if (e.detail > 1) return; // el dblclick ya lo gestiona en desktop
+      if (suppressAfterNodeDrag()) return; // clic fantasma tras arrastrar
       const nodeEl = fieldEl.closest('.vn-node');
       const key = `${nodeEl?.dataset.nodeId}:${(fieldEl as HTMLElement).dataset.field}`;
       const now = performance.now();
@@ -124,6 +175,7 @@ export function attachNodeInteractions() {
     });
     optEl.addEventListener('click', (e) => {
       if (e.detail > 1) return;
+      if (suppressAfterNodeDrag()) return; // clic fantasma tras arrastrar
       const nodeEl = optEl.closest('.vn-node');
       const key = `${nodeEl?.dataset.nodeId}:opt:${(optEl as HTMLElement).dataset.optIdx}`;
       const now = performance.now();
@@ -145,21 +197,18 @@ export function attachNodeInteractions() {
     if (!node) return;
 
     if (action === 'edit-node') {
-      ctrl.addEventListener('click', (e) => {
-        e.stopPropagation();
+      wireTap(ctrl, () => {
         playSynthSfx('click');
         openNodeEditor(nodeId);
       });
     } else if (action === 'set-start') {
-      ctrl.addEventListener('click', (e) => {
-        e.stopPropagation();
+      wireTap(ctrl, () => {
         pushHistory();
         playSynthSfx('click');
         setStartNodeId(nodeId);
         renderNodes();
       });
-    } else if (action === 'delete-node') {      ctrl.addEventListener('click', (e) => {
-        e.stopPropagation();
+    } else if (action === 'delete-node') {      wireTap(ctrl, () => {
         playSynthSfx('click');
         if (confirm(`¿Eliminar este nodo y sus conexiones?`)) deleteNode(nodeId);
         else {
@@ -169,13 +218,11 @@ export function attachNodeInteractions() {
         }
       });
     } else if (action === 'duplicate-node') {
-      ctrl.addEventListener('click', (e) => {
-        e.stopPropagation();
+      wireTap(ctrl, () => {
         duplicateNode(nodeId);
       });
     } else if (action === 'cycle-char') {
-      ctrl.addEventListener('click', (e) => {
-        e.stopPropagation();
+      wireTap(ctrl, () => {
         pushHistory();
         const catalog = getCharacterCatalog();
         const keys = Object.keys(catalog);
@@ -186,8 +233,7 @@ export function attachNodeInteractions() {
         renderNodes();
       });
     } else if (action === 'add-choice-opt') {
-      ctrl.addEventListener('click', (e) => {
-        e.stopPropagation();
+      wireTap(ctrl, () => {
         pushHistory();
         const nextNum = (node.options?.length || 0) + 1;
         const optId = 'opt_' + Date.now().toString(36);
@@ -203,8 +249,7 @@ export function attachNodeInteractions() {
         showToast('Nueva opción de elección añadida');
       });
     } else if (action === 'select-char') {
-      ctrl.addEventListener('click', (e) => {
-        e.stopPropagation();
+      wireTap(ctrl, () => {
         pushHistory();
         const charKey = ctrl.dataset.char;
         node.selectedCharId = charKey;
@@ -213,8 +258,7 @@ export function attachNodeInteractions() {
         renderNodes();
       });
     } else if (action === 'char-prev' || action === 'char-next') {
-      ctrl.addEventListener('click', (e) => {
-        e.stopPropagation();
+      wireTap(ctrl, () => {
         pushHistory();
         const keys = Object.keys(getCharacterCatalog());
         const cur = keys.indexOf(node.selectedCharId || 'yuki');
