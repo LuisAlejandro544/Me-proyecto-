@@ -42,7 +42,7 @@
         {/if}
       </div>
       {#if node.showAddButtons}
-        <div class="text-[11px] text-slate-400">{node.subtitle || 'Nodo de elección'}</div>
+        <div class="text-[11px] text-slate-400 editable-field" data-field="subtitle">{node.subtitle || 'Nodo de elección'}</div>
       {/if}
     </div>
     <button

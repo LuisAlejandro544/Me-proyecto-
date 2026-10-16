@@ -5,7 +5,6 @@ import { findCustomAsset, getCharacterCatalog, resolveCharacter } from '../../as
 import { escapeHtml } from '../domain/geometry';
 import { attachNodeInteractions } from './interactions';
 import { renderWires } from './render-wires';
-import { getSceneById, getSceneOfNode } from '../domain/scenes';
 import { mount, unmount } from 'svelte';
 import ChoiceNodeCard from '../../../components/nodes/ChoiceNodeCard.svelte';
 import CompactSceneCard from '../../../components/nodes/CompactSceneCard.svelte';
@@ -26,9 +25,6 @@ export function renderNodes() {
   ctx.state.nodes.forEach(node => {
     const el = document.createElement('div');
     const isStart = (ctx.state as { startNodeId?: string }).startNodeId === node.id;
-    const scene = (node.sceneId && getSceneById(ctx.state, node.sceneId)) || getSceneOfNode(ctx.state, node.id);
-    const isSceneStart = !!scene && scene.startNodeId === node.id;
-    const isSceneEnd = !!scene && scene.endNodeId === node.id;
     el.className = `vn-node ${node.type === 'choice' ? 'vn-node-choice' : ''} ${ctx.selectedNodeId === node.id ? 'selected' : ''} ${isStart ? 'vn-start-node' : ''}`;
     el.style.left = `${node.x}px`;
     el.style.top = `${node.y}px`;
@@ -37,9 +33,6 @@ export function renderNodes() {
 
     // Barra de acciones del nodo (táctil): editar ✏️, inicio ▶ y eliminar 🗑.
     // Siempre visible en móvil; en escritorio aparece al seleccionar / hover.
-    const sceneTag = scene
-      ? `<div class="vn-scene-tag" title="Pertenece a «${escapeHtml(scene.name)}»${isSceneStart ? ' · aquí empieza' : ''}${isSceneEnd ? ' · aquí termina' : ''}">🎬 ${escapeHtml(scene.name)}${isSceneStart ? ' · INICIO' : ''}${isSceneEnd ? ' · FIN' : ''}</div>`
-      : '';
     const hasCustomAnim = !!(node.assetEnter || node.assetMotion || node.sceneTransition);
     const animTag = hasCustomAnim
       ? `<div class="vn-anim-tag" title="Aparición: ${escapeHtml(node.assetEnter ?? 'global')} · Movimiento: ${escapeHtml(node.assetMotion ?? 'global')} · Transición: ${escapeHtml(node.sceneTransition ?? 'escena/global')}">🎞 ${escapeHtml([node.assetEnter, node.assetMotion, node.sceneTransition].filter(Boolean).join(' · ') || 'animado')}</div>`
@@ -54,7 +47,6 @@ export function renderNodes() {
           class="vn-node-btn vn-node-btn-delete">🗑</button>
       </div>
       ${isStart ? `<div class="vn-start-badge" title="La partida empieza aquí">▶ INICIO</div>` : ''}
-      ${sceneTag}
       ${animTag}
     `;
 
@@ -141,7 +133,7 @@ export function renderNodes() {
                data-port-dir="out"
                data-port-color="cyan"></div>
 
-          <div class="text-sm font-bold text-white mb-2.5 text-center">${escapeHtml(node.title || 'Selector de personaje')}</div>
+          <div class="text-sm font-bold text-white mb-2.5 text-center editable-field" data-field="title">${escapeHtml(node.title || 'Selector de personaje')}</div>
 
           <!-- Avatar Carousel -->
           <div class="flex items-center justify-between gap-1.5 mb-3">
@@ -210,7 +202,7 @@ export function renderNodes() {
           ${node.topTitle ? `
             <div class=" -top-11 left-0.5 mb-1.5 px-3 pt-2.5">
               <div class="text-xs font-bold text-white editable-field" data-field="topTitle">${escapeHtml(node.topTitle)}</div>
-              <div class="text-[11px] text-slate-400">${escapeHtml(node.topSubtitle || 'Start')}</div>
+              <div class="text-[11px] text-slate-400 editable-field" data-field="topSubtitle">${escapeHtml(node.topSubtitle || 'Start')}</div>
             </div>
           ` : ''}
           <div class="p-3 pt-2">
@@ -222,7 +214,7 @@ export function renderNodes() {
               <img src="${charObj.avatar}" data-action="cycle-char" data-node="${node.id}" title="Clic para cambiar de personaje" class="w-12 h-12 rounded-xl object-cover border border-white/20 cursor-pointer" />
               <div>
                 <div class="text-xs font-bold text-white editable-field" data-field="speaker">${escapeHtml(node.speaker)}</div>
-                <div class="text-[11px] text-slate-400">${escapeHtml(node.speakerSub || 'Miniatura')}</div>
+                <div class="text-[11px] text-slate-400 editable-field" data-field="speakerSub">${escapeHtml(node.speakerSub || 'Miniatura')}</div>
               </div>
             </div>
 
@@ -295,7 +287,7 @@ export function renderNodes() {
           <div class="relative w-full rounded-xl overflow-hidden border border-fuchsia-400/30 mb-2.5 bg-black/60">
             ${video ? `<video src="${video.dataUrl}" class="w-full h-24 object-cover" muted playsinline preload="metadata"></video>` : `<div class="w-full h-24 flex flex-col items-center justify-center gap-1 text-3xl">🎬<span class="text-[10px] text-slate-300 font-semibold">Sin vídeo — toca ✏️ para elegir</span></div>`}
           </div>
-          <div class="text-xs font-bold text-fuchsia-300 truncate">${escapeHtml(node.videoName || video?.name || 'Sin vídeo asignado')}</div>
+          <div class="text-xs font-bold text-fuchsia-300 truncate editable-field" data-field="videoName">${escapeHtml(node.videoName || video?.name || 'Sin vídeo asignado')}</div>
           <div class="text-[11px] text-slate-400 truncate editable-field" data-field="dialogue">${escapeHtml(node.dialogue || 'Se reproduce y continúa…')}</div>
           <div class="text-[10px] text-slate-500 mt-1">${node.videoAutoplay === false ? '⏸ Manual' : '▶ Auto'} · ${node.videoLoop ? '🔁 Bucle' : '➡ Sigue'}${node.videoMuted ? ' · 🔇' : ''}</div>
           <div class="vn-port vn-port-cyan vn-port-out"
@@ -325,7 +317,7 @@ export function renderNodes() {
           <div class="w-full rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-400/30 p-3 flex items-center gap-2.5 mb-2">
             <span class="text-2xl">🎵</span>
             <div class="min-w-0">
-              <div class="text-xs font-bold text-amber-200 truncate">${escapeHtml(node.soundName || node.audioName || sound?.name || 'Sin audio')}</div>
+              <div class="text-xs font-bold text-amber-200 truncate editable-field" data-field="soundName">${escapeHtml(node.soundName || node.audioName || sound?.name || 'Sin audio')}</div>
               <div class="text-[10px] text-slate-400">Vol ${(node.volume ?? 100)}% · ${node.loop ? '🔁 Bucle' : '1×'}</div>
             </div>
           </div>
