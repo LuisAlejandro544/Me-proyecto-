@@ -116,20 +116,52 @@
 
   onMount(() => {
     sync(false);
-    // Solo los clics SOBRE un nodo muestran el panel. Clics en el lienzo
-    // vacío, la barra superior o el propio panel no lo reabren (antes
-    // cualquier pointerdown limpiaba el descarte de la ✕).
-    const mark = (e: PointerEvent) => {
+    // Solo un TOQUE (sin arrastrar) sobre un nodo muestra el panel.
+    // Antes cualquier pointerdown lo abría, así que arrastrar un nodo en
+    // móvil abría el editor solo. Los toques en botones/puertos/controles
+    // (✏️, ▶, 🗑, sliders, selects) tampoco lo abren.
+    let downX = 0;
+    let downY = 0;
+    let downT = 0;
+    let downNode: string | null = null;
+    const isControl = (t: HTMLElement | null) =>
+      !!t?.closest('aside') ||
+      !!t?.closest('button') ||
+      !!t?.closest('select') ||
+      !!t?.closest('input') ||
+      !!t?.closest('textarea') ||
+      !!t?.closest('a') ||
+      !!t?.closest('[data-action]') ||
+      !!t?.closest('.vn-port');
+    const markDown = (e: PointerEvent) => {
+      downNode = null;
       const t = e.target as HTMLElement | null;
-      if (t?.closest('aside')) return;
+      if (isControl(t)) return;
       const nodeEl = t?.closest('.vn-node');
       if (!nodeEl) return;
+      downX = e.clientX;
+      downY = e.clientY;
+      downT = performance.now();
+      downNode = (nodeEl as HTMLElement).dataset.nodeId ?? null;
+    };
+    const markUp = (e: PointerEvent) => {
+      if (!downNode) return;
+      const id = downNode;
+      downNode = null;
+      // Fue arrastre (mover el nodo) o pulsación larga: no abrir el editor.
+      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 10) return;
+      if (performance.now() - downT > 600) return;
+      const t = e.target as HTMLElement | null;
+      if (isControl(t)) return;
+      const nodeEl = t?.closest('.vn-node');
+      if (!nodeEl || (nodeEl as HTMLElement).dataset.nodeId !== id) return;
       userSelected = true;
       dismissedFor = null;
       // Diferido: la selección (interactions.ts) se actualiza tras este evento.
       requestAnimationFrame(() => sync(true));
     };
-    document.addEventListener('pointerdown', mark, { capture: true });
+    document.addEventListener('pointerdown', markDown, { capture: true });
+    document.addEventListener('pointerup', markUp, { capture: true });
     const layer = document.getElementById('nodesLayer');
     if (layer) {
       obs = new MutationObserver(() => sync(false));
@@ -137,7 +169,8 @@
     }
     return () => {
       obs?.disconnect();
-      document.removeEventListener('pointerdown', mark, { capture: true } as AddEventListenerOptions);
+      document.removeEventListener('pointerdown', markDown, { capture: true } as AddEventListenerOptions);
+      document.removeEventListener('pointerup', markUp, { capture: true } as AddEventListenerOptions);
     };
   });
 </script>

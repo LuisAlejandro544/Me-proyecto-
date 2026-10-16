@@ -443,7 +443,17 @@ function endPointer(e) {
 
   const endedMode = ctx.dragState.mode;
   const endedNodeId = ctx.dragState.nodeId;
+  const endedMoved = !!ctx.dragState.moved;
   ctx.dragState = null;
+  // Marca el fin de un arrastre real: el pointerup sintetiza un `click`
+  // fantasma sobre el nodo que NO debe abrir editores (ver interactions.ts
+  // y TextEditorPanel.svelte). Solo se marca si hubo movimiento (un toque
+  // simple debe seguir abriendo el editor).
+  if (endedMode === 'node' && endedMoved) {
+    try {
+      (window as unknown as { __vnLastNodeDragEnd?: number }).__vnLastNodeDragEnd = Date.now();
+    } catch {}
+  }
   panState = null;
   if (activePointers.size === 0) {
     vpRectCache = null;
