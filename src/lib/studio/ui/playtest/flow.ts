@@ -124,6 +124,11 @@ export function renderPlaytestStep(nodeId) {
   }
 
   const dialogueEl = document.getElementById('vnDialogueText');
+  // Limpia el temporizador de espera del paso anterior (nodo wait).
+  try { if (globalThis.__vnWaitTimer) { clearTimeout(globalThis.__vnWaitTimer); globalThis.__vnWaitTimer = null; } } catch {}
+  // Limpia el estilo de monólogo/narración del paso anterior.
+  dialogueEl.style.fontStyle = '';
+  dialogueEl.style.textAlign = '';
   if (node.type === 'choice') {
     dialogueEl.textContent = 'Elige tu próxima decisión:';
   } else if (node.type === 'character_selector') {
@@ -132,6 +137,20 @@ export function renderPlaytestStep(nodeId) {
     dialogueEl.textContent = node.dialogue || 'Reproduciendo vídeo… pulsa Continuar para seguir.';
   } else if (node.type === 'sound_cue') {
     dialogueEl.textContent = node.dialogue || '🔊 Efecto sonoro (la historia continúa con Continuar).';
+  } else if (node.type === 'jump') {
+    dialogueEl.textContent = node.dialogue || '↗️ Salto a otra parte de la historia…';
+  } else if (node.type === 'ending') {
+    dialogueEl.textContent = `${node.endingTitle || node.title || 'Final'}\n${node.dialogue || ''}`.trim();
+  } else if (node.type === 'background') {
+    dialogueEl.textContent = node.dialogue || '🖼️ Cambia el fondo…';
+  } else if (node.type === 'narration') {
+    dialogueEl.textContent = node.dialogue || '…';
+  } else if (node.type === 'monologue') {
+    dialogueEl.textContent = node.dialogue || '…';
+  } else if (node.type === 'wait') {
+    dialogueEl.textContent = `${node.dialogue || '…'}\n⏳ ${Number(node.waitMs ?? 800)} ms…`;
+  } else if (node.type === 'effect') {
+    dialogueEl.textContent = node.dialogue || '✨ Efecto…';
   } else {
     dialogueEl.textContent = node.dialogue || '…';
   }
@@ -150,7 +169,57 @@ export function renderPlaytestStep(nodeId) {
     dialogueEl.classList.add(node.textTransition === 'fade' ? 'vn-dlg-t-fade' : 'vn-dlg-t-slide');
   }
 
-  // Render story variables readout
+  // ——— Nodos nuevos: fondo persistente, estilos y efectos ———
+  try {
+    if (node.type === 'background' && node.backgroundAssetId) {
+      const bg = findCustomAsset(node.backgroundAssetId);
+      const stage = document.getElementById('vnStageBg');
+      if (bg?.dataUrl && stage) {
+        stage.style.backgroundImage = `url("${bg.dataUrl}")`;
+        stage.style.backgroundSize = 'cover';
+        stage.style.backgroundPosition = 'center';
+      }
+    }
+    if (node.type === 'narration') {
+      document.getElementById('vnSpeakerName').textContent = '📖 Narración';
+      document.getElementById('vnSpeakerName').style.color = '#cbd5e1';
+      document.getElementById('vnExpressionTag').textContent = 'Pantalla completa';
+      dialogueEl.style.textAlign = 'center';
+    } else if (node.type === 'monologue') {
+      document.getElementById('vnSpeakerName').textContent = `💭 ${node.speaker || charObj?.name || 'Pensamiento'}`;
+      document.getElementById('vnSpeakerName').style.color = node.speakerColor || '#a78bfa';
+      document.getElementById('vnExpressionTag').textContent = 'Monólogo interno';
+      dialogueEl.style.fontStyle = 'italic';
+    } else if (node.type === 'ending') {
+      const kindLabel = { bueno: '🌅 Final bueno', malo: '🌑 Final malo', secreto: '🗝 Final secreto', neutral: '🌫 Final neutral' }[node.endingKind] || '🏁 Final';
+      document.getElementById('vnSpeakerName').textContent = kindLabel;
+      document.getElementById('vnSpeakerName').style.color = '#6ee7b7';
+      document.getElementById('vnExpressionTag').textContent = node.endingTitle || node.title || 'Fin de la historia';
+      dialogueEl.style.textAlign = 'center';
+    } else if (node.type === 'jump') {
+      const destName = (() => {
+        if (node.jumpNodeId) {
+          const t = ctx.state.nodes.find((n) => n.id === node.jumpNodeId);
+          return t ? (t.badge || t.title || t.headerBar || t.id) : node.jumpNodeId;
+        }
+        if (node.jumpSceneId) return getSceneById(ctx.state, node.jumpSceneId)?.name ?? node.jumpSceneId;
+        return 'sin destino';
+      })();
+      document.getElementById('vnSpeakerName').textContent = '↗️ Salto';
+      document.getElementById('vnSpeakerName').style.color = '#7dd3fc';
+      document.getElementById('vnExpressionTag').textContent = `→ ${destName}`;
+    } else if (node.type === 'wait') {
+      document.getElementById('vnSpeakerName').textContent = '⏳ Pausa';
+      document.getElementById('vnSpeakerName').style.color = '#fde68a';
+      document.getElementById('vnExpressionTag').textContent = `${Number(node.waitMs ?? 800)} ms`;
+    } else if (node.type === 'effect') {
+      const kindLabel = { flash: '⚡ Flash', 'fade-black': '⬛ Fundido', shake: '📳 Sacudida', 'zoom-punch': '👊 Zoom', hearts: '💖 Corazones', rain: '🌧 Lluvia', snow: '❄ Nieve', sparkles: '✨ Chispas' }[node.effectKind] || '✨ Efecto';
+      document.getElementById('vnSpeakerName').textContent = kindLabel;
+      document.getElementById('vnSpeakerName').style.color = '#f9a8d4';
+      document.getElementById('vnExpressionTag').textContent = `${Number(node.effectDurationMs ?? 600)} ms`;
+      playVisualEffect(node.effectKind || 'shake', Number(node.effectDurationMs ?? 600));
+    }
+  } catch {}
   const varsEl = document.getElementById('vnVariablesReadout');
   varsEl.innerHTML = Object.entries(ctx.state.variables || {})
     .map(([k, v]) => `<span class="px-2 py-0.5 rounded bg-slate-800 text-cyan-300 font-mono">${escapeHtml(k)}: ${escapeHtml(String(v))}</span>`)
@@ -199,14 +268,56 @@ export function renderPlaytestStep(nodeId) {
   } else {
     choicesOverlay.classList.add('hidden');
     nextBtn.classList.remove('opacity-40', 'pointer-events-none');
-    // Continuar: primero cables, luego salto de escena (fin de escena / nextSceneId).
+    // Continuar: cables → salto del nodo jump → salto de escena (fin / nextSceneId).
     const sceneTarget = resolveContinueSceneTarget(ctx.state, node.id);
-    const goTarget = outWires.length > 0 ? outWires[0].toNode : (sceneTarget || null);
+    let jumpTarget = null;
+    if (node.type === 'jump') {
+      if (node.jumpNodeId && ctx.state.nodes.some((n) => n.id === node.jumpNodeId)) {
+        jumpTarget = node.jumpNodeId;
+      } else if (node.jumpSceneId) {
+        jumpTarget = resolveSceneStartNode(ctx.state, node.jumpSceneId) || null;
+      }
+    }
+    const goTarget = outWires.length > 0 ? outWires[0].toNode : (jumpTarget || sceneTarget || null);
+    // El final es terminal: no hay Continuar, se muestra el epílogo como cierre.
+    if (node.type === 'ending') {
+      nextBtn.classList.add('opacity-40', 'pointer-events-none');
+      const nextLabel = nextBtn.querySelector('span') ?? nextBtn;
+      nextLabel.textContent = '🏁 Fin';
+      nextBtn.onclick = () => showToast('🏁 Este es un final de la historia. ¡Gracias por jugar!');
+      showToast(`🏁 ${node.endingTitle || 'Final'} — pulsa Reiniciar para volver a jugar`);
+      return;
+    }
     const goSceneName = !outWires.length && sceneTarget
       ? (getSceneOfNode(ctx.state, sceneTarget)?.name ?? '')
       : '';
+    const jumpName = !outWires.length && jumpTarget && node.type === 'jump'
+      ? (getSceneOfNode(ctx.state, jumpTarget)?.name ?? '')
+      : '';
     const nextLabel = nextBtn.querySelector('span') ?? nextBtn;
-    nextLabel.textContent = goSceneName ? `Continuar → 🎬 ${goSceneName}` : 'Continuar';
+    if (node.type === 'jump') {
+      nextLabel.textContent = jumpName ? `Saltar → 🎬 ${jumpName}` : 'Saltar →';
+    } else {
+      nextLabel.textContent = goSceneName ? `Continuar → 🎬 ${goSceneName}` : 'Continuar';
+    }
+    // La pausa avanza sola tras waitMs (con botón para omitirla).
+    if (node.type === 'wait' && goTarget) {
+      const ms = Math.max(200, Math.min(5000, Number(node.waitMs ?? 800)));
+      nextLabel.textContent = `Omitir espera (${ms} ms) →`;
+      try { if (globalThis.__vnWaitTimer) clearTimeout(globalThis.__vnWaitTimer); } catch {}
+      try {
+        globalThis.__vnWaitTimer = setTimeout(() => {
+          globalThis.__vnWaitTimer = null;
+          try { renderPlaytestStep(goTarget); } catch {}
+        }, ms);
+      } catch {}
+      nextBtn.onclick = () => {
+        playSynthSfx('click');
+        try { if (globalThis.__vnWaitTimer) { clearTimeout(globalThis.__vnWaitTimer); globalThis.__vnWaitTimer = null; } } catch {}
+        renderPlaytestStep(goTarget);
+      };
+      return;
+    }
     nextBtn.onclick = () => {
       playSynthSfx('click');
       if (goTarget) {
@@ -216,4 +327,46 @@ export function renderPlaytestStep(nodeId) {
       }
     };
   }
+}
+
+/** Efecto visual breve sobre la tarjeta de playtest (flash / shake / partículas). */
+export function playVisualEffect(kind: string, durationMs: number) {
+  try {
+    const card = document.getElementById('vnPlaytestCard');
+    if (!card) return;
+    const ms = Math.max(200, Math.min(3000, Number(durationMs) || 600));
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return;
+    if (kind === 'flash' || kind === 'fade-black') {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `position:absolute;inset:0;z-index:40;pointer-events:none;background:${kind === 'flash' ? '#fff' : '#000'};opacity:0;transition:opacity 180ms;`;
+      card.appendChild(overlay);
+      requestAnimationFrame(() => { overlay.style.opacity = '0.9'; });
+      setTimeout(() => { overlay.style.opacity = '0'; }, Math.max(120, ms - 220));
+      setTimeout(() => { try { overlay.remove(); } catch {} }, ms);
+    } else if (kind === 'shake' || kind === 'zoom-punch') {
+      const dx = kind === 'shake' ? 10 : 0;
+      card.animate(
+        kind === 'shake'
+          ? [{ transform: 'translateX(0)' }, { transform: `translateX(${-dx}px)` }, { transform: `translateX(${dx}px)` }, { transform: `translateX(${-dx / 2}px)` }, { transform: 'translateX(0)' }]
+          : [{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }],
+        { duration: Math.min(ms, 800), iterations: kind === 'shake' ? 2 : 1 }
+      );
+    } else {
+      const emoji = kind === 'hearts' ? '💖' : kind === 'rain' ? '🌧' : kind === 'snow' ? '❄' : '✨';
+      const layer = document.createElement('div');
+      layer.style.cssText = 'position:absolute;inset:0;z-index:40;pointer-events:none;overflow:hidden;display:flex;justify-content:space-around;font-size:28px;';
+      for (let i = 0; i < 12; i++) {
+        const s = document.createElement('span');
+        s.textContent = emoji;
+        s.style.cssText = `transform:translateY(-40px);opacity:0.95;animation-delay:${(i * 90) + Math.random() * 200}ms;`;
+        layer.appendChild(s);
+      }
+      card.appendChild(layer);
+      try {
+        layer.animate([{ transform: 'translateY(-30px)', opacity: 0 }, { transform: 'translateY(120px)', opacity: 1 }], { duration: ms, easing: 'ease-in' });
+      } catch {}
+      setTimeout(() => { try { layer.remove(); } catch {} }, ms + 60);
+    }
+  } catch {}
 }

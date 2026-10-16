@@ -40,7 +40,7 @@ Me-proyecto-/
 │   │       ├── #shareLoading #shareLoadingMsg #shareLoadingBar #shareLoadingGame
 │   │       │   └── #updateModal (pantalla auto-update) + #toastBanner #toastMessage
 │   └── lib/
-│       ├── types.ts          VNNode (+sceneId/nextSceneId/dlg* +assetEnter/assetMotion/sceneTransition) VNWire VNScene (+enterTransition) VNState (+startNodeId/dialogueThemeId/scenes +defaults de animación) GraphSnapshot (+scenes) DragState SfxKind
+│       ├── types.ts          VNNode (+sceneId/nextSceneId/dlg* +assetEnter/assetMotion/sceneTransition +jumpSceneId/jumpNodeId +endingKind/endingTitle +backgroundAssetId +waitMs +effectKind/effectDurationMs, EndingKind/EffectKind) VNWire VNScene (+enterTransition) VNState (+startNodeId/dialogueThemeId/scenes +defaults de animación) GraphSnapshot (+scenes) DragState SfxKind
 │       ├── asset-animations.ts  9 apariciones + 8 movimientos + 8 transiciones (listas + getProjectAssetDefaults/resolveNodeAssetAnim + assetAnimationsCss)
 │       ├── dialogue-themes.ts  biblioteca de diseños de diálogo (6 base + propios) + 14 fuentes + 8 animaciones
 │       ├── platform.ts       isTauri/isCapacitor + saveHtmlExport (dialog/fs, Filesystem/Share)
@@ -62,10 +62,12 @@ Me-proyecto-/
 │           │   ├── scenes.ts   VNScene (ensure/normalize/create/rename/delete/move + resolveSceneStartNode/resolveContinueSceneTarget)
 │           │   └── history.ts  pushHistory (30 pasos)
 │           └── ui/  (dioses partidos en subcarpeta + barrel fino; detalle abajo)
-│               ├── render-nodes.ts  orquestador + cards/{toolbar,banner,selector,avatar,branch,video,sound}.ts (8 tipos + toolbar ✏️/▶/🗑 + insignia ▶ INICIO + insignia 🎞 + puertos a -9px)
+│               ├── render-nodes.ts  orquestador + cards/{toolbar,banner,selector,avatar,branch,video,sound,system}.ts (15 tipos + toolbar ✏️/▶/🗑 + insignia ▶ INICIO + insignia 🎞 + puertos a -9px)
 │               │     banner_scene (in_main + portsOut repartidos %) · choice (in_main + out por opción) · compact_scene · character_selector (in + out) · avatar_scene (in + outs)
 │               │     branch_scene (in + out) · video_scene (in + out, 🎬) · sound_cue (in + out, 🔊)
-│               ├── node-editor.ts   barrel + node-editor/{fields,options,crud,form}.ts (openNodeEditor por tipo + deleteNode/duplicateNode + escena por nodo + sección 🎞)
+│               │     jump (in + out, salto a nodo/escena) · ending (solo in, terminal contable) · background (in + out, fondo persistente) · narration (in + out, sin hablante)
+│               │     monologue (in + out, cursiva) · wait (in + out, avance solo) · effect (in + out, flash/shake/partículas)
+│               ├── node-editor.ts   barrel + node-editor/{fields,options,crud,form}.ts (openNodeEditor por tipo + deleteNode/duplicateNode + escena por nodo + sección 🎞 + formularios jump/ending/background/narration/monologue/wait/effect)
 │               ├── scenes.ts        openScenesStudio() (nombre + inicio/fin por nodo + transición de entrada + orden + ver/jugar/eliminar)
 │               ├── dialogue.ts      barrel + dialogue/{io,apply,studio}.ts (fondos + tema en playtest + estudio de diseños)
 │               ├── editors.ts       edición rápida inline (doble-clic / doble-toque)
@@ -77,8 +79,8 @@ Me-proyecto-/
 │               ├── transform.ts     setZoom/applyTransform (panLayer translate GPU + world scale GPU)
 │               ├── minimap.ts       renderMinimap
 │               ├── load-preset.ts   loadPreset(sora|aoi|blank)
-│               ├── playtest.ts      barrel + playtest/{media,anim,chrome,flow}.ts (start/close/paso + <video>/<audio> + 🎞 por nodo/escena/global)
-│               ├── compile.ts       barrel + compile/{types,validate,historia,standalone,files,modal}.ts (generador ÚNICO en standalone.ts + buildHistoria/validateStory/saveTextFile + paquetes Win/Linux)
+│               ├── playtest.ts      barrel + playtest/{media,anim,chrome,flow}.ts (start/close/paso + <video>/<audio> + 🎞 por nodo/escena/global + jump/ending/background/narration/monologue/wait/effect + playVisualEffect)
+│               ├── compile.ts       barrel + compile/{types,validate,historia,standalone,files,modal}.ts (generador ÚNICO en standalone.ts + buildHistoria/validateStory/saveTextFile + paquetes Win/Linux + 7 nodos nuevos en .html y validación)
 │               ├── exporter.ts      compat (delega a compile.ts: exportStandaloneHtml/openExeExportModal)
 │               ├── workspace.ts     router fino + workspace/{state,tab-switch,folder,tab-nodes,tab-nodes-factory,tab-assets,tab-timeline,tab-characters,tab-settings}.ts
 │               ├── share.ts         barrel + share/{codec,base,modal,play}.ts (getShareBaseUrl/isLocalOrPrivateHost/buildShareUrl/

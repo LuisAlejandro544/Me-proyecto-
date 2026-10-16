@@ -14,7 +14,10 @@
 > **compilador de novelas** (`ui/compile.ts` + modal «Compilar novela»: `.html`
 > jugable + `.vn.json` + paquetes funcionales Windows/Linux con validación) +
 > workflow manual **`Bundle escritorio (.exe + Linux)`** (Rust/Tauri: NSIS/MSI +
-> .deb/.AppImage en Artifacts).
+> .deb/.AppImage en Artifacts) + **7 nodos nuevos** (`jump` salto directo,
+> `ending` final contable, `background` cambio de fondo persistente, `narration`,
+> `monologue` interno, `wait` pausa con avance solo, `effect` flash/shake/
+> partículas — con editor, playtest, `.html` y validación).
 
 ## Ahora (v0.2) — compartir y pulir
 
@@ -71,6 +74,12 @@
   Ajustes); sección 🎞 en el editor, transición en el estudio de escenas,
   insignia 🎞 en tarjetas; se juegan en Probar/invitado/`.html` (mismo CSS +
   `prefers-reduced-motion`) y viajan en `#nivel=` y `.vn.json`.
+- [x] Siete nodos nuevos (`jump` ↗️ + `ending` 🏁 + `background` 🖼️ +
+  `narration` 📖 + `monologue` 💭 + `wait` ⏳ + `effect` ✨): tipos
+  (`EndingKind`/`EffectKind`) + fábrica + tarjetas (`cards/system.ts`) +
+  formularios + playtest (salto a nodo/escena, final terminal, fondo persistente,
+  avance solo, efectos) + `.html` con la misma lógica + validación (destinos
+  rotos, finales terminales, fondos sin imagen).
 - [ ] Pruebas visuales del modo invitado en Android (WebView) y iOS (Safari).
 
 ## Siguiente (v0.3) — niveles y permisos

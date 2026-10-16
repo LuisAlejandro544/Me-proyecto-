@@ -1,6 +1,8 @@
 # Changelog — formato Keep a Changelog
 
 ## [Unreleased]
+### Added
+- Siete nodos nuevos (`jump`, `ending`, `background`, `narration`, `monologue`, `wait`, `effect` con tipos `EndingKind`/`EffectKind` en `types.ts`): fábrica en `tab-nodes-factory.ts` + botones en la pestaña Nodos + tarjetas en `ui/cards/system.ts` (puertos `in_main`/`out_main`, `ending` terminal sin salida) + formularios en `node-editor/form.ts` (destino por nodo/escena, tipo de final + epílogo, fondo de la carpeta, duración de pausa/efecto) + reproducción en Probar (`playtest/flow.ts`: salto a `jumpNodeId`/`jumpSceneId`, final contable sin Continuar, fondo persistente en `#vnStageBg`, narración centrada, monólogo en cursiva, espera con avance solo + Omitir, efectos flash/sacudida/partículas vía `playVisualEffect`) + `.html` compilado con la misma lógica (fondo persistente, `Saltar →`, `Omitir espera`, final 🏁, efectos) + validación (`jump` sin destino/escena o nodo borrado, `background` sin imagen, `ending` terminal sin aviso de rama rota, recursos `backgroundAssetId` incluidos en `.vn.json`/`.html`)
 ### Fixed
 - Deshacer revierte de verdad: snapshot ANTES de mutar en panel de texto, drag de nodos, character/expression/sliders; `GraphSnapshot` incluye ajustes globales de animación; `snapshotOf/restoreInto` únicos en `domain/history.ts`
 - Estado compartido por URL validado: ids con patrón, cables contra nodos existentes, topes de tamaño; `escapeHtml` también escapa `'`

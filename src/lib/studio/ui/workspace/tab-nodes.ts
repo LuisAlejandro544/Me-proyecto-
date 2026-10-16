@@ -32,6 +32,34 @@ export function renderNodesTab(modal: HTMLElement, titleEl: HTMLElement, bodyEl:
           <div class="font-bold text-amber-300 mb-1">🔊 Nodo complemento de sonido</div>
           <div class="text-xs text-slate-400">Dispara un audio/efecto al entrar (música, ambiente o SFX) sin bloquear.</div>
         </button>
+        <button data-new-node="jump" class="vn-anim-card p-4 rounded-xl bg-[#1e2646] hover:bg-[#263159] border border-sky-400/30 text-left transition hover:-translate-y-0.5">
+          <div class="font-bold text-sky-300 mb-1">↗️ Nodo de salto</div>
+          <div class="text-xs text-slate-400">Salta a otra escena o nodo sin cable largo cruzando el lienzo.</div>
+        </button>
+        <button data-new-node="ending" class="vn-anim-card p-4 rounded-xl bg-[#1e2646] hover:bg-[#263159] border border-emerald-400/30 text-left transition hover:-translate-y-0.5">
+          <div class="font-bold text-emerald-300 mb-1">🏁 Nodo de final</div>
+          <div class="text-xs text-slate-400">Final contable (bueno/malo/secreto) con título y epílogo.</div>
+        </button>
+        <button data-new-node="background" class="vn-anim-card p-4 rounded-xl bg-[#1e2646] hover:bg-[#263159] border border-orange-400/30 text-left transition hover:-translate-y-0.5">
+          <div class="font-bold text-orange-300 mb-1">🖼️ Nodo de fondo</div>
+          <div class="text-xs text-slate-400">Cambia el fondo del escenario con transición y sigue.</div>
+        </button>
+        <button data-new-node="narration" class="vn-anim-card p-4 rounded-xl bg-[#1e2646] hover:bg-[#263159] border border-slate-400/30 text-left transition hover:-translate-y-0.5">
+          <div class="font-bold text-slate-200 mb-1">📖 Nodo de narración</div>
+          <div class="text-xs text-slate-400">Texto a pantalla completa sin hablante ni sprite.</div>
+        </button>
+        <button data-new-node="monologue" class="vn-anim-card p-4 rounded-xl bg-[#1e2646] hover:bg-[#263159] border border-violet-400/30 text-left transition hover:-translate-y-0.5">
+          <div class="font-bold text-violet-300 mb-1">💭 Nodo de monólogo</div>
+          <div class="text-xs text-slate-400">Pensamiento interno en cursiva con burbuja propia.</div>
+        </button>
+        <button data-new-node="wait" class="vn-anim-card p-4 rounded-xl bg-[#1e2646] hover:bg-[#263159] border border-yellow-400/30 text-left transition hover:-translate-y-0.5">
+          <div class="font-bold text-yellow-300 mb-1">⏳ Nodo de pausa</div>
+          <div class="text-xs text-slate-400">Espera unos ms (susto, comedia, dramatismo) y sigue solo.</div>
+        </button>
+        <button data-new-node="effect" class="vn-anim-card p-4 rounded-xl bg-[#1e2646] hover:bg-[#263159] border border-pink-400/30 text-left transition hover:-translate-y-0.5">
+          <div class="font-bold text-pink-300 mb-1">✨ Nodo de efecto</div>
+          <div class="text-xs text-slate-400">Flash, sacudida o partículas sobre el escenario.</div>
+        </button>
       </div>
     `;
     modal.classList.remove('hidden');

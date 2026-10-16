@@ -14,6 +14,7 @@ import { renderAvatarCard } from './cards/avatar';
 import { renderBranchCard } from './cards/branch';
 import { renderVideoCard } from './cards/video';
 import { renderSoundCard } from './cards/sound';
+import { renderJumpCard, renderEndingCard, renderBackgroundCard, renderNarrationCard, renderMonologueCard, renderWaitCard, renderEffectCard } from './cards/system';
 
 let mountedCards: object[] = [];
 
@@ -44,6 +45,13 @@ export function renderNodes() {
     else if (node.type === 'branch_scene') el.innerHTML = renderBranchCard(node);
     else if (node.type === 'video_scene') el.innerHTML = renderVideoCard(node);
     else if (node.type === 'sound_cue') el.innerHTML = renderSoundCard(node);
+    else if (node.type === 'jump') el.innerHTML = renderJumpCard(node);
+    else if (node.type === 'ending') el.innerHTML = renderEndingCard(node);
+    else if (node.type === 'background') el.innerHTML = renderBackgroundCard(node);
+    else if (node.type === 'narration') el.innerHTML = renderNarrationCard(node);
+    else if (node.type === 'monologue') el.innerHTML = renderMonologueCard(node);
+    else if (node.type === 'wait') el.innerHTML = renderWaitCard(node);
+    else if (node.type === 'effect') el.innerHTML = renderEffectCard(node);
 
     el.insertAdjacentHTML('afterbegin', toolbar);
     layer.appendChild(el);

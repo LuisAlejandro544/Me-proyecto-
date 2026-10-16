@@ -142,7 +142,48 @@ function continueTarget(nodeId){
   }
   return null;
 }
-var __prevScene = null;
+  var __prevScene = null;
+  var __bgUrl = null;
+  var __waitTimer = null;
+  function fxKindLabel(k) {
+    return { flash: "⚡ Flash", "fade-black": "⬛ Fundido", shake: "📳 Sacudida", "zoom-punch": "👊 Zoom", hearts: "💖 Corazones", rain: "🌧 Lluvia", snow: "❄ Nieve", sparkles: "✨ Chispas" }[k] || "✨ Efecto";
+  }
+  function endingKindLabel(k) {
+    return { bueno: "🌅 Final bueno", malo: "🌑 Final malo", secreto: "🗝 Final secreto", neutral: "🌫 Final neutral" }[k] || "🏁 Final";
+  }
+  function playFx(kind, ms) {
+    try {
+      var stage = document.querySelector(".stage");
+      if (!stage) return;
+      var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduce) return;
+      var dur = Math.max(200, Math.min(3000, Number(ms) || 600));
+      if (kind === "flash" || kind === "fade-black") {
+        var o = document.createElement("div");
+        o.style.cssText = "position:fixed;inset:0;z-index:99;pointer-events:none;background:" + (kind === "flash" ? "#fff" : "#000") + ";opacity:0;transition:opacity 180ms;";
+        document.body.appendChild(o);
+        requestAnimationFrame(function(){ o.style.opacity = "0.9"; });
+        setTimeout(function(){ o.style.opacity = "0"; }, Math.max(120, dur - 220));
+        setTimeout(function(){ try { o.remove(); } catch(e){} }, dur);
+      } else if (kind === "shake" || kind === "zoom-punch") {
+        try {
+          stage.animate(
+            kind === "shake"
+              ? [{ transform: "translateX(0)" }, { transform: "translateX(-10px)" }, { transform: "translateX(10px)" }, { transform: "translateX(-5px)" }, { transform: "translateX(0)" }]
+              : [{ transform: "scale(1)" }, { transform: "scale(1.06)" }, { transform: "scale(1)" }],
+            { duration: Math.min(dur, 800), iterations: kind === "shake" ? 2 : 1 });
+        } catch(e){}
+      } else {
+        var emoji = kind === "hearts" ? "💖" : kind === "rain" ? "🌧" : kind === "snow" ? "❄" : "✨";
+        var layer = document.createElement("div");
+        layer.style.cssText = "position:fixed;inset:0;z-index:99;pointer-events:none;display:flex;justify-content:space-around;font-size:30px;";
+        for (var i = 0; i < 12; i++) { var s = document.createElement("span"); s.textContent = emoji; layer.appendChild(s); }
+        document.body.appendChild(layer);
+        try { layer.animate([{ transform: "translateY(-30px)", opacity: 0 }, { transform: "translateY(40vh)", opacity: 1 }], { duration: dur, easing: "ease-in" }); } catch(e){}
+        setTimeout(function(){ try { layer.remove(); } catch(e){} }, dur + 60);
+      }
+    } catch(e){}
+  }
 function resolveAnim(n, sc) {
   var d = DATA.animDefaults || {};
   var enter = n.assetEnter || d.enter || "fade-in";
@@ -168,6 +209,7 @@ function go(id) {
   for (var i=0;i<DATA.nodes.length;i++){ if (DATA.nodes[i].id===id){ n=DATA.nodes[i]; break; } }
   if (!n) n = DATA.nodes[0];
   if (!n) return;
+  if (__waitTimer) { try { clearTimeout(__waitTimer); } catch(e){} __waitTimer = null; }
   visited++; var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var catalog = DATA.assets || {};
   var c = catalog[n.characterId || n.selectedCharId || ""] || null;
@@ -213,10 +255,36 @@ function go(id) {
   } else {
     if (c && c.avatar) { sp.src = c.avatar; sp.style.display = ""; }
     else { sp.style.display = "none"; try { sp.removeAttribute("src"); } catch(e){} }
-    var spkName = (n.type === "sound_cue") ? (n.soundName || n.audioName || "🔊 Sonido") : (n.speaker || (c && c.name) || "Narrador");
+    var spkName = (n.type === "sound_cue") ? (n.soundName || n.audioName || "🔊 Sonido")
+      : (n.type === "narration") ? "📖 Narración"
+      : (n.type === "monologue") ? ("💭 " + (n.speaker || (c && c.name) || "Pensamiento"))
+      : (n.type === "ending") ? endingKindLabel(n.endingKind)
+      : (n.type === "jump") ? "↗️ Salto"
+      : (n.type === "wait") ? "⏳ Pausa"
+      : (n.type === "effect") ? fxKindLabel(n.effectKind)
+      : (n.type === "background") ? "🖼️ Fondo"
+      : (n.speaker || (c && c.name) || "Narrador");
     document.getElementById("spk").textContent = spkName;
-    document.getElementById("spk").style.color = (n.type === "sound_cue") ? "#fbbf24" : (n.speakerColor || (c && c.color) || "#94a3b8");
+    document.getElementById("spk").style.color = (n.type === "sound_cue") ? "#fbbf24"
+      : (n.type === "narration") ? "#cbd5e1"
+      : (n.type === "monologue") ? (n.speakerColor || "#a78bfa")
+      : (n.type === "ending") ? "#6ee7b7"
+      : (n.type === "jump") ? "#7dd3fc"
+      : (n.type === "wait") ? "#fde68a"
+      : (n.type === "effect") ? "#f9a8d4"
+      : (n.speakerColor || (c && c.color) || "#94a3b8");
   }
+  // Nodo background: el fondo persiste en los pasos siguientes.
+  if (n.type === "background" && n.backgroundAssetId) {
+    var bgc = customOf(n.backgroundAssetId);
+    if (bgc && bgc.dataUrl) {
+      __bgUrl = bgc.dataUrl;
+      var stageBg = document.querySelector(".stage");
+      if (stageBg) { stageBg.style.backgroundImage = 'url("' + bgc.dataUrl + '")'; stageBg.style.backgroundSize = "cover"; stageBg.style.backgroundPosition = "center"; }
+    }
+  }
+  // Nodo effect: destello / sacudida / partículas sobre el escenario.
+  if (n.type === "effect") { playFx(n.effectKind || "shake", Number(n.effectDurationMs ?? 600)); }
   if (!reduceMotion) {
     var mediaEl = (n.type === "video_scene") ? vp : sp;
     if (mediaEl && mediaEl.style.display !== "none" && anim.enter !== "none") {
@@ -263,10 +331,15 @@ function go(id) {
     var spk = document.getElementById("spk");
     if (spk) { spk.style.fontFamily = stack; if (!n.speakerColor) spk.style.color = t.speakerColor || "#ff758c"; }
     var dlg = document.getElementById("dlg");
-    var full = (n.type === "choice") ? "Elige tu próxima decisión:" : (n.dialogue || n.title || "…");
+    var full = (n.type === "choice") ? "Elige tu próxima decisión:"
+      : (n.type === "ending") ? (((n.endingTitle || n.title) ? ((n.endingTitle || n.title) + "\\n") : "") + (n.dialogue || ""))
+      : (n.type === "wait") ? ((n.dialogue || "…") + "\\n⏳ " + Number(n.waitMs ?? 800) + " ms…")
+      : (n.dialogue || n.title || "…");
     dlg.style.fontFamily = stack;
     dlg.style.fontSize = (t.fontSize || 16) + "px";
     dlg.style.color = t.fontColor || "#fff";
+    dlg.style.fontStyle = (n.type === "monologue") ? "italic" : "normal";
+    dlg.style.textAlign = (n.type === "narration" || n.type === "ending") ? "center" : "left";
     dlg.className = "dlg vn-dlg-letters";
     if (window.__dlgTimer) { clearInterval(window.__dlgTimer); window.__dlgTimer = null; }
     var anim = t.animation || "none";
@@ -333,12 +406,33 @@ function go(id) {
     document.onkeydown = function(e){
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(outs[0].toNode); }
     };
+  } else if (n.type === "ending") {
+    end.style.display = "";
+    end.textContent = "🏁 " + (n.endingTitle || n.title || endingKindLabel(n.endingKind)) + " — ¡gracias por jugar! Pulsa ↻ Reiniciar para volver al inicio.";
+    document.onkeydown = null;
   } else {
-    var ct = continueTarget(n.id);
+    var jt = null;
+    if (n.type === "jump") {
+      if (n.jumpNodeId && nodeExists(n.jumpNodeId)) jt = n.jumpNodeId;
+      else if (n.jumpSceneId) jt = sceneStart(n.jumpSceneId);
+    }
+    if (n.type === "wait" && (jt || continueTarget(n.id))) {
+      var wt = jt || continueTarget(n.id);
+      var wms = Math.max(200, Math.min(5000, Number(n.waitMs ?? 800)));
+      var bw = document.createElement("button");
+      bw.className = "btn"; bw.textContent = "Omitir espera (" + wms + " ms) →";
+      bw.onclick = function(){ if (__waitTimer) { clearTimeout(__waitTimer); __waitTimer = null; } go(wt); };
+      ch.appendChild(bw);
+      __waitTimer = setTimeout(function(){ __waitTimer = null; go(wt); }, wms);
+      document.onkeydown = function(e){
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (__waitTimer) { clearTimeout(__waitTimer); __waitTimer = null; } go(wt); }
+      };
+    } else {
+    var ct = jt || continueTarget(n.id);
     var cs = ct ? sceneOf(ct) : null;
     if (ct) {
       var b2 = document.createElement("button");
-      b2.className = "btn"; b2.textContent = cs ? ("Continuar → 🎬 " + cs.name) : "Continuar →";
+      b2.className = "btn"; b2.textContent = n.type === "jump" ? ("Saltar" + (cs ? " → 🎬 " + cs.name : " →")) : (cs ? ("Continuar → 🎬 " + cs.name) : "Continuar →");
       b2.onclick = function(){ go(ct); };
       ch.appendChild(b2);
       document.onkeydown = function(e){
@@ -348,6 +442,7 @@ function go(id) {
       end.style.display = "";
       end.textContent = "✦ Fin de esta rama — ¡gracias por jugar! Pulsa ↻ Reiniciar para volver al inicio.";
       document.onkeydown = null;
+    }
     }
   }
 }

@@ -17,8 +17,8 @@ Idioma del repo: español en respuestas al usuario.
 - `src/lib/studio/` — módulos por dominio (`data/`, `domain/`, `ui/`); barrel `index.ts`; estado en `context.ts`
   - `domain/scenes.ts` — `VNScene` (nombre + `startNodeId`/`endNodeId` + `enterTransition`) + `sceneId`/`nextSceneId` por nodo + `gotoSceneId` por opción + resolvers (`resolveSceneStartNode`, `resolveContinueSceneTarget`, `ensure/normalize/create/rename/delete/move`, sanea animaciones)
   - `ui/scenes.ts` — estudio de escenas (pestaña `Escenas`: nombre + inicio/fin + transición de entrada + orden + ver/jugar/eliminar)
-  - `ui/render-nodes.ts` — tarjetas + toolbar ✏️/▶/🗑 + etiqueta 🎬 de escena (INICIO/FIN) + insignia 🎞 de animación + puertos a `-9px` visibles
-  - `ui/node-editor.ts` — `openNodeEditor` / `deleteNode` / `duplicateNode` (+ sección 🎬 por nodo y salto por opción + sección 🎞 `assetEnter`/`assetMotion`/`sceneTransition`)
+  - `ui/render-nodes.ts` — tarjetas + toolbar ✏️/▶/🗑 + etiqueta 🎬 de escena (INICIO/FIN) + insignia 🎞 de animación + puertos a `-9px` visibles + `ui/cards/system.ts` (`jump` ↗️ + `ending` 🏁 terminal + `background` 🖼️ persistente + `narration` 📖 + `monologue` 💭 + `wait` ⏳ avance solo + `effect` ✨ `playVisualEffect`)
+  - `ui/node-editor.ts` — `openNodeEditor` / `deleteNode` / `duplicateNode` (+ sección 🎬 por nodo y salto por opción + sección 🎞 `assetEnter`/`assetMotion`/`sceneTransition` + formularios `jumpSceneId`/`jumpNodeId`, `endingKind`/`endingTitle`, `backgroundAssetId`, `waitMs`, `effectKind`/`effectDurationMs`)
   - `ui/dialogue.ts` + `src/lib/dialogue-themes.ts` — biblioteca de diseños de diálogo + tipografías + animaciones (tema global + por nodo)
   - `ui/share.ts` — URL `#nivel=` (permiso `jugar`, incluye `startNodeId` + `scenes` + defaults de animación) + carga + `shared-play-mode` (el `.html` delega al generador único de `compile.ts`)
   - `src/lib/asset-animations.ts` — apariciones (9) + movimientos (8) + transiciones (8): listas + `getProjectAssetDefaults`/`resolveNodeAssetAnim` + `assetAnimationsCss()` (mismo CSS en `app.css`, playtest y `.html`; respeta `prefers-reduced-motion`); globales en Ajustes (`defaultAssetEnter/defaultAssetMotion/defaultSceneTransition/animDurationMs`)
@@ -27,7 +27,7 @@ Idioma del repo: español en respuestas al usuario.
   - `ui/render-wires.ts` + `domain/geometry.ts` — cables y posiciones de puertos
     (`renderWires` solo al cambiar el grafo; `updateWirePaths` en drag; nada en pan/zoom)
   - `ui/viewport.ts` + `ui/transform.ts` — pan/pinch/zoom GPU (pan en `#panLayer`, scale en `#canvasWorld`, `body.vn-gesturing` en el gesto)
-- `src/lib/types.ts` — tipos `VNNode`, `VNWire`, `VNState`, `VNScene` (usar en código nuevo)
+- `src/lib/types.ts` — tipos `VNNode`, `VNWire`, `VNState`, `VNScene` (usar en código nuevo) + `EndingKind`/`EffectKind` (`EFFECT_KINDS`/`ENDING_KINDS`)
 - `src/lib/assets.ts` — `getCharacterCatalog` / `resolveCharacter` + import galería/cámara + etiquetas (`tags`, `setAssetTags`, `getAllAssetTags`)
 - `src/lib/compositions.ts` — composiciones fondo+sprites + `renderCompositionToDataUrl` (PNG 1280×720 para Recursos)
 - `src/lib/platform.ts` — export nativo (Tauri `dialog`/`fs`, Capacitor `Filesystem`/`Share`)

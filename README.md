@@ -34,6 +34,15 @@ para jugar a pantalla completa**.
 - **Complemento de sonido 🔊**: nodo `sound_cue` que dispara un audio al entrar
   (música, ambiente o SFX, con volumen y bucle); cualquier escena admite además
   un audio extra opcional.
+- **Nodos narrativos nuevos**: `jump` (↗️ salto directo a otra escena o nodo sin
+  cable largo), `ending` (🏁 final contable bueno/malo/secreto/neutral con título
+  y epílogo), `background` (🖼️ cambia el fondo del escenario con una imagen de
+  la carpeta, persiste en los pasos siguientes), `narration` (📖 texto a pantalla
+  completa sin hablante ni sprite), `monologue` (💭 pensamiento interno en
+  cursiva con burbuja violeta), `wait` (⏳ pausa de 200–5000 ms con avance solo
+  y botón Omitir) y `effect` (✨ flash, fundido a negro, sacudida, zoom,
+  corazones, lluvia, nieve o chispas). Se crean en la pestaña *Nodos*, se editan
+  con ✏️, se juegan en Probar/invitado/`.html` y se validan al compilar.
 - **Probar en horizontal**: el botón Probar abre el reproductor en formato
   apaisado 16:9 (como se juega de verdad), con botón ⛶ de pantalla completa,
   aviso de girar el móvil y reproducción de vídeo/audio.
@@ -171,7 +180,7 @@ Formato: `https://tu-dominio-publico/#nivel=<base64url>` con `{ v, permiso, proy
 src/App.svelte                  shell mínimo
 src/components/StudioShell.svelte  chrome (ids intactos, NO renombrar)
 src/components/BottomNav.svelte    pie con pestañas (Nodos, Recursos, Componer, Cronología, Personajes, Escenas, Diálogos, Probar, Ajustes)
-src/lib/types.ts                VNNode (+assetEnter/assetMotion/sceneTransition), VNWire, VNState (+startNodeId, +scenes/VNScene, +defaults de animación), VNScene (+enterTransition)
+src/lib/types.ts                VNNode (+assetEnter/assetMotion/sceneTransition +jumpSceneId/jumpNodeId +endingKind/endingTitle +backgroundAssetId +waitMs +effectKind/effectDurationMs, EndingKind/EffectKind), VNWire, VNState (+startNodeId, +scenes/VNScene, +defaults de animación), VNScene (+enterTransition)
 src/lib/asset-animations.ts     apariciones + movimientos + transiciones (listas, resolvers, CSS compartido)
 src/lib/dialogue-themes.ts      biblioteca de diseños de diálogo + tipografías + animaciones
 src/lib/assets.ts               galería/cámara/archivos + etiquetas (#tag) de assets
@@ -180,8 +189,8 @@ src/components/CompositionStudio.svelte  editor de escenas a pantalla completa (
 src/lib/studio/context.ts       estado mutable único
 src/lib/studio/domain/scenes.ts escenas (ensure/normalize/create/rename/delete/move + resolución de saltos)
 src/lib/studio/ui/scenes.ts     estudio de escenas (nombre + inicio/fin + transición de entrada + jugar desde + reordenar)
-src/lib/studio/ui/render-nodes.ts  tarjetas + puertos + toolbar ✏️/🗑 (+ etiqueta 🎬 de escena + insignia 🎞 de animación)
-src/lib/studio/ui/node-editor.ts   editor completo + eliminar/duplicar (+ escena por nodo + salto por opción + sección 🎞 de animaciones)
+src/lib/studio/ui/render-nodes.ts  tarjetas + puertos + toolbar ✏️/🗑 (+ etiqueta 🎬 de escena + insignia 🎞 de animación + 7 nodos nuevos en cards/system.ts: jump/ending/background/narration/monologue/wait/effect)
+src/lib/studio/ui/node-editor.ts   editor completo + eliminar/duplicar (+ escena por nodo + salto por opción + sección 🎞 de animaciones + formularios jump/ending/background/narration/monologue/wait/effect)
 src/lib/studio/ui/dialogue.ts      estudio de diálogos personalizados
 src/lib/studio/ui/share.ts         URL para jugar + carga + fullscreen (incluye scenes + startNodeId)
 src/lib/studio/ui/render-wires.ts  cables SVG + popover

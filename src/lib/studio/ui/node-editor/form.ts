@@ -1,7 +1,8 @@
 // @ts-nocheck
 // Node-editor: formulario completo por tipo (extraído de ui/node-editor.ts — barrel en ui/node-editor.ts).
 import { ctx } from '../../context';
-import { findCustomAsset, getAudioAssets, getCharacterCatalog, getVideoAssets } from '../../../assets';
+import { findCustomAsset, getAudioAssets, getCharacterCatalog, getCustomAssets, getVideoAssets } from '../../../assets';
+import { EFFECT_KINDS, ENDING_KINDS } from '../../../types';
 import { escapeHtml } from '../../domain/geometry';
 import { pushHistory } from '../../domain/history';
 import { renderNodes } from '../render-nodes';
@@ -38,6 +39,13 @@ export function openNodeEditor(nodeId: string) {
     node.type === 'avatar_scene' ? 'Escena con avatar' :
     node.type === 'video_scene' ? 'Bloque de vídeo' :
     node.type === 'sound_cue' ? 'Complemento de sonido' :
+    node.type === 'jump' ? 'Salto directo' :
+    node.type === 'ending' ? 'Final de historia' :
+    node.type === 'background' ? 'Cambio de fondo' :
+    node.type === 'narration' ? 'Narración' :
+    node.type === 'monologue' ? 'Monólogo interno' :
+    node.type === 'wait' ? 'Pausa / espera' :
+    node.type === 'effect' ? 'Efecto visual' :
     node.type === 'compact_scene' ? 'Escena compacta' : 'Rama de escena';
 
   const videoOptions = (selectedId?: string) => {
@@ -52,6 +60,28 @@ export function openNodeEditor(nodeId: string) {
     if (!auds.length) return `<option value="">— Sin audios en la carpeta —</option>`;
     return `<option value="">— Sin audio —</option>` + auds
       .map((a) => `<option value="${a.id}" ${a.id === selectedId ? 'selected' : ''}>🎵 ${escapeHtml(a.name)}</option>`)
+      .join('');
+  };
+  const imageOptions = (selectedId?: string) => {
+    const imgs = getCustomAssets().filter((a) => a.kind === 'imagen');
+    if (!imgs.length) return `<option value="">— Sin imágenes en la carpeta —</option>`;
+    return `<option value="">— Elegir fondo —</option>` + imgs
+      .map((a) => `<option value="${a.id}" ${a.id === selectedId ? 'selected' : ''}>🖼️ ${escapeHtml(a.name)}</option>`)
+      .join('');
+  };
+  const sceneOptions = (selectedId?: string) => {
+    try {
+      const scenes = ctx.state.scenes ?? [];
+      if (!scenes.length) return `<option value="">— Sin escenas —</option>`;
+      return `<option value="">— Elegir escena —</option>` + scenes
+        .map((s) => `<option value="${s.id}" ${s.id === selectedId ? 'selected' : ''}>🎬 ${escapeHtml(s.name)}</option>`)
+        .join('');
+    } catch { return `<option value="">— Sin escenas —</option>`; }
+  };
+  const nodeOptions = (selectedId?: string) => {
+    const nodes = ctx.state.nodes ?? [];
+    return `<option value="">— Elegir nodo —</option>` + nodes
+      .map((n) => `<option value="${n.id}" ${n.id === selectedId ? 'selected' : ''}>${escapeHtml(n.badge || n.title || n.headerBar || n.id)}</option>`)
       .join('');
   };
   const checkRow = (id: string, label: string, checked?: boolean) => `
@@ -164,6 +194,39 @@ export function openNodeEditor(nodeId: string) {
     form += field(`Volumen (${node.volume ?? 100}%)`, `<input id="ed_volume" type="range" min="0" max="100" value="${node.volume ?? 100}" class="vn-slider mt-3" />`);
     form += checkRow('ed_loop', '🔁 Repetir mientras dure el paso', !!node.loop);
     form += field('Nota (no bloquea la historia)', `<textarea id="ed_dialogue" rows="2" class="${inputCls}">${escapeHtml(node.dialogue ?? '')}</textarea>`);
+  } else if (node.type === 'jump') {
+    form += field('Título', `<input id="ed_title" class="${inputCls}" value="${escapeHtml(node.title ?? 'Salto directo')}" />`);
+    form += field('Escena destino (sin cable)', `<select id="ed_jumpSceneId" class="${inputCls}">${sceneOptions(node.jumpSceneId)}</select>`);
+    form += field('Nodo destino concreto (opcional, manda sobre la escena)', `<select id="ed_jumpNodeId" class="${inputCls}">${nodeOptions(node.jumpNodeId)}</select>`);
+    form += field('Nota', `<textarea id="ed_dialogue" rows="2" class="${inputCls}">${escapeHtml(node.dialogue ?? '')}</textarea>`);
+    form += `<p class="text-[11px] text-slate-500">Prioridad al jugar: cable → nodo destino → escena destino → «al continuar, ir a…».</p>`;
+  } else if (node.type === 'ending') {
+    form += field('Tipo de final', `<select id="ed_endingKind" class="${inputCls}">${ENDING_KINDS.map((k) => `<option value="${k.id}" ${node.endingKind === k.id ? 'selected' : ''}>${k.label}</option>`).join('')}</select>`);
+    form += field('Título del final', `<input id="ed_endingTitle" class="${inputCls}" value="${escapeHtml(node.endingTitle ?? node.title ?? 'Final')}" />`);
+    form += field('Epílogo', `<textarea id="ed_dialogue" rows="3" class="${inputCls}">${escapeHtml(node.dialogue ?? '')}</textarea>`);
+    form += `<p class="text-[11px] text-slate-500">Es un final contable: no necesita salida y la validación no lo marca como rama rota.</p>`;
+  } else if (node.type === 'background') {
+    form += field('Fondo (imagen de la carpeta)', `<select id="ed_backgroundAssetId" class="${inputCls}">${imageOptions(node.backgroundAssetId)}</select>`);
+    form += field('Texto del paso', `<textarea id="ed_dialogue" rows="2" class="${inputCls}">${escapeHtml(node.dialogue ?? '')}</textarea>`);
+    form += `<p class="text-[11px] text-slate-500">La transición visual usa la sección 🎞 de abajo (o la de su escena).</p>`;
+  } else if (node.type === 'narration') {
+    form += field('Texto de narración', `<textarea id="ed_dialogue" rows="4" class="${inputCls}">${escapeHtml(node.dialogue ?? '')}</textarea>`);
+    form += `<p class="text-[11px] text-slate-500">Sin hablante ni sprite: el reproductor lo muestra a pantalla completa.</p>`;
+  } else if (node.type === 'monologue') {
+    form += `<div class="grid grid-cols-[1fr_auto] gap-2 items-end">
+        ${field('Quién piensa', `<input id="ed_speaker" class="${inputCls}" value="${escapeHtml(node.speaker ?? '')}" />`)}
+        ${field('Color', `<input id="ed_speakerColor" type="color" value="${escapeHtml(node.speakerColor ?? '#a78bfa')}" class="w-12 h-[44px] rounded-xl bg-[#0f1428] border border-slate-600 cursor-pointer" />`)}
+      </div>`;
+    form += field('Pensamiento', `<textarea id="ed_dialogue" rows="3" class="${inputCls}">${escapeHtml(node.dialogue ?? '')}</textarea>`);
+    form += `<p class="text-[11px] text-slate-500">Se juega en cursiva con burbuja violeta para distinguirlo del diálogo.</p>`;
+  } else if (node.type === 'wait') {
+    form += field(`Duración (${node.waitMs ?? 800} ms)`, `<input id="ed_waitMs" type="range" min="200" max="5000" step="100" value="${Number(node.waitMs ?? 800)}" class="vn-slider mt-3" />`);
+    form += field('Texto mientras espera', `<textarea id="ed_dialogue" rows="2" class="${inputCls}">${escapeHtml(node.dialogue ?? '')}</textarea>`);
+    form += `<p class="text-[11px] text-slate-500">Al jugar avanza solo tras la pausa (con botón Omitir).</p>`;
+  } else if (node.type === 'effect') {
+    form += field('Efecto', `<select id="ed_effectKind" class="${inputCls}">${EFFECT_KINDS.map((k) => `<option value="${k.id}" ${node.effectKind === k.id ? 'selected' : ''}>${k.label}</option>`).join('')}</select>`);
+    form += field(`Duración (${node.effectDurationMs ?? 600} ms)`, `<input id="ed_effectDurationMs" type="range" min="200" max="3000" step="100" value="${Number(node.effectDurationMs ?? 600)}" class="vn-slider mt-3" />`);
+    form += field('Texto del paso', `<textarea id="ed_dialogue" rows="2" class="${inputCls}">${escapeHtml(node.dialogue ?? '')}</textarea>`);
   } else {
     // compact_scene + branch_scene
     if (node.title !== undefined) form += field('Título', `<input id="ed_title" class="${inputCls}" value="${escapeHtml(node.title ?? '')}" />`);
@@ -302,6 +365,29 @@ export function openNodeEditor(nodeId: string) {
     if ($('ed_sceneTransition')) node.sceneTransition = (val('ed_sceneTransition') as string) || undefined;
     if ($('ed_badge')) node.badge = val('ed_badge')!;
     if ($('ed_title')) node.title = val('ed_title')!;
+    // Nodos nuevos: salto / final / fondo / espera / efecto
+    if ($('ed_jumpSceneId')) node.jumpSceneId = (val('ed_jumpSceneId') as string) || undefined;
+    if ($('ed_jumpNodeId')) node.jumpNodeId = (val('ed_jumpNodeId') as string) || undefined;
+    if ($('ed_endingKind')) node.endingKind = (val('ed_endingKind') as string) || undefined;
+    if ($('ed_endingTitle')) {
+      node.endingTitle = val('ed_endingTitle')!;
+      node.title = val('ed_endingTitle')!;
+    }
+    if ($('ed_backgroundAssetId')) {
+      const bid = val('ed_backgroundAssetId')!;
+      node.backgroundAssetId = bid || undefined;
+      const found = findCustomAsset(bid);
+      node.backgroundName = found?.name;
+    }
+    if ($('ed_waitMs')) {
+      const n = Number(val('ed_waitMs'));
+      node.waitMs = Number.isFinite(n) ? Math.max(200, Math.min(5000, n)) : 800;
+    }
+    if ($('ed_effectKind')) node.effectKind = (val('ed_effectKind') as string) || undefined;
+    if ($('ed_effectDurationMs')) {
+      const n = Number(val('ed_effectDurationMs'));
+      node.effectDurationMs = Number.isFinite(n) ? Math.max(200, Math.min(3000, n)) : 600;
+    }
     if ($('ed_subtitle')) node.subtitle = val('ed_subtitle')!;
     if ($('ed_headerBar')) node.headerBar = val('ed_headerBar')!;
     if ($('ed_topTitle')) node.topTitle = val('ed_topTitle')!;

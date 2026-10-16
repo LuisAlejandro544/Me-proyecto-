@@ -65,6 +65,14 @@ export function validateStory(): StoryIssue[] {
       }
     } else if (!outOf(n.id).length) {
       // Un solo final sin salida es normal; varios huérfanos intermedios avisan.
+      // Los nodos `ending` son finales por diseño: nunca avisan por no tener salida.
+      if (n.type === 'ending') {
+        const outs = outOf(n.id).length;
+        if (outs > 0) {
+          issues.push({ level: 'aviso', msg: `«${label}» es un final pero tiene salida (los finales suelen ser terminales).` });
+        }
+      } else {
+      // Un solo final sin salida es normal; varios huérfanos intermedios avisan.
       const outs = outOf(n.id).length;
       if (outs === 0 && reachable.size > 1 && n.id !== startId && nodes.length > 1) {
         // Solo avisa si el nodo tiene entradas (es un final prematuro en mitad del grafo).
@@ -73,6 +81,7 @@ export function validateStory(): StoryIssue[] {
           issues.push({ level: 'aviso', msg: `«${label}» no tiene salida (será un final de rama).` });
         }
       }
+      }
     }
     if (n.type === 'video_scene' && !n.videoAssetId) {
       issues.push({ level: 'aviso', msg: `«${label}» es de vídeo pero no tiene recurso asignado.` });
@@ -80,13 +89,39 @@ export function validateStory(): StoryIssue[] {
     if (n.type === 'sound_cue' && !(n.soundAssetId || n.audioAssetId)) {
       issues.push({ level: 'aviso', msg: `«${label}» es de sonido pero no tiene audio asignado.` });
     }
-    for (const ref of [n.videoAssetId, n.soundAssetId, n.audioAssetId]) {
+    if (n.type === 'background' && !n.backgroundAssetId) {
+      issues.push({ level: 'aviso', msg: `«${label}» es de fondo pero no tiene imagen asignada.` });
+    }
+    if (n.type === 'jump') {
+      const hasWire = outOf(n.id).length > 0;
+      if (!hasWire && !n.jumpNodeId && !n.jumpSceneId && !n.nextSceneId) {
+        issues.push({ level: 'aviso', msg: `«${label}» es un salto sin destino (cable, nodo o escena).` });
+      }
+      if (n.jumpNodeId && !ids.has(n.jumpNodeId)) {
+        issues.push({ level: 'error', msg: `«${label}» salta a un nodo borrado. Elige otro destino.` });
+      }
+      if (n.jumpSceneId) {
+        const scene = (ctx.state.scenes ?? []).find((s) => s.id === n.jumpSceneId);
+        if (!scene) {
+          issues.push({ level: 'error', msg: `«${label}» salta a una escena eliminada. Reasígnala.` });
+        } else if (!scene.startNodeId || !ids.has(scene.startNodeId)) {
+          const member = nodes.find((x) => x.sceneId === scene.id);
+          if (!member) {
+            issues.push({ level: 'aviso', msg: `«${label}» salta a «${scene.name}», pero esa escena no tiene inicio (no saltará).` });
+          }
+        }
+      }
+    }
+    if (n.type === 'ending' && !n.endingKind) {
+      issues.push({ level: 'aviso', msg: `«${label}» es un final sin tipo (se contará como neutral).` });
+    }
+    for (const ref of [n.videoAssetId, n.soundAssetId, n.audioAssetId, n.backgroundAssetId]) {
       if (ref && !customs.has(ref)) {
         issues.push({ level: 'error', msg: `«${label}» usa un recurso eliminado (${String(ref).slice(0, 24)}…). Reasígnalo.` });
         break;
       }
     }
-    if (n.type !== 'choice' && n.type !== 'character_selector' && !(n.dialogue ?? '').trim()) {
+    if (n.type !== 'choice' && n.type !== 'character_selector' && n.type !== 'jump' && n.type !== 'background' && !(n.dialogue ?? '').trim() && !(n.type === 'ending' && (n.endingTitle ?? '').trim())) {
       issues.push({ level: 'aviso', msg: `«${label}» no tiene diálogo (saldrá vacío).` });
     }
   }
