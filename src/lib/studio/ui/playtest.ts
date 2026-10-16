@@ -278,11 +278,20 @@ export function renderPlaytestStep(nodeId) {
   } else {
     dialogueEl.textContent = node.dialogue || '…';
   }
-
   // Cuadro de diálogo personalizado: fondo importado + tipografía + animación de letras.
   try {
     applyDialogueThemeToPlaytest(node);
   } catch {}
+
+  // Estilo del panel Editor de texto (tamaño/rotación/posición + transición).
+  // Va DESPUÉS del tema: los valores explícitos del panel tienen prioridad.
+  dialogueEl.style.fontSize = `${Math.round((node.dialogueSize ?? 16) * (node.textScale ?? 1))}px`;
+  dialogueEl.style.transform = `rotate(${node.rotation ?? 0}deg) translateY(${node.textPosY ?? 0}px)`;
+  dialogueEl.classList.remove('vn-dlg-t-fade', 'vn-dlg-t-slide');
+  if (node.textTransition === 'fade' || node.textTransition === 'slide') {
+    void dialogueEl.offsetWidth;
+    dialogueEl.classList.add(node.textTransition === 'fade' ? 'vn-dlg-t-fade' : 'vn-dlg-t-slide');
+  }
 
   // Render story variables readout
   const varsEl = document.getElementById('vnVariablesReadout');

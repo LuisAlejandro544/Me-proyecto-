@@ -16,6 +16,7 @@
   import DrawerModal from './DrawerModal.svelte';
   import PlaytestModal from './PlaytestModal.svelte';
   import ShareLoading from './ShareLoading.svelte';
+  import TextEditorPanel from './TextEditorPanel.svelte';
   import ToastBanner from './ToastBanner.svelte';
   import TopBar from './TopBar.svelte';
   import UpdateModal from './UpdateModal.svelte';
@@ -28,6 +29,7 @@
   <DrawerModal />
   <PlaytestModal />
   <ShareLoading />
+  <TextEditorPanel />
   <ToastBanner />
   <UpdateModal />
 </div>

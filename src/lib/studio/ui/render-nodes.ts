@@ -30,6 +30,13 @@ export function renderNodes() {
     el.style.top = `${node.y}px`;
     el.style.width = `${node.width || 240}px`;
     el.dataset.nodeId = node.id;
+    // Estilo de texto del panel Editor (solo si el nodo lo define).
+    if (node.dialogueSize != null || node.rotation || (node.textScale && node.textScale !== 1)) {
+      el.dataset.txtStyled = '1';
+      if (node.dialogueSize != null) el.style.setProperty('--dlg-size', `${node.dialogueSize}px`);
+      if (node.textScale && node.textScale !== 1) el.style.setProperty('--dlg-scale', String(node.textScale));
+      if (node.rotation) el.style.setProperty('--dlg-rot', `${node.rotation}deg`);
+    }
 
     // Barra de acciones del nodo (táctil): editar ✏️, inicio ▶ y eliminar 🗑.
     // Siempre visible en móvil; en escritorio aparece al seleccionar / hover.

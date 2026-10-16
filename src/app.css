@@ -376,6 +376,16 @@
       border-color: rgba(52, 211, 153, 0.55);
     }
     /* Etiqueta de escena: nombre personalizable + marcas INICIO/FIN por nodo */
+    /* Texto de diálogo con estilo del panel Editor (solo nodos marcados). */
+    .vn-node[data-txt-styled] [data-field="dialogue"] {
+      font-size: calc(var(--dlg-size, 14px) * var(--dlg-scale, 1));
+      transform: rotate(var(--dlg-rot, 0deg));
+    }
+    /* Transiciones de entrada del cuadro de diálogo (playtest). */
+    .vn-dlg-t-fade { animation: vn-dlg-fade 0.45s ease both; }
+    .vn-dlg-t-slide { animation: vn-dlg-slide 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+    @keyframes vn-dlg-fade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes vn-dlg-slide { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
     /* Fila de acciones del header en móvil: segunda fila con scroll, sin solapes */
     .topbar-actions { scrollbar-width: none; }
     .topbar-actions::-webkit-scrollbar { display: none; }

@@ -80,6 +80,12 @@ export interface VNNode {
   scale?: number;
   position?: number;
   inColor?: PortColor;
+  // Editor de texto (panel flotante): todo opcional, sin efecto si ausente.
+  dialogueSize?: number;
+  rotation?: number;
+  textScale?: number;
+  textPosY?: number;
+  textTransition?: TextTransition;
   showAddButtons?: boolean;
   // Nodos de escena genéricos: audio de fondo / efecto asignado desde la carpeta.
   audioAssetId?: string;
@@ -177,6 +183,9 @@ export interface DragState {
 }
 
 export type SfxKind = 'click' | 'connect' | 'choice';
+
+// Presentación del texto de diálogo (panel Editor de texto).
+export type TextTransition = 'none' | 'fade' | 'slide';
 
 // Point in unscaled canvas-world coordinates.
 export interface Point {
