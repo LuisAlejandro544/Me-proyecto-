@@ -158,6 +158,13 @@ export interface GraphSnapshot {
   wires: VNWire[];
   variables: VNState['variables'];
   scenes?: VNScene[];
+  startNodeId?: string;
+  projectName?: string;
+  dialogueThemeId?: string;
+  defaultAssetEnter?: string;
+  defaultAssetMotion?: string;
+  defaultSceneTransition?: string;
+  animDurationMs?: number;
 }
 
 export type DragMode = 'node' | 'wire' | 'pan' | 'pinch';

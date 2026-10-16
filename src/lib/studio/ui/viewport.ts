@@ -257,7 +257,10 @@ window.addEventListener('pointermove', (e) => {
     if (activePointers.size > 1) return;
     const dx = (e.clientX - ctx.dragState.startX) / ctx.state.zoom;
     const dy = (e.clientY - ctx.dragState.startY) / ctx.state.zoom;
-    if (Math.abs(e.clientX - ctx.dragState.startX) > 3 || Math.abs(e.clientY - ctx.dragState.startY) > 3) ctx.dragState.moved = true;
+    const draggedFar = Math.abs(e.clientX - ctx.dragState.startX) > 3 || Math.abs(e.clientY - ctx.dragState.startY) > 3;
+    // Snapshot ANTES de la primera mutación: deshacer revierte el drag completo.
+    if (draggedFar && !ctx.dragState.moved) pushHistory();
+    if (draggedFar) ctx.dragState.moved = true;
 
     const node = ctx.state.nodes.find(n => n.id === ctx.dragState.nodeId);
     if (node) {
@@ -405,8 +408,6 @@ function endPointer(e) {
       renderWires();
       showToast('¡Nodos conectados!');
     }
-  } else if (ctx.dragState.mode === 'node' && ctx.dragState.moved) {
-    pushHistory();
   } else if (ctx.dragState.mode === 'pan') {
     // Double-tap on empty canvas = quick zoom in (mobile-friendly).
     const now = performance.now();

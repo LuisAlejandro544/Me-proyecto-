@@ -42,6 +42,14 @@ export function attachNodeInteractions() {
     });
   });
 
+  // Snapshot único por gesto de slider (los 'input' llegan a 60 Hz).
+  const snapOnce = (el: Element) => {
+    if (!(el as HTMLElement).dataset.hsnap) {
+      (el as HTMLElement).dataset.hsnap = '1';
+      pushHistory();
+    }
+  };
+
   // Port drag to create new connection wire
   document.querySelectorAll('.vn-port').forEach(portEl => {
     portEl.addEventListener('pointerdown', (e) => {
@@ -207,6 +215,7 @@ export function attachNodeInteractions() {
     } else if (action === 'char-prev' || action === 'char-next') {
       ctrl.addEventListener('click', (e) => {
         e.stopPropagation();
+        pushHistory();
         const keys = Object.keys(getCharacterCatalog());
         const cur = keys.indexOf(node.selectedCharId || 'yuki');
         const next = action === 'char-next' ? (cur + 1) % keys.length : (cur - 1 + keys.length) % keys.length;
@@ -217,22 +226,27 @@ export function attachNodeInteractions() {
       });
     } else if (action === 'change-expr') {
       ctrl.addEventListener('change', (e) => {
+        pushHistory();
         node.expression = e.target.value;
         playSynthSfx('click');
         showToast(`Expresión: ${node.expression}`);
       });
     } else if (action === 'slider-scale') {
       ctrl.addEventListener('input', (e) => {
+        snapOnce(ctrl);
         node.scale = parseInt(e.target.value, 10);
         const lbl = document.getElementById(`scaleVal_${node.id}`);
         if (lbl) lbl.textContent = `${node.scale}%`;
       });
+      ctrl.addEventListener('change', () => { delete (ctrl as HTMLElement).dataset.hsnap; });
     } else if (action === 'slider-pos') {
       ctrl.addEventListener('input', (e) => {
+        snapOnce(ctrl);
         node.position = parseInt(e.target.value, 10);
         const lbl = document.getElementById(`posVal_${node.id}`);
         if (lbl) lbl.textContent = `${node.position}%`;
       });
+      ctrl.addEventListener('change', () => { delete (ctrl as HTMLElement).dataset.hsnap; });
     }
   });
 }

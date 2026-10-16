@@ -17,6 +17,16 @@
   let scale = 1;
   let posY = 0;
   let dirtyText = false;
+  // Snapshot tomado al empezar cada gesto de edición (el historial guarda
+  // el ANTES; deshacer restaura). Se libera al confirmar o cambiar de nodo.
+  let stagedHistory = false;
+
+  function stageHistory() {
+    if (!stagedHistory) {
+      stagedHistory = true;
+      pushHistory();
+    }
+  }
   let dismissedFor: string | null = null;
   let obs: MutationObserver | null = null;
   let debounce: ReturnType<typeof setTimeout> | null = null;
@@ -37,6 +47,7 @@
     const n = current();
     if (!n || dismissedFor === n.id || !userSelected) {
       if (dirtyText && n) commitText(n);
+      stagedHistory = false;
       visible = false;
       nodeId = null;
       return;
@@ -62,15 +73,16 @@
   }
 
   function commitText(n: VNNode) {
-    if (!dirtyText) return;
+    if (!dirtyText && !stagedHistory) return;
     dirtyText = false;
-    pushHistory();
+    stagedHistory = false;
     renderNodes();
   }
 
   function onText() {
     const n = current();
     if (!n) return;
+    stageHistory();
     n.dialogue = text;
     dirtyText = true;
     if (debounce) clearTimeout(debounce);
@@ -80,6 +92,7 @@
   function live(fn: (n: VNNode) => void) {
     const n = current();
     if (!n) return;
+    stageHistory();
     fn(n);
     renderNodes();
   }
@@ -87,8 +100,9 @@
   function discrete(fn: (n: VNNode) => void) {
     const n = current();
     if (!n) return;
+    stageHistory();
     fn(n);
-    pushHistory();
+    stagedHistory = false;
     renderNodes();
     sync(false);
   }
@@ -192,7 +206,7 @@
             bind:value={size}
             style="--pct: {sizePct}%"
             oninput={() => live((n) => { n.dialogueSize = size; })}
-            onchange={() => pushHistory()}
+            onchange={() => { stagedHistory = false; }}
             class="te-slider"
             aria-label="Tamaño de texto"
           />
@@ -208,7 +222,7 @@
             bind:value={rotation}
             style="--pct: {rotPct}%"
             oninput={() => live((n) => { n.rotation = rotation; })}
-            onchange={() => pushHistory()}
+            onchange={() => { stagedHistory = false; }}
             class="te-slider"
             aria-label="Rotación de texto"
           />
@@ -224,7 +238,7 @@
             bind:value={scale}
             style="--pct: {scalePct}%"
             oninput={() => live((n) => { n.textScale = Number(scale); })}
-            onchange={() => pushHistory()}
+            onchange={() => { stagedHistory = false; }}
             class="te-slider"
             aria-label="Escala de texto"
           />
@@ -240,7 +254,7 @@
             bind:value={posY}
             style="--pct: {posPct}%"
             oninput={() => live((n) => { n.textPosY = posY; })}
-            onchange={() => pushHistory()}
+            onchange={() => { stagedHistory = false; }}
             class="te-slider"
             aria-label="Posición vertical de texto"
           />
