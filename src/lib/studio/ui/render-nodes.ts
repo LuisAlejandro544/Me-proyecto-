@@ -40,6 +40,10 @@ export function renderNodes() {
     const sceneTag = scene
       ? `<div class="vn-scene-tag" title="Pertenece a «${escapeHtml(scene.name)}»${isSceneStart ? ' · aquí empieza' : ''}${isSceneEnd ? ' · aquí termina' : ''}">🎬 ${escapeHtml(scene.name)}${isSceneStart ? ' · INICIO' : ''}${isSceneEnd ? ' · FIN' : ''}</div>`
       : '';
+    const hasCustomAnim = !!(node.assetEnter || node.assetMotion || node.sceneTransition);
+    const animTag = hasCustomAnim
+      ? `<div class="vn-anim-tag" title="Aparición: ${escapeHtml(node.assetEnter ?? 'global')} · Movimiento: ${escapeHtml(node.assetMotion ?? 'global')} · Transición: ${escapeHtml(node.sceneTransition ?? 'escena/global')}">🎞 ${escapeHtml([node.assetEnter, node.assetMotion, node.sceneTransition].filter(Boolean).join(' · ') || 'animado')}</div>`
+      : '';
     const toolbar = `
       <div class="vn-node-toolbar" role="toolbar" aria-label="Acciones del nodo">
         <button data-action="edit-node" data-node="${node.id}" title="Editar nodo (pregunta, personaje…)" aria-label="Editar nodo"
@@ -51,6 +55,7 @@ export function renderNodes() {
       </div>
       ${isStart ? `<div class="vn-start-badge" title="La partida empieza aquí">▶ INICIO</div>` : ''}
       ${sceneTag}
+      ${animTag}
     `;
 
     // 1. BANNER SCENE NODE (e.g., "Start Scene 1" in Image 1)

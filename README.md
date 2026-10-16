@@ -51,6 +51,14 @@ para jugar a pantalla completa**.
   imagen de fondo importada, 14 tipografías y 8 animaciones de letras
   (máquina de escribir, fundido, ola, rebote, arcoíris…); tema global del proyecto
   + override por nodo; se aplica en Probar, modo invitado y `.html`/`.vn.json`.
+- **Animaciones de assets y escenarios 🎞**: cada nodo define **aparición** del
+  sprite/vídeo (fundido, deslizares, zoom, rebote, enfoque, volteo…),
+  **movimiento continuo** en bucle (flotar, balanceo, saltitos, pulso, respirar,
+  temblor, giro lento…) y **transición de escenario** al llegar (fundido,
+  deslizares, zoom, desenfoque, barrido, corte seco); cada **escena** tiene su
+  transición de entrada y **Ajustes** guarda los valores **globales** + duración
+  (120–2000 ms). Las tarjetas muestran insignia 🎞, se juega en Probar, invitado
+  y `.html` compilado, y se respeta `prefers-reduced-motion`.
 - **Conectar nodos**: arrastra desde cualquier puerto (●) hasta otro puerto.
   Clic en un cable para cambiar color o quitarlo; `Shift+Clic` o doble-clic lo borra.
 - **Compartir nivel**: botón **Compartir** en la cabecera → se genera una URL
@@ -163,16 +171,17 @@ Formato: `https://tu-dominio-publico/#nivel=<base64url>` con `{ v, permiso, proy
 src/App.svelte                  shell mínimo
 src/components/StudioShell.svelte  chrome (ids intactos, NO renombrar)
 src/components/BottomNav.svelte    pie con pestañas (Nodos, Recursos, Componer, Cronología, Personajes, Escenas, Diálogos, Probar, Ajustes)
-src/lib/types.ts                VNNode, VNWire, VNState (+startNodeId, +scenes/VNScene), VNScene
+src/lib/types.ts                VNNode (+assetEnter/assetMotion/sceneTransition), VNWire, VNState (+startNodeId, +scenes/VNScene, +defaults de animación), VNScene (+enterTransition)
+src/lib/asset-animations.ts     apariciones + movimientos + transiciones (listas, resolvers, CSS compartido)
 src/lib/dialogue-themes.ts      biblioteca de diseños de diálogo + tipografías + animaciones
 src/lib/assets.ts               galería/cámara/archivos + etiquetas (#tag) de assets
 src/lib/compositions.ts         composiciones fondo+sprites + render a PNG 1280×720
 src/components/CompositionStudio.svelte  editor de escenas a pantalla completa (#composerScreen)
 src/lib/studio/context.ts       estado mutable único
 src/lib/studio/domain/scenes.ts escenas (ensure/normalize/create/rename/delete/move + resolución de saltos)
-src/lib/studio/ui/scenes.ts     estudio de escenas (nombre + inicio/fin + jugar desde + reordenar)
-src/lib/studio/ui/render-nodes.ts  tarjetas + puertos + toolbar ✏️/🗑 (+ etiqueta 🎬 de escena)
-src/lib/studio/ui/node-editor.ts   editor completo + eliminar/duplicar (+ escena por nodo + salto por opción)
+src/lib/studio/ui/scenes.ts     estudio de escenas (nombre + inicio/fin + transición de entrada + jugar desde + reordenar)
+src/lib/studio/ui/render-nodes.ts  tarjetas + puertos + toolbar ✏️/🗑 (+ etiqueta 🎬 de escena + insignia 🎞 de animación)
+src/lib/studio/ui/node-editor.ts   editor completo + eliminar/duplicar (+ escena por nodo + salto por opción + sección 🎞 de animaciones)
 src/lib/studio/ui/dialogue.ts      estudio de diálogos personalizados
 src/lib/studio/ui/share.ts         URL para jugar + carga + fullscreen (incluye scenes + startNodeId)
 src/lib/studio/ui/render-wires.ts  cables SVG + popover

@@ -9,6 +9,7 @@ import { renderNodes } from './render-nodes';
 import { applyTransform } from './transform';
 import { showToast } from './toast';
 import { getStartNodeId } from '../storage';
+import { SCENE_TRANSITIONS } from '../../asset-animations';
 import { renderPlaytestStep, startPlaytest } from './playtest';
 import {
   createScene,
@@ -93,6 +94,13 @@ export function openScenesStudio() {
                 <select data-scene-end="${s.id}" class="w-full rounded-xl bg-[#0f1428] border border-slate-600 px-2.5 py-2 text-xs text-white min-h-[44px]">${nodeOptions(s.endNodeId)}</select>
               </label>
             </div>
+            <label class="block">
+              <span class="block text-[11px] uppercase tracking-wider text-cyan-300 font-semibold mb-1">🎞 Transición al entrar en esta escena</span>
+              <select data-scene-trans="${s.id}" class="w-full rounded-xl bg-[#0f1428] border border-slate-600 px-2.5 py-2 text-xs text-white min-h-[44px]">
+                <option value="">— La global del proyecto —</option>
+                ${SCENE_TRANSITIONS.map((t) => `<option value="${t.id}" ${(s.enterTransition ?? '') === t.id ? 'selected' : ''}>${t.label} — ${t.desc}</option>`).join('')}
+              </select>
+            </label>
             <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
               <span class="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700">${counts.get(s.id) ?? 0} nodo(s) asignados</span>
               ${s.endNodeId ? `<span class="px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/40 text-amber-200">⛔ fin: ${escapeHtml(nodeLabel(ctx.state.nodes.find((n) => n.id === s.endNodeId) ?? { id: s.endNodeId } as any))}</span>` : `<span class="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700">sin fin marcado</span>`}
@@ -160,6 +168,18 @@ export function openScenesStudio() {
         if (node && !node.sceneId) node.sceneId = id;
         renderNodes();
         showToast(scene.endNodeId ? `«${scene.name}» termina en «${nodeLabel(node)}» ⛔` : `«${scene.name}» sin fin marcado`);
+      }
+      reopen();
+    });
+  });
+  bodyEl.querySelectorAll('[data-scene-trans]').forEach((sel) => {
+    (sel as HTMLSelectElement).addEventListener('change', () => {
+      const id = (sel as HTMLElement).dataset.sceneTrans as string;
+      pushHistory();
+      const scene = (ctx.state.scenes ?? []).find((s) => s.id === id);
+      if (scene) {
+        scene.enterTransition = (sel as HTMLSelectElement).value || undefined;
+        showToast(scene.enterTransition ? `Transición de «${scene.name}»: ${scene.enterTransition} 🎞` : `«${scene.name}» usará la transición global 🎞`);
       }
       reopen();
     });

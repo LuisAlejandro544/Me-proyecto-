@@ -1,9 +1,11 @@
 # Roadmap — Visual Novel Node Studio
 
-> Estado a 2026-10-16. Hecho reciente: cuadros de diálogo personalizables 💬
-> (biblioteca + tipografías + animaciones, tema global + por nodo) + **sistema de
-> escenas 🎬** (nombre propio + nodo de fin/inicio + saltos desde decisiones y
-> Continuar) + bloque de vídeo 🎬 + complemento de sonido 🔊
+> Estado a 2026-10-16. Hecho reciente: **animaciones de assets y escenarios 🎞**
+> (aparición por nodo + movimiento continuo + transición entre escenarios, con
+> transición por escena y valores globales + duración) + cuadros de diálogo
+> personalizables 💬 (biblioteca + tipografías + animaciones, tema global + por
+> nodo) + **sistema de escenas 🎬** (nombre propio + nodo de fin/inicio + saltos
+> desde decisiones y Continuar) + bloque de vídeo 🎬 + complemento de sonido 🔊
 > (carpeta con galería de vídeos y audios), reproductor de prueba en horizontal 16:9,
 > enlaces compartibles (adiós `localhost` + `.html` jugable), canal de
 > auto-actualizaciones (workflow `Auto-update` solo en release publicado o manual
@@ -61,6 +63,14 @@
   nombre personalizable + nodo de fin/inicio por escena + `nextSceneId` al
   continuar + `gotoSceneId` por opción de decisión (salto directo sin cable);
   etiquetas en tarjetas, validación, persistencia y exportados.
+- [x] Animaciones de assets y escenarios (`lib/asset-animations.ts` + tipos en
+  `types.ts`): 9 apariciones (`assetEnter` por nodo), 8 movimientos continuos
+  (`assetMotion`: flotar, balanceo, pulso…) y 8 transiciones de escenario
+  (`sceneTransition` por nodo + `enterTransition` por escena + globales
+  `defaultAssetEnter/defaultAssetMotion/defaultSceneTransition/animDurationMs` en
+  Ajustes); sección 🎞 en el editor, transición en el estudio de escenas,
+  insignia 🎞 en tarjetas; se juegan en Probar/invitado/`.html` (mismo CSS +
+  `prefers-reduced-motion`) y viajan en `#nivel=` y `.vn.json`.
 - [ ] Pruebas visuales del modo invitado en Android (WebView) y iOS (Safari).
 
 ## Siguiente (v0.3) — niveles y permisos
@@ -79,7 +89,7 @@
 - [ ] Refactor a componentes Svelte (`TopBar`, `Canvas`, `NodeCard`, `PlaytestModal`)
   con stores en vez de `ctx` mutable + `// @ts-nocheck`.
 - [ ] Historial por nodo y portapapeles (copiar/pegar nodos con Ctrl+C/V).
-- [x] Audio por escena (campo opcional) y nodo de sonido; pendiente: transiciones de fondo.
+- [x] Audio por escena (campo opcional) y nodo de sonido + transiciones de escenario (fundido, deslizares, zoom, desenfoque, barrido); pendiente: crossfade de música entre escenas.
 - [x] Paquete funcional Windows/Linux descargable + workflow manual de bundles
   nativos (`bundle-desktop.yml`: Rust/Tauri en runners Windows/Ubuntu).
 - [ ] Paquete Tauri firmado (.exe) y APK release en CI.

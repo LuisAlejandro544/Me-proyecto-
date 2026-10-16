@@ -10,6 +10,7 @@ import { showToast } from './toast';
 import { setStartNodeId } from '../storage';
 import { ensureScenes, getSceneById, nodeLabel } from '../domain/scenes';
 import { DIALOGUE_ANIMATIONS, DIALOGUE_FONTS, getAllDialogueThemes, getProjectDialogueThemeId } from '../../dialogue-themes';
+import { ASSET_ENTER_ANIMATIONS, ASSET_MOTIONS, SCENE_TRANSITIONS } from '../../asset-animations';
 import { openDialogueStudio } from './dialogue';
 
 function dialogueStyleFields(node: any, inputCls: string, field: (label: string, inner: string) => string): string {
@@ -268,6 +269,24 @@ export function openNodeEditor(nodeId: string) {
     form += field('Pregunta / diálogo', `<textarea id="ed_dialogue" rows="3" class="${inputCls}">${escapeHtml(node.dialogue ?? '')}</textarea>`);
   }
 
+  // ——— Animaciones del asset y del escenario al llegar a este nodo ———
+  {
+    const enterOpts = `<option value="">— La global —</option>` +
+      ASSET_ENTER_ANIMATIONS.map((a) => `<option value="${a.id}" ${node.assetEnter === a.id ? 'selected' : ''}>${a.label}</option>`).join('');
+    const motionOpts = `<option value="">— El global —</option>` +
+      ASSET_MOTIONS.map((a) => `<option value="${a.id}" ${node.assetMotion === a.id ? 'selected' : ''}>${a.label}</option>`).join('');
+    const transOpts = `<option value="">— Escena / global —</option>` +
+      SCENE_TRANSITIONS.map((a) => `<option value="${a.id}" ${node.sceneTransition === a.id ? 'selected' : ''}>${a.label}</option>`).join('');
+    form += `
+    <div class="p-3 rounded-xl bg-cyan-500/10 border border-cyan-400/40 space-y-2.5">
+      <div class="text-[11px] uppercase tracking-wider text-cyan-200 font-bold">🎞 Animaciones al llegar aquí</div>
+      ${field('Aparición del sprite/vídeo', `<select id="ed_assetEnter" class="${inputCls}">${enterOpts}</select>`)}
+      ${field('Movimiento continuo (modo)', `<select id="ed_assetMotion" class="${inputCls}">${motionOpts}</select>`)}
+      ${field('Transición de escenario', `<select id="ed_sceneTransition" class="${inputCls}">${transOpts}</select>`)}
+      <p class="text-[11px] text-slate-400">La transición de este nodo manda sobre la de su escena y la global. El movimiento sigue en bucle hasta cambiar de paso. Se respeta <i>movimiento reducido</i> del sistema.</p>
+    </div>`;
+  }
+
   form += dialogueStyleFields(node, inputCls, field);
 
   form += `</div>
@@ -373,6 +392,10 @@ export function openNodeEditor(nodeId: string) {
     // Escena del nodo
     if ($('ed_sceneId')) node.sceneId = val('ed_sceneId')! || undefined;
     if ($('ed_nextSceneId')) node.nextSceneId = val('ed_nextSceneId')! || undefined;
+    // Animaciones del asset / escenario
+    if ($('ed_assetEnter')) node.assetEnter = (val('ed_assetEnter') as string) || undefined;
+    if ($('ed_assetMotion')) node.assetMotion = (val('ed_assetMotion') as string) || undefined;
+    if ($('ed_sceneTransition')) node.sceneTransition = (val('ed_sceneTransition') as string) || undefined;
     if ($('ed_badge')) node.badge = val('ed_badge')!;
     if ($('ed_title')) node.title = val('ed_title')!;
     if ($('ed_subtitle')) node.subtitle = val('ed_subtitle')!;

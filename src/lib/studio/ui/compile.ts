@@ -11,6 +11,7 @@ import { getStartNodeId } from '../storage';
 import { getCharacterCatalog, getCustomAssets } from '../../assets';
 import { CHARACTER_ASSETS } from '../data/assets';
 import { DIALOGUE_FONTS, dialogueAnimationCss, getAllDialogueThemes, getProjectDialogueThemeId } from '../../dialogue-themes';
+import { assetAnimationsCss, getProjectAssetDefaults } from '../../asset-animations';
 
 export type CompileFormat = 'html' | 'vnjson' | 'windows' | 'linux';
 
@@ -170,12 +171,16 @@ export function buildHistoria(): Record<string, unknown> {
     variables: ctx.state.variables ?? {},
     dialogueThemeId: getProjectDialogueThemeId(ctx.state),
     dialogueThemes: getAllDialogueThemes(),
+    defaultAssetEnter: (ctx.state as { defaultAssetEnter?: string }).defaultAssetEnter,
+    defaultAssetMotion: (ctx.state as { defaultAssetMotion?: string }).defaultAssetMotion,
+    defaultSceneTransition: (ctx.state as { defaultSceneTransition?: string }).defaultSceneTransition,
+    animDurationMs: (ctx.state as { animDurationMs?: number }).animDurationMs,
     assets: { catalog, customs }
   };
 }
 
 /** Solo los assets usados (el .html pesa menos que incrustando todo el catálogo). */
-function collectUsedPayload(): { nodes: unknown[]; wires: unknown[]; assets: Record<string, unknown>; customs: Record<string, unknown>; dialogueThemes: Record<string, unknown>; dialogueThemeId: string; scenes: unknown[] } {
+function collectUsedPayload(): { nodes: unknown[]; wires: unknown[]; assets: Record<string, unknown>; customs: Record<string, unknown>; dialogueThemes: Record<string, unknown>; dialogueThemeId: string; scenes: unknown[]; animDefaults: Record<string, unknown> } {
   const fullCatalog = getCharacterCatalog();
   const fallback = fullCatalog.sora ?? CHARACTER_ASSETS.sora;
   const usedChars = new Set<string>();
@@ -220,7 +225,8 @@ function collectUsedPayload(): { nodes: unknown[]; wires: unknown[]; assets: Rec
   if (!dialogueThemes[dialogueThemeId] && allThemes.get(dialogueThemeId)) {
     dialogueThemes[dialogueThemeId] = allThemes.get(dialogueThemeId);
   }
-  return { nodes: ctx.state.nodes, wires: ctx.state.wires, assets, customs, dialogueThemes, dialogueThemeId, scenes: ctx.state.scenes ?? [] };
+  const animDefaults = getProjectAssetDefaults(ctx.state);
+  return { nodes: ctx.state.nodes, wires: ctx.state.wires, assets, customs, dialogueThemes, dialogueThemeId, scenes: ctx.state.scenes ?? [], animDefaults };
 }
 
 /**
@@ -230,7 +236,7 @@ function collectUsedPayload(): { nodes: unknown[]; wires: unknown[]; assets: Rec
 export function buildStandaloneHtml(): string {
   const startId = getStartNodeId(ctx.state);
   const project = ctx.state.projectName || 'Mi Novela';
-  const { nodes, wires, assets, customs, dialogueThemes, dialogueThemeId, scenes } = collectUsedPayload();
+  const { nodes, wires, assets, customs, dialogueThemes, dialogueThemeId, scenes, animDefaults } = collectUsedPayload();
   const fontStacks: Record<string, string> = {};
   for (const f of DIALOGUE_FONTS) fontStacks[f.id] = f.stack;
   const serialized = JSON.stringify({
@@ -244,7 +250,8 @@ export function buildStandaloneHtml(): string {
     customs,
     dialogueThemes,
     dialogueThemeId,
-    fontStacks
+    fontStacks,
+    animDefaults
   }).replace(/</g, '\\u003c');
 
   return `<!DOCTYPE html>
@@ -271,6 +278,11 @@ export function buildStandaloneHtml(): string {
   .speaker { font-weight:800; color:#ff758c; margin-bottom:6px; }
   .dlg { white-space:pre-wrap; line-height:1.55; }
 ${dialogueAnimationCss()}
+${assetAnimationsCss()}
+  #spWrap { display:flex; justify-content:center; }
+  #spWrap.vn-asset-motion-float, #spWrap.vn-asset-motion-sway, #spWrap.vn-asset-motion-bob,
+  #spWrap.vn-asset-motion-pulse, #spWrap.vn-asset-motion-breathe,
+  #spWrap.vn-asset-motion-shake-soft, #spWrap.vn-asset-motion-spin-slow { will-change: transform; }
   .vars { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
   .vars span { font-size:11px; padding:2px 8px; border-radius:999px; background:#1e293b; color:#67e8f9; font-family:ui-monospace,monospace; }
   .choices { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
@@ -286,7 +298,7 @@ ${dialogueAnimationCss()}
     <div><div class="title" id="t"></div><div class="meta" id="m"></div></div>
     <div class="rowbtns"><button class="ghost" id="restart">↻ Reiniciar</button></div>
   </div>
-  <div class="media"><img id="sp" class="sprite" alt="Personaje" /></div>
+  <div class="media" id="spWrap"><img id="sp" class="sprite" alt="Personaje" /></div>
   <div class="media"><video id="vp" class="vplayer" controls playsinline style="display:none"></video></div>
   <audio id="ap" style="display:none"></audio>
   <div class="box" id="dlgBox">
@@ -351,12 +363,33 @@ function continueTarget(nodeId){
   }
   return null;
 }
+var __prevScene = null;
+function resolveAnim(n, sc) {
+  var d = DATA.animDefaults || {};
+  var enter = n.assetEnter || d.enter || "fade-in";
+  var motion = n.assetMotion || d.motion || "none";
+  var trans = n.sceneTransition || (sc && sc.enterTransition) || d.transition || "fade";
+  var dur = Math.max(120, Math.min(2000, Number(d.durationMs) || 450));
+  return { enter: enter, motion: motion, transition: trans, dur: dur };
+}
+function restartAnim(el, cls) {
+  if (!el) return;
+  var rm = [];
+  for (var i = 0; i < el.classList.length; i++) {
+    var c = el.classList[i];
+    if (c.indexOf("vn-asset-enter-") === 0 || c.indexOf("vn-stage-trans-") === 0 || c === "vn-asset-enter" || c === "vn-stage-trans") rm.push(c);
+  }
+  for (var j = 0; j < rm.length; j++) el.classList.remove(rm[j]);
+  void el.offsetWidth;
+  var parts = cls.split(" ");
+  for (var k = 0; k < parts.length; k++) if (parts[k]) el.classList.add(parts[k]);
+}
 function go(id) {
   var n = null;
   for (var i=0;i<DATA.nodes.length;i++){ if (DATA.nodes[i].id===id){ n=DATA.nodes[i]; break; } }
   if (!n) n = DATA.nodes[0];
   if (!n) return;
-  visited++;
+  visited++; var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var catalog = DATA.assets || {};
   var c = catalog[n.characterId || n.selectedCharId || "sora"] || catalog.sora || { name:"", avatar:"" };
   var sp = document.getElementById("sp");
@@ -367,9 +400,24 @@ function go(id) {
   try { ap.pause(); } catch(e){}
   function customOf(id){ return (DATA.customs || {})[id]; }
   var sc = sceneOf(n.id);
+  var anim = resolveAnim(n, sc);
+  var sceneChanged = __prevScene !== null && __prevScene !== ((sc && sc.id) || null);
+  var firstStep = __prevScene === null;
+  __prevScene = ((sc && sc.id) || null);
+  document.documentElement.style.setProperty("--vn-anim-dur", anim.dur + "ms");
   var label = n.badge || n.headerBar || n.title || n.topTitle || DATA.proyecto || "Novela";
   document.getElementById("t").textContent = DATA.proyecto || "Novela";
   document.getElementById("m").textContent = (sc ? ("🎬 " + sc.name + " · ") : "") + label + " · paso " + visited;
+  // Movimiento continuo en el contenedor + aparición del medio + transición de escenario.
+  var wrap = document.getElementById("spWrap");
+  if (wrap) {
+    var rm2 = [];
+    for (var mi = 0; mi < wrap.classList.length; mi++) {
+      if (wrap.classList[mi].indexOf("vn-asset-motion-") === 0) rm2.push(wrap.classList[mi]);
+    }
+    for (var mj = 0; mj < rm2.length; mj++) wrap.classList.remove(rm2[mj]);
+    if (!reduceMotion && anim.motion !== "none") wrap.classList.add("vn-asset-motion-" + anim.motion);
+  }
   if (n.type === "video_scene") {
     var v = customOf(n.videoAssetId);
     if (v && v.dataUrl) {
@@ -389,6 +437,17 @@ function go(id) {
     var spkName = (n.type === "sound_cue") ? (n.soundName || n.audioName || "🔊 Sonido") : (n.speaker || c.name || "");
     document.getElementById("spk").textContent = spkName;
     document.getElementById("spk").style.color = (n.type === "sound_cue") ? "#fbbf24" : (n.speakerColor || c.color || "#ff758c");
+  }
+  if (!reduceMotion) {
+    var mediaEl = (n.type === "video_scene") ? vp : sp;
+    if (mediaEl && mediaEl.style.display !== "none" && anim.enter !== "none") {
+      restartAnim(mediaEl, "vn-asset-enter vn-asset-enter-" + anim.enter);
+    }
+    var stageEl = document.querySelector(".stage");
+    var forcesTrans = !!(n.sceneTransition && n.sceneTransition !== "none");
+    if (stageEl && anim.transition !== "none" && (sceneChanged || forcesTrans || firstStep)) {
+      restartAnim(stageEl, "vn-stage-trans vn-stage-trans-" + anim.transition);
+    }
   }
   var sndId = (n.type === "sound_cue") ? (n.soundAssetId || n.audioAssetId) : n.audioAssetId;
   if (sndId) {
@@ -513,7 +572,7 @@ function go(id) {
     }
   }
 }
-document.getElementById("restart").onclick = function(){ visited = 0; go(START); };
+document.getElementById("restart").onclick = function(){ visited = 0; __prevScene = null; go(START); };
 go(START);
 <\/script>
 </body>

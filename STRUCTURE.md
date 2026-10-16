@@ -40,7 +40,8 @@ Me-proyecto-/
 │   │       ├── #shareLoading #shareLoadingMsg #shareLoadingBar #shareLoadingGame
 │   │       │   └── #updateModal (pantalla auto-update) + #toastBanner #toastMessage
 │   └── lib/
-│       ├── types.ts          VNNode (+sceneId/nextSceneId/dlg*) VNWire VNScene VNState (+startNodeId/dialogueThemeId/scenes) GraphSnapshot (+scenes) DragState SfxKind
+│       ├── types.ts          VNNode (+sceneId/nextSceneId/dlg* +assetEnter/assetMotion/sceneTransition) VNWire VNScene (+enterTransition) VNState (+startNodeId/dialogueThemeId/scenes +defaults de animación) GraphSnapshot (+scenes) DragState SfxKind
+│       ├── asset-animations.ts  9 apariciones + 8 movimientos + 8 transiciones (listas + getProjectAssetDefaults/resolveNodeAssetAnim + assetAnimationsCss)
 │       ├── dialogue-themes.ts  biblioteca de diseños de diálogo (6 base + propios) + 14 fuentes + 8 animaciones
 │       ├── platform.ts       isTauri/isCapacitor + saveHtmlExport (dialog/fs, Filesystem/Share)
 │       ├── assets.ts         galería (fotos+vídeos)/cámara/archivos (imagen+vídeo+audio) + catálogos + etiquetas (tags/normalizeTags/setAssetTags/getAllAssetTags/saveCustomAssetFromDataUrl)
@@ -61,12 +62,12 @@ Me-proyecto-/
 │           │   ├── scenes.ts   VNScene (ensure/normalize/create/rename/delete/move + resolveSceneStartNode/resolveContinueSceneTarget)
 │           │   └── history.ts  pushHistory (30 pasos)
 │           └── ui/
-│               ├── render-nodes.ts  8 tipos + toolbar ✏️/▶/🗑 + insignia ▶ INICIO + etiqueta 🎬 de escena (INICIO/FIN) + puertos a -9px
+│               ├── render-nodes.ts  8 tipos + toolbar ✏️/▶/🗑 + insignia ▶ INICIO + etiqueta 🎬 de escena (INICIO/FIN) + insignia 🎞 de animación + puertos a -9px
 │               │     banner_scene (in_main + portsOut repartidos %) · choice (in_main + out por opción; punto izq. decorativo)
 │               │     compact_scene · character_selector (in + out) · avatar_scene (in + outs)
 │               │     branch_scene (in + out) · video_scene (in + out, 🎬) · sound_cue (in + out, 🔊)
-│               ├── node-editor.ts   openNodeEditor() por tipo + deleteNode() + duplicateNode() (+ escena por nodo: sceneId/nextSceneId/inicio/fin + gotoSceneId por opción)
-│               ├── scenes.ts        openScenesStudio() (nombre + inicio/fin por nodo + orden + ver/jugar/eliminar)
+│               ├── node-editor.ts   openNodeEditor() por tipo + deleteNode() + duplicateNode() (+ escena por nodo: sceneId/nextSceneId/inicio/fin + gotoSceneId por opción + sección 🎞 assetEnter/assetMotion/sceneTransition)
+│               ├── scenes.ts        openScenesStudio() (nombre + inicio/fin por nodo + transición de entrada + orden + ver/jugar/eliminar)
 │               ├── editors.ts       edición rápida inline (doble-clic / doble-toque)
 │               ├── interactions.ts  drag nodos, drag cables, botones, doble-toque, Supr
 │               ├── render-wires.ts  cables SVG + popover (Quitar/Color) + Shift+Clic borra
@@ -76,8 +77,8 @@ Me-proyecto-/
 │               ├── transform.ts     setZoom/applyTransform (panLayer translate GPU + world scale GPU)
 │               ├── minimap.ts       renderMinimap
 │               ├── load-preset.ts   loadPreset(sora|aoi|blank)
-│               ├── playtest.ts      startPlaytest/closePlaytest/renderPlaytestStep (horizontal 16:9 + <video>/<audio> + saltos de escena: Continuar → siguiente, decisión → gotoSceneId)
-│               ├── compile.ts       compilador ÚNICO (buildStandaloneHtml/buildHistoria/validateStory/saveTextFile + openCompileModal + exportWindowsPackage/exportLinuxPackage + escenas en .vn.json/.html/validación)
+│               ├── playtest.ts      startPlaytest/closePlaytest/renderPlaytestStep (horizontal 16:9 + <video>/<audio> + saltos de escena + 🎞 aparición/movimiento/transición por nodo/escena/global)
+│               ├── compile.ts       compilador ÚNICO (buildStandaloneHtml/buildHistoria/validateStory/saveTextFile + openCompileModal + exportWindowsPackage/exportLinuxPackage + escenas y 🎞 animaciones en .vn.json/.html/validación)
 │               ├── exporter.ts      compat (delega a compile.ts: exportStandaloneHtml/openExeExportModal)
 │               ├── workspace.ts     openWorkspaceTab + addNewNodeOfType + assets/timeline/chars (+ pestañas scenes/dialogues/compositor)
 │               ├── share.ts         getShareBaseUrl/isLocalOrPrivateHost/buildShareUrl/
@@ -107,6 +108,7 @@ Me-proyecto-/
 | Cambiar compartir/jugar | `ui/share.ts` + `StudioShell.svelte` (`#btnShareLevel`, `#shareLoading`, `#playtestModal`) + `app.css` (`shared-play-mode`) + `domain/scenes.ts` (el reproductor resuelve Continuar/saltos por escena) |
 | Añadir pestaña inferior | `StudioShell.svelte` (footer) + `ui/workspace.ts` (`openWorkspaceTab`) + `BottomNav.svelte` (`data-tab`) |
 | Sistema de escenas | `lib/types.ts` (`VNScene`, `sceneId/nextSceneId/gotoSceneId`) + `domain/scenes.ts` + `ui/scenes.ts` (`openScenesStudio`) + `ui/node-editor.ts` (sección 🎬) + `ui/playtest.ts` + `ui/compile.ts` (mismos saltos en `.html`) |
+| Animaciones de assets | `lib/asset-animations.ts` (listas + resolvers + CSS) + `types.ts` (`assetEnter/assetMotion/sceneTransition`, `enterTransition`, defaults globales) + `ui/node-editor.ts` (sección 🎞) + `ui/scenes.ts` (transición por escena) + `ui/workspace.ts` (Ajustes globales) + `ui/playtest.ts` + `ui/compile.ts` (mismo `assetAnimationsCss` en `.html`) + `app.css` (`.vn-asset-*`/`.vn-stage-*`/`.vn-anim-tag`) |
 | Nueva pantalla completa (no popup) | `components/*.svelte` montado en `App.svelte` + evento `vn:open-*`/`vn:close-*` + `data-tab` en el footer (ver `CompositionStudio.svelte`) |
 | Etiquetar assets | `lib/assets.ts` (`tags`, `setAssetTags`, `getAllAssetTags`) + chips `[data-tag-filter]` y botón `[data-edit-tags]` en `ui/workspace.ts` |
 | Cambiar export nativo | `lib/platform.ts` + `ui/compile.ts` (generador único) + workflow `bundle-desktop.yml` (solo manual; Rust/Tauri compila el .exe/.deb/.AppImage real) |

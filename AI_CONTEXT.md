@@ -29,7 +29,8 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
   los eventos `vn:open-composer` / `vn:close-composer` (la pestaña `compositor`
   del footer NO abre el drawer, dispara el evento desde `openWorkspaceTab`).
 - Estado: `context.ts` → `ctx.state: VNState { projectName, startNodeId,
-  dialogueThemeId, scenes: VNScene[], zoom, panX, panY,
+  dialogueThemeId, defaultAssetEnter?, defaultAssetMotion?,
+  defaultSceneTransition?, animDurationMs?, scenes: VNScene[], zoom, panX, panY,
   variables, nodes, wires }`.
 - Escenas (`domain/scenes.ts` + `ui/scenes.ts`): `VNScene { id, name,
   startNodeId?, endNodeId? }`; nodos con `sceneId` + `nextSceneId`, opciones
@@ -40,10 +41,16 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
   `character_selector`, `avatar_scene`, `branch_scene`, `video_scene` (🎬),
   `sound_cue` (🔊 complemento). Cada tarjeta lleva
   `.vn-node-toolbar` (✏️ `edit-node`, ▶ `set-start`, 🗑 `delete-node`),
-  `.vn-scene-tag` (🎬 nombre + INICIO/FIN) + `.vn-port` a `-9px` con
+  `.vn-scene-tag` (🎬 nombre + INICIO/FIN) + `.vn-anim-tag` (🎞 si el nodo tiene
+  `assetEnter/assetMotion/sceneTransition`) + `.vn-port` a `-9px` con
   `data-node-id/data-port-id/data-port-dir/data-port-color`.
+- Animaciones (`lib/asset-animations.ts`): 9 apariciones + 8 movimientos +
+  8 transiciones; `getProjectAssetDefaults()` + `resolveNodeAssetAnim()` (nodo →
+  escena `enterTransition` → global) + `assetAnimationsCss()` (mismo CSS en
+  `app.css`, playtest y `.html`); respeta `prefers-reduced-motion`.
 - Edición: `ui/node-editor.ts` (`openNodeEditor`, `deleteNode`, `duplicateNode`,
-  sección 🎬 escena por nodo + `gotoSceneId` por opción) +
+  sección 🎬 escena por nodo + `gotoSceneId` por opción + sección 🎞
+  `assetEnter/assetMotion/sceneTransition`) +
   `ui/editors.ts` (inline doble-clic/doble-toque) + `ui/interactions.ts`
   (drag, botones, `Supr`).
 - Cuadros de diálogo (`lib/dialogue-themes.ts` + `ui/dialogue.ts`): biblioteca con
@@ -82,7 +89,10 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
   workflow manual `bundle-desktop.yml` (solo `workflow_dispatch`).
 - Playtest horizontal: `#vnPlaytestCard.vn-playtest-landscape` (16:9) +
   `#vnVideoPlayer`/`#vnAudioPlayer` + `#btnVnFullscreen`/`closePlaytest()`;
-  assets con vídeo: `lib/assets.ts` (`imagen|video|audio`).
+  assets con vídeo: `lib/assets.ts` (`imagen|video|audio`); animaciones vía
+  `applyAssetAnimations()` (aparición en el medio + movimiento en
+  `#vnSpriteContainer` con posición en `translate`/`scale` + transición de
+  `#vnStageBg` solo al cambiar de escena o forzarla por nodo).
 - Plataforma: `lib/platform.ts`; assets: `lib/assets.ts` + `studio/data/assets.ts`.
   Los assets llevan `tags: string[]` (`normalizeTags`/`setAssetTags`/
   `getAllAssetTags`); la carpeta filtra por chips `[data-tag-filter]` y edita
@@ -102,7 +112,9 @@ Capacitor 7. Referencia legacy: `my_novel_visual_novel_node_studio.html` (no bor
   `render-nodes.ts`, edítalo en `node-editor.ts` (y en `playtest.ts`/`compile.ts`
   si afecta a jugar/exportar). Para escenas usa `domain/scenes.ts`
   (`ensureScenes`/`normalizeScenes` + resolvers) y persiste en `storage.ts`,
-  `history.ts`, undo/redo de `index.ts`, presets y `share.ts`.
+  `history.ts`, undo/redo de `index.ts`, presets y `share.ts`. Para animaciones
+  usa `lib/asset-animations.ts` (listas + resolvers + CSS) y no dupliques el CSS:
+  importa `assetAnimationsCss()`.
 - Nuevo puerto: `data-port-id` único por nodo; respeta convención
   `in_*` (entrada) / `out_*` (salida); en `choice` es `in_<optId>` / `out_<optId>`.
 - Nuevo botón de cabecera/pie: añade en `StudioShell.svelte` con `id`, conéctalo en

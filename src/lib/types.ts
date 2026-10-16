@@ -29,6 +29,8 @@ export interface VNScene {
   startNodeId?: string;
   /** Nodo donde termina esta escena (Continuar salta a la siguiente escena). */
   endNodeId?: string;
+  /** Transición al entrar en esta escena (ver `SCENE_TRANSITIONS`; vacío = global). */
+  enterTransition?: string;
 }
 
 export type NodeType =
@@ -105,6 +107,12 @@ export interface VNNode {
   sceneId?: string;
   /** Al pulsar Continuar sin cable de salida, saltar al inicio de esta escena. */
   nextSceneId?: string;
+  /** Animación de aparición del sprite/vídeo al llegar a este nodo (vacío = global). */
+  assetEnter?: string;
+  /** Movimiento continuo del sprite en este paso (flotar, latir…; vacío = global). */
+  assetMotion?: string;
+  /** Transición de escenario al llegar a este nodo (vacío = escena/global). */
+  sceneTransition?: string;
 }
 
 export interface VNWire {
@@ -122,6 +130,12 @@ export interface VNState {
   startNodeId?: string;
   /** Tema de cuadro de diálogo activo para todo el proyecto. */
   dialogueThemeId?: string;
+  /** Animaciones globales de assets/escenarios (fallback de nodos y escenas). */
+  defaultAssetEnter?: string;
+  defaultAssetMotion?: string;
+  defaultSceneTransition?: string;
+  /** Duración base de apariciones/transiciones en ms (120–2000, defecto 450). */
+  animDurationMs?: number;
   /** Escenas narrativas ordenadas (nombre personalizable + inicio/fin por nodo). */
   scenes?: VNScene[];
   zoom: number;
