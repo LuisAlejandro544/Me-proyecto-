@@ -33,18 +33,15 @@ export function buildHistoria(): Record<string, unknown> {
 /** Solo los assets usados (el .html pesa menos que incrustando todo el catálogo). */
 export function collectUsedPayload(): { nodes: unknown[]; wires: unknown[]; assets: Record<string, unknown>; customs: Record<string, unknown>; dialogueThemes: Record<string, unknown>; dialogueThemeId: string; scenes: unknown[]; animDefaults: Record<string, unknown> } {
   const fullCatalog = getCharacterCatalog();
-  const fallback = fullCatalog.sora ?? CHARACTER_ASSETS.sora;
   const usedChars = new Set<string>();
   for (const n of ctx.state.nodes) {
-    if (n.characterId) usedChars.add(n.characterId);
-    if (n.selectedCharId) usedChars.add(n.selectedCharId);
+    if (n.characterId && fullCatalog[n.characterId]) usedChars.add(n.characterId);
+    if (n.selectedCharId && fullCatalog[n.selectedCharId]) usedChars.add(n.selectedCharId);
   }
-  usedChars.add('sora');
   const assets: Record<string, unknown> = {};
   for (const id of usedChars) {
     if (fullCatalog[id]) assets[id] = fullCatalog[id];
   }
-  if (!assets.sora && fallback) assets.sora = fallback;
   const customsAll = new Map(getCustomAssets().map((a) => [a.id, a]));
   const customs: Record<string, unknown> = {};
   for (const n of ctx.state.nodes) {

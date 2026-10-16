@@ -4,7 +4,8 @@ import { getCharacterCatalog } from '../../../assets';
 import { escapeHtml } from '../../domain/geometry';
 export function charOptions(selectedId?: string) {
   const catalog = getCharacterCatalog();
-  return Object.values(catalog)
+  const noneSel = !selectedId ? 'selected' : '';
+  return `<option value="" ${noneSel}>— Sin personaje —</option>` + Object.values(catalog)
     .map((c) => `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`)
     .join('');
 }

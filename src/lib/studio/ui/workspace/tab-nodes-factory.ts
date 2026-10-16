@@ -28,10 +28,10 @@ export function addNewNodeOfType(type) {
       x: offsetX,
       y: offsetY,
       width: 245,
-      characterId: 'sora',
-      speaker: 'Sora',
-      speakerColor: '#ff758c',
-      dialogue: 'Un nuevo momento empieza aquí.\n¡Doble clic para editar!',
+      characterId: undefined,
+      speaker: 'Narrador',
+      speakerColor: '#94a3b8',
+      dialogue: 'Un nuevo momento empieza aquí.\n¡Toca ✏️ y elige un personaje!',
       portsOut: [{ id: 'out_cyan', color: 'cyan', yOffset: 150 }]
     });
   } else if (type === 'choice') {
@@ -59,8 +59,8 @@ export function addNewNodeOfType(type) {
       x: offsetX,
       y: offsetY,
       width: 230,
-      selectedCharId: 'yuki',
-      expression: 'Yuki - Alegre',
+      selectedCharId: undefined,
+      expression: undefined,
       scale: 100,
       position: 50,
       inColor: 'coral'
@@ -105,9 +105,9 @@ export function addNewNodeOfType(type) {
       x: offsetX,
       y: offsetY,
       width: 250,
-      characterId: 'aoi',
-      speaker: 'Aoi',
-      dialogue: 'Aoi: «¡Veamos a dónde lleva esto!»',
+      characterId: undefined,
+      speaker: 'Narrador',
+      dialogue: '«¡Veamos a dónde lleva esto!» (toca ✏️ y elige personaje)',
       inColor: 'cyan'
     });
   }

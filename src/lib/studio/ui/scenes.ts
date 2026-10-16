@@ -46,6 +46,69 @@ function centerOnNode(nodeId?: string) {
   renderNodes();
 }
 
+/**
+ * Píldoras superiores (#pillPresetSora/#pillPresetAoi): antes cargaban los
+ * presets demo de Sora/Aoi y borraban la historia del usuario (parecía que
+ * "lo pre-hecho seguía apareciendo"). Ahora son un navegador de las escenas
+ * REALES del proyecto: muestran los nombres actuales y centran el lienzo en
+ * el inicio de cada escena. Se conservan los ids por compatibilidad del shell.
+ */
+export function refreshScenePills() {
+  try {
+    ensureScenes(ctx.state);
+    const scenes = ctx.state.scenes ?? [];
+    const pillA = document.getElementById('pillPresetSora');
+    const pillB = document.getElementById('pillPresetAoi');
+    const activeCls = 'px-3 py-2 rounded-full text-xs font-semibold transition shrink-0 min-h-[36px] bg-cyan-500/20 text-cyan-300 border border-cyan-400/40';
+    const idleCls = 'px-3 py-2 rounded-full text-xs font-semibold transition shrink-0 min-h-[36px] text-slate-400 hover:text-white';
+    if (pillA) {
+      const s0 = scenes[0];
+      pillA.textContent = s0 ? `🎬 ${s0.name}` : '🎬 Escena 1';
+      pillA.title = s0 ? `Ir al inicio de «${s0.name}»` : 'Sin escenas';
+      pillA.className = activeCls;
+      (pillA as any).__sceneId = s0?.id ?? null;
+    }
+    if (pillB) {
+      const s1 = scenes[1];
+      if (!s1) {
+        // Solo hay una escena: la segunda píldora se oculta en vez de
+        // mostrar el demo "Aoi (tableta)" que confundía.
+        pillB.classList.add('hidden');
+        (pillB as any).__sceneId = null;
+      } else {
+        pillB.classList.remove('hidden');
+        pillB.textContent = `🎬 ${s1.name}${scenes.length > 2 ? ` (+${scenes.length - 2})` : ''}`;
+        pillB.title = `Ir al inicio de «${s1.name}»`;
+        pillB.className = idleCls;
+        (pillB as any).__sceneId = s1.id;
+      }
+    }
+  } catch {}
+}
+
+export function wireScenePills() {
+  const go = (pillId: string) => {
+    const pill = document.getElementById(pillId);
+    if (!pill || (pill as any).__wiredPill) return;
+    (pill as any).__wiredPill = true;
+    pill.addEventListener('click', () => {
+      const sceneId = (pill as any).__sceneId as string | null;
+      if (!sceneId) {
+        showToast('Crea más escenas en la pestaña Escenas 🎬');
+        return;
+      }
+      const target = resolveSceneStartNode(ctx.state, sceneId);
+      if (!target) {
+        showToast('Esta escena aún no tiene nodo de inicio');
+        return;
+      }
+      centerOnNode(target);
+    });
+  };
+  go('pillPresetSora');
+  go('pillPresetAoi');
+}
+
 export function openScenesStudio() {
   ensureScenes(ctx.state);
   const modal = document.getElementById('drawerModal');
@@ -118,7 +181,10 @@ export function openScenesStudio() {
     </div>`;
   modal.classList.remove('hidden');
 
-  const reopen = () => openScenesStudio();
+  const reopen = () => {
+    try { refreshScenePills(); } catch {}
+    openScenesStudio();
+  };
 
   (document.getElementById('btnAddScene') as HTMLElement | null)?.addEventListener('click', () => {
     pushHistory();

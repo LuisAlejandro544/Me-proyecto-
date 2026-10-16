@@ -47,18 +47,20 @@
       panX: 40,
       panY: 40,
       variables: { chapter: 1 },
+      scenes: [{ id: 'escena_1', name: 'Escena 1', startNodeId: 'start_1', endNodeId: undefined }],
       nodes: [
         {
           id: 'start_1',
           type: 'banner_scene',
           badge: 'Escena inicial 1',
+          sceneId: 'escena_1',
           x: 120,
           y: 120,
           width: 245,
-          characterId: 'sora',
-          speaker: 'Sora',
-          speakerColor: '#ff758c',
-          dialogue: '¡Bienvenido a tu nueva novela visual!\nAñade nodos abajo.',
+          characterId: undefined,
+          speaker: 'Narrador',
+          speakerColor: '#94a3b8',
+          dialogue: '¡Bienvenido a tu nueva novela visual!\nToca ✏️ y elige un personaje para empezar.',
           portsOut: [{ id: 'out_cyan', color: 'cyan', yOffset: 160 }]
         }
       ],

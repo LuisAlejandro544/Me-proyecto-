@@ -20,10 +20,12 @@ export function getCharacterCatalog(): Record<string, any> {
   return { ...(CHARACTER_ASSETS as Record<string, any>), ...customs };
 }
 
-/** Resuelve el personaje de un nodo, con respaldo a Sora si el recurso se eliminó. */
-export function resolveCharacter(id: string | undefined | null): any {
+/** Resuelve el personaje de un nodo. Devuelve null si no hay personaje asignado
+ *  o el recurso se eliminó (antes caía a Sora y provocaba el "fondo fantasma"). */
+export function resolveCharacter(id: string | undefined | null): any | null {
+  if (!id) return null;
   const catalog = getCharacterCatalog();
-  return catalog[id ?? ''] ?? catalog.sora;
+  return catalog[id] ?? null;
 }
 
 export function getVideoAssets(): CustomAsset[] {
