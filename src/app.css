@@ -430,6 +430,11 @@ button { touch-action: manipulation; }
     justify-content: center;
   }
   #playtestModal > div { border-radius: 0; }
+  /* Exportar: la rejilla es la única zona con scroll; cabecera y pie fijos */
+  #exportModal > div { max-height: 92dvh; }
+  #exportModal .export-card { overflow-wrap: break-word; word-break: break-word; }
+  /* Evita scroll horizontal fantasma por tarjetas/plaquitas en pantallas estrechas */
+  html, body, #app { overflow-x: clip; }
 }
 @media (max-width: 380px) {
   .vn-node { max-width: 82vw; }

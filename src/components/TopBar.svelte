@@ -91,7 +91,7 @@
 
     <!-- Right: Importar (abre el diálogo Exportar proyecto) + Updates + Settings -->
     <div class="flex items-center gap-2 sm:gap-2.5 shrink-0 order-2 sm:order-3">
-      <button id="btnImportar" title="Importar / exportar proyecto" class="flex items-center gap-1.5 h-[30px] px-3.5 rounded-full bg-[#161c32]/60 hover:bg-[#38bdf8]/15 border-2 border-[#3894b8] text-xs font-medium text-[#56bdda] transition">
+      <button id="btnImportar" title="Importar / exportar proyecto" class="flex items-center gap-1.5 h-[30px] min-h-[44px] sm:min-h-0 sm:h-[30px] px-3.5 rounded-full bg-[#161c32]/60 hover:bg-[#38bdf8]/15 border-2 border-[#3894b8] text-xs font-medium text-[#56bdda] transition">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
         <span>Importar</span>
       </button>

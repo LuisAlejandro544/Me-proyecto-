@@ -143,7 +143,7 @@
 </script>
 
 {#if visible}
-  <aside class="fixed right-2 sm:right-3 top-[4.5rem] bottom-20 w-[290px] max-w-[86vw] z-30 rounded-2xl bg-[#191c2e]/90 backdrop-blur-xl border border-indigo-400/20 shadow-[0_12px_40px_rgba(0,0,0,0.65)] flex flex-col overflow-hidden">
+  <aside class="te-panel fixed right-2 sm:right-3 top-[4.5rem] bottom-20 w-[290px] max-w-[86vw] z-30 rounded-2xl bg-[#191c2e]/90 backdrop-blur-xl border border-indigo-400/20 shadow-[0_12px_40px_rgba(0,0,0,0.65)] flex flex-col overflow-hidden">
     <!-- Cabecera -->
     <div class="flex items-center justify-between px-4 pt-4 pb-2.5">
       <h3 class="flex items-center gap-2 text-[15px] font-medium text-slate-100 tracking-wide">
@@ -312,5 +312,31 @@
 
   .te-slider::-moz-range-thumb:hover {
     transform: scale(1.1);
+  }
+
+  /* ---- Solo móvil: el editor pasa a ser hoja inferior a ancho completo.
+     En PC se mantiene el panel lateral (right/top/bottom intactos). ---- */
+  @media (max-width: 640px) {
+    .te-panel {
+      left: 0.5rem;
+      right: 0.5rem;
+      top: auto;
+      bottom: calc(4.5rem + env(safe-area-inset-bottom));
+      width: auto;
+      max-width: none;
+      max-height: 52dvh;
+      border-radius: 1.1rem;
+    }
+    .te-panel .te-slider {
+      height: 8px;
+    }
+    .te-panel .te-slider::-webkit-slider-thumb {
+      width: 24px;
+      height: 24px;
+    }
+    .te-panel .te-slider::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+    }
   }
 </style>
