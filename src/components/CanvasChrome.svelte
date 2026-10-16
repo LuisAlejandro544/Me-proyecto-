@@ -4,10 +4,10 @@
     <!-- Quick Mode Switcher Pill (Top-Left floating helper to compare View 1 & View 2 effortlessly) -->
     <div class="absolute top-2 left-2 right-2 sm:right-auto z-30 flex items-center gap-1.5 bg-[#161c33]/90 backdrop-blur-md border border-slate-700/70 rounded-full p-1 shadow-lg overflow-x-auto max-w-[calc(100vw-1rem)]" style="scrollbar-width: none;">
       <button id="pillPresetSora" class="px-3 py-2 rounded-full text-xs font-semibold transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shrink-0 min-h-[36px]">
-        Escena 1: Sora (móvil)
+        🎬 Escena 1
       </button>
       <button id="pillPresetAoi" class="px-3 py-2 rounded-full text-xs font-semibold transition text-slate-400 hover:text-white shrink-0 min-h-[36px]">
-        Escena 2: Aoi (tableta)
+        🎬 Escena 2
       </button>
       <span class="hidden md:inline-block text-[11px] text-slate-400 px-2 border-l border-slate-700/70 whitespace-nowrap">
         Arrastra nodos o puertos • Doble clic en un texto para editar

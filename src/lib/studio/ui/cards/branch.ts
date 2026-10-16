@@ -8,6 +8,9 @@ export function renderBranchCard(node): string {
   const sound = findCustomAsset(node.soundAssetId || node.audioAssetId);
   const charKeys = Object.keys(getCharacterCatalog());
   const selChar = resolveCharacter(node.selectedCharId);
+  const avatarHtml = charObj?.avatar
+    ? `<img src="${charObj.avatar}" data-action="cycle-char" data-node="${node.id}" class="w-12 h-12 rounded-xl object-cover border border-white/20 cursor-pointer shrink-0" />`
+    : `<div data-action="cycle-char" data-node="${node.id}" title="Toca para elegir personaje" class="w-12 h-12 rounded-xl bg-slate-800 border border-dashed border-slate-600 flex items-center justify-center text-xl cursor-pointer shrink-0">🎭</div>`;
   return `
         <div class="relative overflow-visible vn-node-pad-ports">
           <!-- Input Port -->
@@ -23,7 +26,7 @@ export function renderBranchCard(node): string {
           </div>
 
           <div class="p-3.5 flex items-center gap-3">
-            <img src="${charObj.avatar}" data-action="cycle-char" data-node="${node.id}" class="w-12 h-12 rounded-xl object-cover border border-white/20 cursor-pointer shrink-0" />
+            ${avatarHtml}
             <div class="text-xs text-slate-100 leading-snug editable-field" data-field="dialogue">${escapeHtml(node.dialogue)}</div>
           </div>
 

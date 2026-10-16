@@ -60,6 +60,8 @@ export function renderPlaytestStep(nodeId) {
   const spriteImg = document.getElementById('vnCharacterSprite');
   const spriteWrap = document.getElementById('vnSpriteContainer');
   const videoEl = document.getElementById('vnVideoPlayer') as HTMLVideoElement | null;
+  // Sin fallback a Sora: si el nodo no tiene personaje, no se muestra ninguno
+  // (antes resolveCharacter caía a Sora y el "fondo" aparecía aunque no se hubiera puesto).
   const charObj = resolveCharacter(node.characterId || node.selectedCharId);
 
   stopPlaytestMedia();
@@ -68,6 +70,7 @@ export function renderPlaytestStep(nodeId) {
   if (node.type === 'video_scene') {
     const found = findCustomAsset(node.videoAssetId);
     spriteImg.classList.add('hidden');
+    try { (spriteImg as HTMLImageElement).removeAttribute('src'); } catch {}
     if (found && videoEl) {
       videoEl.classList.remove('hidden');
       videoEl.src = found.dataUrl;
@@ -80,9 +83,15 @@ export function renderPlaytestStep(nodeId) {
     document.getElementById('vnSpeakerName').style.color = '#e879f9';
     document.getElementById('vnExpressionTag').textContent =
       `${node.videoLoop ? '🔁 Bucle' : '▶ Una vez'}${node.videoMuted ? ' · 🔇' : ''}`;
+  } else if (!charObj) {
+    // Sin personaje asignado: no mostrar ningún sprite (ni Sora de respaldo).
+    // Limpia el src para que no quede la imagen del paso anterior.
+    spriteImg.classList.add('hidden');
+    try { (spriteImg as HTMLImageElement).removeAttribute('src'); } catch {}
+    spriteImg.style.height = '0px';
   } else {
     spriteImg.classList.remove('hidden');
-    spriteImg.src = node.type === 'banner_scene' ? charObj.banner : charObj.avatar;
+    (spriteImg as HTMLImageElement).src = node.type === 'banner_scene' ? charObj.banner : charObj.avatar;
   }
   // Posición en propiedad CSS independiente (`translate`): no pisa el
   // `transform` que animan las clases de movimiento. Tamaño por layout
@@ -108,10 +117,10 @@ export function renderPlaytestStep(nodeId) {
   }
 
   if (node.type !== 'video_scene' && node.type !== 'sound_cue') {
-    document.getElementById('vnSpeakerName').textContent = node.speaker || charObj.name;
-    document.getElementById('vnSpeakerName').style.color = node.speakerColor || charObj.color;
-    document.getElementById('vnExpressionTag').textContent =
-      `${charSelector?.expression || charObj.expressions[0]} • Escala ${scalePct}%`;
+    document.getElementById('vnSpeakerName').textContent = node.speaker || charObj?.name || 'Narrador';
+    document.getElementById('vnSpeakerName').style.color = node.speakerColor || charObj?.color || '#94a3b8';
+    const expr = charSelector?.expression || charObj?.expressions?.[0] || 'Sin personaje';
+    document.getElementById('vnExpressionTag').textContent = `${expr} • Escala ${scalePct}%`;
   }
 
   const dialogueEl = document.getElementById('vnDialogueText');

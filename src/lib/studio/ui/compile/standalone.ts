@@ -170,7 +170,7 @@ function go(id) {
   if (!n) return;
   visited++; var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var catalog = DATA.assets || {};
-  var c = catalog[n.characterId || n.selectedCharId || "sora"] || catalog.sora || { name:"", avatar:"" };
+  var c = catalog[n.characterId || n.selectedCharId || ""] || null;
   var sp = document.getElementById("sp");
   var vp = document.getElementById("vp");
   var ap = document.getElementById("ap");
@@ -211,11 +211,11 @@ function go(id) {
       document.getElementById("spk").style.color = "#e879f9";
     }
   } else {
-    if (c.avatar) { sp.src = c.avatar; sp.style.display = ""; }
-    else { sp.style.display = "none"; }
-    var spkName = (n.type === "sound_cue") ? (n.soundName || n.audioName || "🔊 Sonido") : (n.speaker || c.name || "");
+    if (c && c.avatar) { sp.src = c.avatar; sp.style.display = ""; }
+    else { sp.style.display = "none"; try { sp.removeAttribute("src"); } catch(e){} }
+    var spkName = (n.type === "sound_cue") ? (n.soundName || n.audioName || "🔊 Sonido") : (n.speaker || (c && c.name) || "Narrador");
     document.getElementById("spk").textContent = spkName;
-    document.getElementById("spk").style.color = (n.type === "sound_cue") ? "#fbbf24" : (n.speakerColor || c.color || "#ff758c");
+    document.getElementById("spk").style.color = (n.type === "sound_cue") ? "#fbbf24" : (n.speakerColor || (c && c.color) || "#94a3b8");
   }
   if (!reduceMotion) {
     var mediaEl = (n.type === "video_scene") ? vp : sp;

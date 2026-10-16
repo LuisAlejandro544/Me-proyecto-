@@ -8,6 +8,9 @@ export function renderAvatarCard(node): string {
   const sound = findCustomAsset(node.soundAssetId || node.audioAssetId);
   const charKeys = Object.keys(getCharacterCatalog());
   const selChar = resolveCharacter(node.selectedCharId);
+  const avatarHtml = charObj?.avatar
+    ? `<img src="${charObj.avatar}" data-action="cycle-char" data-node="${node.id}" title="Clic para cambiar de personaje" class="w-12 h-12 rounded-xl object-cover border border-white/20 cursor-pointer" />`
+    : `<div data-action="cycle-char" data-node="${node.id}" title="Toca para elegir personaje" class="w-12 h-12 rounded-xl bg-slate-800 border border-dashed border-slate-600 flex items-center justify-center text-xl cursor-pointer shrink-0">🎭</div>`;
   return `
         <div class="relative vn-node-pad-ports">
           <!-- Input Port (permite encadenar escenas) -->
@@ -29,9 +32,9 @@ export function renderAvatarCard(node): string {
             </div>
 
             <div class="flex items-center gap-3 mb-2.5">
-              <img src="${charObj.avatar}" data-action="cycle-char" data-node="${node.id}" title="Clic para cambiar de personaje" class="w-12 h-12 rounded-xl object-cover border border-white/20 cursor-pointer" />
+              ${avatarHtml}
               <div>
-                <div class="text-xs font-bold text-white editable-field" data-field="speaker">${escapeHtml(node.speaker)}</div>
+                <div class="text-xs font-bold text-white editable-field" data-field="speaker">${escapeHtml(node.speaker || charObj?.name || 'Sin personaje')}</div>
                 <div class="text-[11px] text-slate-400 editable-field" data-field="speakerSub">${escapeHtml(node.speakerSub || 'Miniatura')}</div>
               </div>
             </div>

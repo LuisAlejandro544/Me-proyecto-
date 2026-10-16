@@ -20,9 +20,13 @@ export function stopPlaytestMedia() {
       a.load();
     }
   } catch {}
+  // No desocultar el sprite aquí: lo decide renderPlaytestStep según el
+  // personaje del nodo (si no hay, se queda oculto sin imagen residual).
   try {
     const img = document.getElementById('vnCharacterSprite') as HTMLImageElement | null;
-    img?.classList.remove('hidden');
+    if (img && img.classList.contains('hidden')) {
+      img.removeAttribute('src');
+    }
   } catch {}
 }
 

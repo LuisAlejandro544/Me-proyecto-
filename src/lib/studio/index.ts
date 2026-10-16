@@ -17,6 +17,7 @@ import { setZoom } from './ui/transform';
 import { checkSharedPlayModeOnBoot, openShareModal } from './ui/share';
 import { checkForUpdates, checkForUpdatesOnBoot } from './ui/updater';
 import { deleteNode } from './ui/node-editor';
+import { refreshScenePills, wireScenePills } from './ui/scenes';
 import {
   getActiveSlot,
   getStartNodeId,
@@ -43,6 +44,7 @@ export function enterEditor() {
   refreshSlotSaveButtons();
   try { applyTransform(); } catch {}
   try { renderNodes(); } catch {}
+  try { refreshScenePills(); } catch {}
 }
 
 /** Etiquetas de los botones «Slot N» del desplegable (✓ en el activo + nombre). */
@@ -120,12 +122,16 @@ export function initStudio() {
       document.querySelectorAll('.preset-option').forEach(btn => {
         btn.addEventListener('click', () => {
           loadPreset(btn.dataset.preset);
+          try { refreshScenePills(); } catch {}
           projMenu.classList.add('hidden');
         });
       });
 
-      document.getElementById('pillPresetSora').addEventListener('click', () => loadPreset('sora'));
-      document.getElementById('pillPresetAoi').addEventListener('click', () => loadPreset('aoi'));
+      // Las píldoras superiores ya NO cargan presets demo (borraban la historia
+      // del usuario): ahora navegan por las escenas reales del proyecto.
+      // Se conservan los ids #pillPresetSora/#pillPresetAoi por compatibilidad.
+      try { wireScenePills(); } catch {}
+      try { refreshScenePills(); } catch {}
 
       // Top bar buttons
       document.getElementById('btnPlayPreviewTop').addEventListener('click', startPlaytest);
@@ -227,6 +233,7 @@ export function initStudio() {
   wireCanvasPanZoom();
   applyTransform();
   renderNodes();
+  try { refreshScenePills(); } catch {}
   // Supr / Backspace elimina el nodo seleccionado (fuera de inputs).
   window.addEventListener('keydown', (e) => {
     const t = e.target as HTMLElement | null;
