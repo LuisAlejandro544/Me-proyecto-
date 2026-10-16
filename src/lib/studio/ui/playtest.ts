@@ -236,12 +236,14 @@ export function renderPlaytestStep(nodeId) {
     spriteImg.classList.remove('hidden');
     spriteImg.src = node.type === 'banner_scene' ? charObj.banner : charObj.avatar;
   }
-  // Posición/escala en propiedades CSS independientes (`translate`/`scale`):
-  // se componen con el `transform` que animan las clases de movimiento,
-  // así no se pisan entre sí.
+  // Posición en propiedad CSS independiente (`translate`): no pisa el
+  // `transform` que animan las clases de movimiento. Tamaño por layout
+  // (height explícito): nítido porque re-maqueta en vez de estirar el bitmap.
+  const baseH = Math.min(window.innerHeight * 0.38, 480);
+  spriteImg.style.height = `${Math.round((baseH * scalePct) / 100)}px`;
+  spriteImg.style.width = 'auto';
   spriteWrap.style.transform = '';
   (spriteWrap as HTMLElement).style.translate = `${(posPct - 50) * 2.2}px 0`;
-  (spriteWrap as HTMLElement).style.scale = `${scalePct / 100}`;
   try {
     applyAssetAnimations(node);
   } catch {}

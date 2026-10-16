@@ -84,9 +84,14 @@
       overflow: visible;
       overflow-wrap: break-word;
       word-break: break-word;
-      /* Capa propia: el blur del fondo se cachea y los fades hijos
-         (toolbar, puertos) componen sin re-dibujarlo = sin parpadeo. */
-      transform: translateZ(0);
+      /* Sin transform: translateZ(0) fijo aquí para no forzar textura GPU a 1x que emborrona imágenes y texto al escalar o hacer zoom */
+    }
+    /* Renderizado de alta fidelidad para imágenes dentro de nodos */
+    .vn-node img {
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+      image-rendering: auto;
+      object-fit: cover;
     }
     .vn-node > .vn-node-toolbar + div,
     .vn-node-pad-ports {

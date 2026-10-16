@@ -154,7 +154,7 @@ export function renderNodes() {
                 return `
                   <img src="${c.avatar}" data-action="select-char" data-node="${node.id}" data-char="${ck}"
                        alt="${c.name}"
-                       class="w-12 h-12 rounded-xl object-cover cursor-pointer transition ${isSel ? 'ring-2 ring-cyan-400 scale-105 shadow-[0_0_12px_rgba(0,242,254,0.5)]' : 'opacity-65 hover:opacity-100'}" />
+                       class="w-12 h-12 rounded-xl object-cover cursor-pointer transition ${isSel ? 'ring-2 ring-cyan-400 shadow-[0_0_12px_rgba(0,242,254,0.5)]' : 'opacity-65 hover:opacity-100'}" />
                 `;
               }).join('')}
             </div>
