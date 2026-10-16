@@ -239,7 +239,8 @@ export function renderPlaytestStep(nodeId) {
   // Posición en propiedad CSS independiente (`translate`): no pisa el
   // `transform` que animan las clases de movimiento. Tamaño por layout
   // (height explícito): nítido porque re-maqueta en vez de estirar el bitmap.
-  const baseH = Math.min(window.innerHeight * 0.38, 480);
+  // El tope descuenta la escala para no mostrar por encima de la intrínseca.
+  const baseH = Math.min(window.innerHeight * 0.38, (480 * 100) / Math.max(scalePct, 1));
   spriteImg.style.height = `${Math.round((baseH * scalePct) / 100)}px`;
   spriteImg.style.width = 'auto';
   spriteWrap.style.transform = '';
