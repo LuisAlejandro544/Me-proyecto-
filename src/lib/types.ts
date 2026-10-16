@@ -165,6 +165,7 @@ export interface VNNode {
   endingKind?: EndingKind;
   endingTitle?: string;
   // Nodo background — cambia el fondo del escenario.
+  // También lo usa `narration` como fondo OPCIONAL del paso (sin persistir).
   backgroundAssetId?: string;
   backgroundName?: string;
   // Nodo wait — pausa dramática antes de continuar (ms).

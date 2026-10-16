@@ -180,6 +180,16 @@ export function renderPlaytestStep(nodeId) {
         stage.style.backgroundPosition = 'center';
       }
     }
+    // Narración con fondo opcional: solo se muestra en este paso (no persiste).
+    if (node.type === 'narration' && node.backgroundAssetId) {
+      const bg = findCustomAsset(node.backgroundAssetId);
+      const stage = document.getElementById('vnStageBg');
+      if (bg?.dataUrl && stage) {
+        stage.style.backgroundImage = `url("${bg.dataUrl}")`;
+        stage.style.backgroundSize = 'cover';
+        stage.style.backgroundPosition = 'center';
+      }
+    }
     if (node.type === 'narration') {
       document.getElementById('vnSpeakerName').textContent = '📖 Narración';
       document.getElementById('vnSpeakerName').style.color = '#cbd5e1';

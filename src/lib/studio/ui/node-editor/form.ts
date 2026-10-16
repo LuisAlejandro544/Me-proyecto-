@@ -211,7 +211,8 @@ export function openNodeEditor(nodeId: string) {
     form += `<p class="text-[11px] text-slate-500">La transición visual usa la sección 🎞 de abajo (o la de su escena).</p>`;
   } else if (node.type === 'narration') {
     form += field('Texto de narración', `<textarea id="ed_dialogue" rows="4" class="${inputCls}">${escapeHtml(node.dialogue ?? '')}</textarea>`);
-    form += `<p class="text-[11px] text-slate-500">Sin hablante ni sprite: el reproductor lo muestra a pantalla completa.</p>`;
+    form += field('Fondo opcional (imagen de la carpeta)', `<select id="ed_backgroundAssetId" class="${inputCls}">${imageOptions(node.backgroundAssetId)}</select>`);
+    form += `<p class="text-[11px] text-slate-500">Sin hablante ni sprite: el reproductor lo muestra a pantalla completa. El fondo solo se muestra en este paso (no persiste como el nodo 🖼️).</p>`;
   } else if (node.type === 'monologue') {
     form += `<div class="grid grid-cols-[1fr_auto] gap-2 items-end">
         ${field('Quién piensa', `<input id="ed_speaker" class="${inputCls}" value="${escapeHtml(node.speaker ?? '')}" />`)}
