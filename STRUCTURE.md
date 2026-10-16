@@ -18,8 +18,8 @@ Me-proyecto-/
 │   │       │                 #projectNameInput .slot-save-btn[data-slot-save]
 │   │       │                 #projectDropdownMenu .preset-option
 │   │       │                 #btnShareLevel #btnPlayPreviewTop #btnUndo #btnRedo
-│   │       │                 #btnZoomResetTop #topZoomLabel #btnExportExe
-│   │       │                 #btnExportHtml #btnExportLinux #btnTopSettings #btnCheckUpdates #updateDot
+│   │       │                 #btnZoomResetTop #topZoomLabel #btnImportar (abre ExportProjectModal vía vn:open-export)
+│   │       │                 #btnTopSettings #btnCheckUpdates #updateDot
 │   │       │                 (+ #updateModal #updateVersionBadge #btnDownloadUpdate)
 │   │       ├── main#canvasViewport  lienzo
 │   │       │   ├── #pillPresetSora #pillPresetAoi
@@ -111,7 +111,7 @@ Me-proyecto-/
 | Nueva pantalla completa (no popup) | `components/*.svelte` montado en `App.svelte` + evento `vn:open-*`/`vn:close-*` + `data-tab` en el footer (ver `CompositionStudio.svelte`) |
 | Etiquetar assets | `lib/assets.ts` (`tags`, `setAssetTags`, `getAllAssetTags`) + chips `[data-tag-filter]` y botón `[data-edit-tags]` en `ui/workspace.ts` |
 | Cambiar export nativo | `lib/platform.ts` + `ui/compile.ts` (generador único) + workflow `bundle-desktop.yml` (solo manual; Rust/Tauri compila el .exe/.deb/.AppImage real) |
-| Cambiar compilar novela | `ui/compile.ts` (`buildStandaloneHtml`/`buildHistoria`/`validateStory`/`saveTextFile`/`openCompileModal`/`exportWindowsPackage`/`exportLinuxPackage`) + `index.ts` (wiring `#btnExportExe`/`#btnExportHtml`/`#btnExportLinux`) |
+| Cambiar compilar novela | `ui/compile.ts` (mismo + `ExportProjectModal.svelte`: 6 tarjetas Windows/Android/Linux/Vídeo/macOS/Web, evento `vn:open-export` desde `#btnImportar`) |
 | Cambiar auto-update | `ui/updater.ts` + `components/UpdateModal.svelte` (`#updateModal`) + workflow `auto-update.yml` (solo `release: published` + `workflow_dispatch`; ver `docs/RELEASING.md`) |
 | Añadir personaje base | `studio/data/assets.ts` + `lib/assets.ts` |
 

@@ -14,6 +14,7 @@
   import BottomNav from './BottomNav.svelte';
   import CanvasChrome from './CanvasChrome.svelte';
   import DrawerModal from './DrawerModal.svelte';
+  import ExportProjectModal from './ExportProjectModal.svelte';
   import PlaytestModal from './PlaytestModal.svelte';
   import ShareLoading from './ShareLoading.svelte';
   import TextEditorPanel from './TextEditorPanel.svelte';
@@ -27,6 +28,7 @@
   <CanvasChrome />
   <BottomNav />
   <DrawerModal />
+  <ExportProjectModal />
   <PlaytestModal />
   <ShareLoading />
   <TextEditorPanel />

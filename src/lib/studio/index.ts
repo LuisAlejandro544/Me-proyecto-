@@ -8,7 +8,6 @@ import { loadPreset } from './ui/load-preset';
 import { startPlaytest } from './ui/playtest';
 import { closePlaytest } from './ui/playtest';
 import { renderPlaytestStep } from './ui/playtest';
-import { openCompileModal } from './ui/compile';
 import { openWorkspaceTab } from './ui/workspace';
 import { playSynthSfx } from './domain/audio';
 import { showToast } from './ui/toast';
@@ -130,9 +129,7 @@ export function initStudio() {
       // Top bar buttons
       document.getElementById('btnPlayPreviewTop').addEventListener('click', startPlaytest);
       document.getElementById('btnShareLevel')?.addEventListener('click', openShareModal);
-      document.getElementById('btnExportHtml')?.addEventListener('click', () => openCompileModal('html'));
-      document.getElementById('btnExportExe')?.addEventListener('click', () => openCompileModal('windows'));
-      document.getElementById('btnExportLinux')?.addEventListener('click', () => openCompileModal('linux'));
+      document.getElementById('btnImportar')?.addEventListener('click', () => window.dispatchEvent(new CustomEvent('vn:open-export')));
       document.getElementById('btnTopSettings').addEventListener('click', () => openWorkspaceTab('settings'));
       document.getElementById('btnCheckUpdates')?.addEventListener('click', () => {
         playSynthSfx('click');
