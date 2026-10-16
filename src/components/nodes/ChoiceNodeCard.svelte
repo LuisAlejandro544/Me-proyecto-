@@ -33,7 +33,7 @@
   <!-- Header (con hueco a la derecha: botón + y toolbar ✏️/🗑 del nodo) -->
   <div class="flex items-start justify-between gap-2 mb-2.5">
     <div class="min-w-0 flex-1 pr-12">
-      <div class="text-xs sm:text-[13px] font-bold text-white">
+      <div class="text-sm font-bold text-white">
         <span class="editable-field" data-field="title">{node.title}</span>
         {#if !node.showAddButtons}
           <span class="font-normal text-slate-300 ml-1 editable-field" data-field="subtitle">

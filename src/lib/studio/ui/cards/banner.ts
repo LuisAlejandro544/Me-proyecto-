@@ -21,7 +21,7 @@ export function renderBannerCard(node): string {
                data-port-dir="in"
                data-port-color="cyan"></div>
           <!-- Blue Start Badge -->
-          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-bold shadow-md mb-2.5">
+          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-bold shadow-md mb-2.5">
             <span class="editable-field" data-field="badge">${escapeHtml(node.badge || 'Escena inicial 1')}</span>
           </div>
 

@@ -23,10 +23,10 @@ export function renderJumpCard(node): string {
   return `
         <div class="p-3.5 relative vn-node-pad-ports">
           ${inPort(node)}
-          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-sky-500 to-cyan-500 text-slate-950 text-xs font-bold shadow-md mb-2.5">
+          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-sky-500 to-cyan-500 text-slate-950 text-sm font-bold shadow-md mb-2.5">
             <span class="editable-field" data-field="badge">${escapeHtml(node.badge || '↗️ Salto')}</span>
           </div>
-          <div class="text-xs font-bold text-sky-200 truncate editable-field" data-field="title">${escapeHtml(node.title || 'Salto directo')}</div>
+          <div class="text-sm font-bold text-sky-200 truncate editable-field" data-field="title">${escapeHtml(node.title || 'Salto directo')}</div>
           <div class="text-[11px] text-slate-400 truncate">→ ${escapeHtml(node.jumpNodeId || node.jumpSceneId || 'sin destino')}</div>
           ${outPort(node)}
         </div>`;
@@ -37,10 +37,10 @@ export function renderEndingCard(node): string {
   return `
         <div class="p-3.5 relative vn-node-pad-ports">
           ${inPort(node, 'coral')}
-          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 text-xs font-bold shadow-md mb-2.5">
+          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 text-sm font-bold shadow-md mb-2.5">
             <span>${escapeHtml(kind)}</span>
           </div>
-          <div class="text-xs font-bold text-emerald-200 editable-field" data-field="endingTitle">${escapeHtml(node.endingTitle || node.title || 'Final')}</div>
+          <div class="text-sm font-bold text-emerald-200 editable-field" data-field="endingTitle">${escapeHtml(node.endingTitle || node.title || 'Final')}</div>
           <div class="text-[11px] text-slate-300 leading-snug whitespace-pre-line editable-field" data-field="dialogue">${escapeHtml(node.dialogue || 'Epílogo…')}</div>
         </div>`;
 }
@@ -53,7 +53,7 @@ export function renderBackgroundCard(node): string {
   return `
         <div class="p-3.5 relative vn-node-pad-ports">
           ${inPort(node)}
-          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 text-xs font-bold shadow-md mb-2.5">
+          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 text-sm font-bold shadow-md mb-2.5">
             <span class="editable-field" data-field="badge">${escapeHtml(node.badge || '🖼️ Fondo')}</span>
           </div>
           ${thumb}
@@ -72,7 +72,7 @@ export function renderNarrationCard(node): string {
   return `
         <div class="p-3.5 relative vn-node-pad-ports">
           ${inPort(node)}
-          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-slate-500 to-slate-700 text-white text-xs font-bold shadow-md mb-2.5">
+          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-slate-500 to-slate-700 text-white text-sm font-bold shadow-md mb-2.5">
             <span class="editable-field" data-field="badge">${escapeHtml(node.badge || '📖 Narración')}</span>
           </div>
           <div class="text-xs text-slate-100 leading-snug whitespace-pre-line editable-field" data-field="dialogue">${escapeHtml(node.dialogue || 'Narración…')}</div>
@@ -85,7 +85,7 @@ export function renderMonologueCard(node): string {
   return `
         <div class="p-3.5 relative vn-node-pad-ports">
           ${inPort(node)}
-          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-violet-500 to-purple-500 text-white text-xs font-bold shadow-md mb-2.5">
+          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-violet-500 to-purple-500 text-white text-sm font-bold shadow-md mb-2.5">
             <span class="editable-field" data-field="badge">${escapeHtml(node.badge || '💭 Monólogo')}</span>
           </div>
           <div class="text-[11px] font-bold text-violet-300 editable-field" data-field="speaker">${escapeHtml(node.speaker || '…')}</div>
@@ -98,7 +98,7 @@ export function renderWaitCard(node): string {
   return `
         <div class="p-3.5 relative vn-node-pad-ports">
           ${inPort(node)}
-          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-950 text-xs font-bold shadow-md mb-2.5">
+          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-950 text-sm font-bold shadow-md mb-2.5">
             <span class="editable-field" data-field="badge">${escapeHtml(node.badge || '⏳ Pausa')}</span>
           </div>
           <div class="text-2xl font-black text-yellow-200 tabular-nums">${Number(node.waitMs ?? 800)}<span class="text-xs font-semibold"> ms</span></div>
@@ -112,10 +112,10 @@ export function renderEffectCard(node): string {
   return `
         <div class="p-3.5 relative vn-node-pad-ports">
           ${inPort(node)}
-          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white text-xs font-bold shadow-md mb-2.5">
+          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white text-sm font-bold shadow-md mb-2.5">
             <span class="editable-field" data-field="badge">${escapeHtml(node.badge || '✨ Efecto')}</span>
           </div>
-          <div class="text-xs font-bold text-pink-200">${escapeHtml(label)} · ${Number(node.effectDurationMs ?? 600)} ms</div>
+          <div class="text-sm font-bold text-pink-200">${escapeHtml(label)} · ${Number(node.effectDurationMs ?? 600)} ms</div>
           <div class="text-[11px] text-slate-400 truncate editable-field" data-field="dialogue">${escapeHtml(node.dialogue || '')}</div>
           ${outPort(node)}
         </div>`;

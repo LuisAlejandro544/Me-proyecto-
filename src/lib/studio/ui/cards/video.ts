@@ -16,13 +16,13 @@ export function renderVideoCard(node): string {
                data-port-id="in_main"
                data-port-dir="in"
                data-port-color="cyan"></div>
-          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-fuchsia-500 to-indigo-500 text-white text-xs font-bold shadow-md mb-2.5">
+          <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-fuchsia-500 to-indigo-500 text-white text-sm font-bold shadow-md mb-2.5">
             <span class="editable-field" data-field="badge">${escapeHtml(node.badge || 'Vídeo')}</span>
           </div>
           <div class="relative w-full rounded-xl overflow-hidden border border-fuchsia-400/30 mb-2.5 bg-black/60">
             ${video ? `<video src="${video.dataUrl}" class="w-full h-24 object-cover" muted playsinline preload="metadata"></video>` : `<div class="w-full h-24 flex flex-col items-center justify-center gap-1 text-3xl">🎬<span class="text-[10px] text-slate-300 font-semibold">Sin vídeo — toca ✏️ para elegir</span></div>`}
           </div>
-          <div class="text-xs font-bold text-fuchsia-300 truncate editable-field" data-field="videoName">${escapeHtml(node.videoName || video?.name || 'Sin vídeo asignado')}</div>
+          <div class="text-sm font-bold text-fuchsia-300 truncate editable-field" data-field="videoName">${escapeHtml(node.videoName || video?.name || 'Sin vídeo asignado')}</div>
           <div class="text-[11px] text-slate-400 truncate editable-field" data-field="dialogue">${escapeHtml(node.dialogue || 'Se reproduce y continúa…')}</div>
           <div class="text-[10px] text-slate-500 mt-1">${node.videoAutoplay === false ? '⏸ Manual' : '▶ Auto'} · ${node.videoLoop ? '🔁 Bucle' : '➡ Sigue'}${node.videoMuted ? ' · 🔇' : ''}</div>
           <div class="vn-port vn-port-cyan vn-port-out"

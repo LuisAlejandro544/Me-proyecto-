@@ -22,12 +22,12 @@ export function renderAvatarCard(node): string {
                data-port-color="cyan"></div>
           ${node.topTitle ? `
             <div class=" -top-11 left-0.5 mb-1.5 px-3 pt-2.5">
-              <div class="text-xs font-bold text-white editable-field" data-field="topTitle">${escapeHtml(node.topTitle)}</div>
+              <div class="text-sm font-bold text-white editable-field" data-field="topTitle">${escapeHtml(node.topTitle)}</div>
               <div class="text-[11px] text-slate-400 editable-field" data-field="topSubtitle">${escapeHtml(node.topSubtitle || 'Start')}</div>
             </div>
           ` : ''}
           <div class="p-3 pt-2">
-            <div class="px-3 py-1.5 rounded-lg bg-[#253554] border border-cyan-500/25 text-xs font-semibold text-slate-100 mb-3 editable-field" data-field="headerBar">
+            <div class="px-3 py-1.5 rounded-lg bg-[#253554] border border-cyan-500/25 text-sm font-semibold text-slate-100 mb-3 editable-field" data-field="headerBar">
               ${escapeHtml(node.headerBar || 'Escena 1: Encuentro')}
             </div>
 

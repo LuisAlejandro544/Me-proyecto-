@@ -21,7 +21,7 @@ export function renderBranchCard(node): string {
                 data-port-dir="in"
                 data-port-color="${node.inColor || 'cyan'}"></div>
 
-          <div class="px-3.5 py-2 border-b border-slate-700/70 text-xs font-bold text-white editable-field" data-field="headerBar">
+          <div class="px-3.5 py-2 border-b border-slate-700/70 text-sm font-bold text-white editable-field" data-field="headerBar">
             ${escapeHtml(node.headerBar || 'Rama de escena')}
           </div>
 
