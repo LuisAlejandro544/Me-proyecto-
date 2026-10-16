@@ -7,6 +7,7 @@
 - Deshacer revierte de verdad: snapshot ANTES de mutar en panel de texto, drag de nodos, character/expression/sliders; `GraphSnapshot` incluye ajustes globales de animación; `snapshotOf/restoreInto` únicos en `domain/history.ts`
 - Estado compartido por URL validado: ids con patrón, cables contra nodos existentes, topes de tamaño; `escapeHtml` también escapa `'`
 - Barra de acciones del nodo tapaba el texto superior en nodos angostos (<200px): ahora flota elevada sobre el nodo vía container query en `.vn-node`; nodos anchos sin cambios
+- Texto superior ("Nodo 6: …") salía ~2px de la caja: `.editable-field` compensaba el padding con margen negativo horizontal y la caja quedaba 6px más ancha que la tarjeta; ahora solo compensa en vertical
 ### Changed
 - Modularización total sin cambiar conducta: `compile/` (types/validate/historia/standalone/files/modal), `workspace/` (router + 9 módulos por pestaña), `updater/` (repo/version/assets/screen/check/boot), `cards/` (7 tarjetas) y `node-editor/` (fields/options/crud/form) como barrels que re-exportan el contrato; `context.ts` expone `getStudioState/getSelectedNodeId/getSelectedNode/selectNode` (vía preferida, `ctx` queda legacy) y `TextEditorPanel` ya los usa
 - Botón único Importar + diálogo Exportar proyecto (estilo Flow: 6 tarjetas Windows/Android/Linux/Vídeo/macOS/Web con radio, línea de destino y Exportar y compilar; Windows/Linux/Web compilan de verdad, Android guía a Actions, Vídeo/macOS deshabilitados; fuera los 3 botones de exportar)
