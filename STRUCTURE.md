@@ -44,7 +44,7 @@ Me-proyecto-/
 │       ├── asset-animations.ts  9 apariciones + 8 movimientos + 8 transiciones (listas + getProjectAssetDefaults/resolveNodeAssetAnim + assetAnimationsCss)
 │       ├── dialogue-themes.ts  biblioteca de diseños de diálogo (6 base + propios) + 14 fuentes + 8 animaciones
 │       ├── platform.ts       isTauri/isCapacitor + saveHtmlExport (dialog/fs, Filesystem/Share)
-│       ├── assets.ts         galería (fotos+vídeos)/cámara/archivos (imagen+vídeo+audio) + catálogos + etiquetas (tags/normalizeTags/setAssetTags/getAllAssetTags/saveCustomAssetFromDataUrl)
+│       ├── assets.ts         barrel + assets/{types,store,catalog,import-files,import-media,tags}.ts (galería/cámara/archivos + catálogos + etiquetas)
 │       ├── compositions.ts   Composition/CompositionLayer (fondo+sprites) + persistencia + renderCompositionToDataUrl (PNG 1280×720)
 │       └── studio/
 │           ├── index.ts        initStudio() idempotente + wiring de botones + Supr + share-boot + enterEditor()
@@ -55,7 +55,7 @@ Me-proyecto-/
 │           │                         applyLoadedState, renameProject, get/setStartNodeId)
 │           ├── data/
 │           │   ├── presets.ts  PRESET_SORA PRESET_AOI
-│           │   └── assets.ts   CHARACTER_ASSETS (base64 sora/yuki/aoi/mio)
+│           │   ├── assets.ts   barrel + characters/{sora,yuki,aoi,mio}.ts (base64 estático, un archivo por personaje)
 │           ├── domain/
 │           │   ├── audio.ts    playSynthSfx
 │           │   ├── geometry.ts getPortPosition buildBezierPath escapeHtml
@@ -67,20 +67,21 @@ Me-proyecto-/
 │               │     branch_scene (in + out) · video_scene (in + out, 🎬) · sound_cue (in + out, 🔊)
 │               ├── node-editor.ts   barrel + node-editor/{fields,options,crud,form}.ts (openNodeEditor por tipo + deleteNode/duplicateNode + escena por nodo + sección 🎞)
 │               ├── scenes.ts        openScenesStudio() (nombre + inicio/fin por nodo + transición de entrada + orden + ver/jugar/eliminar)
+│               ├── dialogue.ts      barrel + dialogue/{io,apply,studio}.ts (fondos + tema en playtest + estudio de diseños)
 │               ├── editors.ts       edición rápida inline (doble-clic / doble-toque)
 │               ├── interactions.ts  drag nodos, drag cables, botones, doble-toque, Supr
 │               ├── render-wires.ts  cables SVG + popover (Quitar/Color) + Shift+Clic borra
 │               │                     + updateWirePaths() (vía rápida drag) + scheduleMinimap()
-│               ├── viewport.ts      pan 1 dedo, pinch 2 dedos, inercia, zoom rueda/anclado
+│               ├── viewport.ts      ATÓMICO a propósito: máquina de estados de gestos (closures con sesión mutable compartida; partirlo añade indirección + riesgo en código sensible a timing) — pan 1 dedo, pinch 2 dedos, inercia, zoom rueda/anclado
 │               │                     (rAF único, rect cacheado, sin rebuild de cables en el gesto)
 │               ├── transform.ts     setZoom/applyTransform (panLayer translate GPU + world scale GPU)
 │               ├── minimap.ts       renderMinimap
 │               ├── load-preset.ts   loadPreset(sora|aoi|blank)
-│               ├── playtest.ts      startPlaytest/closePlaytest/renderPlaytestStep (horizontal 16:9 + <video>/<audio> + saltos de escena + 🎞 aparición/movimiento/transición por nodo/escena/global)
+│               ├── playtest.ts      barrel + playtest/{media,anim,chrome,flow}.ts (start/close/paso + <video>/<audio> + 🎞 por nodo/escena/global)
 │               ├── compile.ts       barrel + compile/{types,validate,historia,standalone,files,modal}.ts (generador ÚNICO en standalone.ts + buildHistoria/validateStory/saveTextFile + paquetes Win/Linux)
 │               ├── exporter.ts      compat (delega a compile.ts: exportStandaloneHtml/openExeExportModal)
 │               ├── workspace.ts     router fino + workspace/{state,tab-switch,folder,tab-nodes,tab-nodes-factory,tab-assets,tab-timeline,tab-characters,tab-settings}.ts
-│               ├── share.ts         getShareBaseUrl/isLocalOrPrivateHost/buildShareUrl/
+│               ├── share.ts         barrel + share/{codec,base,modal,play}.ts (getShareBaseUrl/isLocalOrPrivateHost/buildShareUrl/
 │               │                         parseShareHash/openShareModal (base editable + .html vía compile.ts)/
 │               │               downloadPlayableHtml/enterSharedPlayMode/checkSharedPlayModeOnBoot
 │               ├── updater.ts       barrel + updater/{repo,version,assets,screen,check,boot}.ts (releases/latest + pantalla #updateModal + descarga .zip/instalador)

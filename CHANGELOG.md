@@ -3,6 +3,7 @@
 ## [Unreleased]
 ### Changed
 - Modularización total sin cambiar conducta: `compile/` (types/validate/historia/standalone/files/modal), `workspace/` (router + 9 módulos por pestaña), `updater/` (repo/version/assets/screen/check/boot), `cards/` (7 tarjetas) y `node-editor/` (fields/options/crud/form) como barrels que re-exportan el contrato; `context.ts` expone `getStudioState/getSelectedNodeId/getSelectedNode/selectNode` (vía preferida, `ctx` queda legacy) y `TextEditorPanel` ya los usa
+- Segunda pasada: `share/` (codec/base/modal/play), `dialogue/` (io/apply/studio), `playtest/` (media/anim/chrome/flow), `lib/assets/` (types/store/catalog/import-files/import-media/tags) y `data/characters/` (un archivo por personaje); `viewport.ts` queda atómico a propósito (máquina de gestos con closures de sesión compartida)
 ### Added
 - Panel flotante Editor de texto (textarea + transición + sliders tamaño/rotación/escala/posición por nodo; vive en playtest y preview del canvas)
 ### Added
