@@ -18,10 +18,10 @@ export function renderSoundCard(node): string {
           <div class="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-sm font-bold shadow-md mb-2.5">
             <span class="editable-field" data-field="badge">${escapeHtml(node.badge || '🔊 Sonido')}</span>
           </div>
-          <div class="w-full rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-400/30 p-3 flex items-center gap-2.5 mb-2">
+          <div data-asset-thumb title="Doble clic para elegir el audio en Recursos" class="w-full rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-400/30 p-3 flex items-center gap-2.5 mb-2 cursor-pointer">
             <span class="text-2xl">🎵</span>
             <div class="min-w-0">
-              <div class="text-sm font-bold text-amber-200 truncate editable-field" data-field="soundName">${escapeHtml(node.soundName || node.audioName || sound?.name || 'Sin audio')}</div>
+              <div class="text-sm font-bold text-amber-200 truncate editable-field" data-field="soundName" title="Doble clic para elegir el audio en Recursos">${escapeHtml(node.soundName || node.audioName || sound?.name || 'Sin audio — doble clic para elegir')}</div>
               <div class="text-[10px] text-slate-400">Vol ${(node.volume ?? 100)}% · ${node.loop ? '🔁 Bucle' : '1×'}</div>
             </div>
           </div>

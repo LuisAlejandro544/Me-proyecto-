@@ -48,8 +48,8 @@ export function renderEndingCard(node): string {
 export function renderBackgroundCard(node): string {
   const bg = findCustomAsset(node.backgroundAssetId);
   const thumb = bg?.dataUrl
-    ? `<img src="${bg.dataUrl}" alt="" class="w-full h-16 rounded-xl object-cover border border-white/15" />`
-    : `<div class="w-full h-16 rounded-xl bg-slate-800 border border-dashed border-slate-600 flex items-center justify-center text-xl">🖼️</div>`;
+    ? `<img data-asset-thumb title="Doble clic para elegir la foto en Recursos" src="${bg.dataUrl}" alt="" class="w-full h-16 rounded-xl object-cover border border-white/15 cursor-pointer" />`
+    : `<div data-asset-thumb title="Doble clic para elegir la foto en Recursos" class="w-full h-16 rounded-xl bg-slate-800 border border-dashed border-slate-600 flex items-center justify-center text-xl cursor-pointer">🖼️</div>`;
   return `
         <div class="p-3.5 relative vn-node-pad-ports">
           ${inPort(node)}
@@ -57,7 +57,7 @@ export function renderBackgroundCard(node): string {
             <span class="editable-field" data-field="badge">${escapeHtml(node.badge || '🖼️ Fondo')}</span>
           </div>
           ${thumb}
-          <div class="text-[11px] text-slate-400 truncate mt-1.5 editable-field" data-field="backgroundName">${escapeHtml(node.backgroundName || bg?.name || 'Sin fondo')}</div>
+          <div class="text-[11px] text-slate-400 truncate mt-1.5 editable-field" data-field="backgroundName" title="Doble clic para elegir la foto en Recursos">${escapeHtml(node.backgroundName || bg?.name || 'Sin fondo — doble clic para elegir')}</div>
           ${outPort(node)}
         </div>`;
 }
@@ -65,9 +65,9 @@ export function renderBackgroundCard(node): string {
 export function renderNarrationCard(node): string {
   const bg = node.backgroundAssetId ? findCustomAsset(node.backgroundAssetId) : undefined;
   const thumb = bg?.dataUrl
-    ? `<img src="${bg.dataUrl}" alt="" class="w-full h-12 rounded-xl object-cover border border-white/15 mt-2" />`
+    ? `<img data-asset-thumb title="Doble clic para elegir la foto en Recursos" src="${bg.dataUrl}" alt="" class="w-full h-12 rounded-xl object-cover border border-white/15 mt-2 cursor-pointer" />`
     : (node.backgroundAssetId
-      ? `<div class="w-full rounded-xl bg-slate-800 border border-dashed border-slate-600 mt-2 px-2 py-1.5 text-[11px] text-slate-400 truncate">🖼️ ${escapeHtml(node.backgroundName || bg?.name || 'Fondo…')}</div>`
+      ? `<div data-asset-thumb title="Doble clic para elegir la foto en Recursos" class="w-full rounded-xl bg-slate-800 border border-dashed border-slate-600 mt-2 px-2 py-1.5 text-[11px] text-slate-400 truncate cursor-pointer">🖼️ ${escapeHtml(node.backgroundName || bg?.name || 'Fondo…')}</div>`
       : '');
   return `
         <div class="p-3.5 relative vn-node-pad-ports">
