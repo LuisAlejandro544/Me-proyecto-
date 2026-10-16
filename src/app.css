@@ -84,6 +84,9 @@
       overflow: visible;
       overflow-wrap: break-word;
       word-break: break-word;
+      /* Contenedor de consultas por ancho: el toolbar flotante se eleva
+         en nodos angostos para no tapar el texto superior (ver abajo). */
+      container-type: inline-size;
       /* Sin transform: translateZ(0) fijo aquí para no forzar textura GPU a 1x que emborrona imágenes y texto al escalar o hacer zoom */
     }
     /* Renderizado de alta fidelidad para imágenes dentro de nodos */
@@ -99,8 +102,7 @@
     }
     .vn-node:active {
       cursor: grabbing;
-    }
-    .vn-node.selected {
+    }    .vn-node.selected {
       border-color: rgba(0, 242, 254, 0.75);
       box-shadow: 0 0 0 2px rgba(0, 242, 254, 0.22), 0 18px 40px rgba(0, 0, 0, 0.65);
       z-index: 25;
@@ -373,6 +375,15 @@
       border-color: rgba(52, 211, 153, 0.9);
       background: rgba(6, 40, 26, 0.95);
       box-shadow: 0 0 12px rgba(52, 211, 153, 0.45), 0 4px 14px rgba(0, 0, 0, 0.5);
+    }
+    /* Nodos angostos (<200px): el toolbar flotante (3×32px + gaps ≈ 108px)
+       taparía la primera línea del header y el badge ▶ INICIO; se eleva
+       sobre el nodo para que el texto superior quede libre y clicable. */
+    @container (max-width: 200px) {
+      .vn-node-toolbar {
+        top: -42px;
+        right: 6px;
+      }
     }
     /* Insignia del nodo inicial: la partida (Jugar / enlace) empieza aquí */
     .vn-start-badge {
