@@ -271,7 +271,7 @@
     <!-- Sidebar Izquierda -->
     <aside class="hidden md:flex flex-col w-[220px] shrink-0 border-r border-white/[0.07] bg-[#141829]/95 py-6">
       {#snippet proximoBadge()}
-        <span title="Próximamente" class="ml-auto shrink-0 rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#6b7398]">Pronto</span>
+        <span class="ml-auto shrink-0 rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#6b7398]">Pronto</span>
       {/snippet}
       <!-- Logo Novel Craft Studio -->
       <div class="flex items-center gap-3 px-6 mb-7">
@@ -334,7 +334,7 @@
           <span>Plantillas</span>
         </button>
 
-        <button disabled title="Próximamente" class="flex items-center gap-3.5 px-6 py-3 text-left text-[#5c6584] cursor-not-allowed min-h-[46px]">
+        <button disabled class="flex items-center gap-3.5 px-6 py-3 text-left text-[#5c6584] cursor-not-allowed min-h-[46px]">
           <svg class="w-5 h-5 shrink-0 text-[#5c6584]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5" />
@@ -343,7 +343,7 @@
           {@render proximoBadge()}
         </button>
 
-        <button disabled title="Próximamente" class="flex items-center gap-3.5 px-6 py-3 text-left text-[#5c6584] cursor-not-allowed min-h-[46px]">
+        <button disabled class="flex items-center gap-3.5 px-6 py-3 text-left text-[#5c6584] cursor-not-allowed min-h-[46px]">
           <!-- Icono oficial users de Lucide (lucide.dev · ISC) -->
           <svg class="w-5 h-5 shrink-0 text-[#5c6584]" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -355,7 +355,7 @@
           {@render proximoBadge()}
         </button>
 
-        <button disabled title="Próximamente" class="flex items-center gap-3.5 px-6 py-3 text-left text-[#5c6584] cursor-not-allowed min-h-[46px]">
+        <button disabled class="flex items-center gap-3.5 px-6 py-3 text-left text-[#5c6584] cursor-not-allowed min-h-[46px]">
           <svg class="w-5 h-5 shrink-0 text-[#5c6584]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.5c-2.2-1.4-5.2-1.8-8-1v13c2.8-.8 5.8-.4 8 1 2.2-1.4 5.2-1.8 8-1v-13c-2.8-.8-5.8-.4-8 1z" />
           </svg>
@@ -366,7 +366,7 @@
 
       <!-- Parte inferior del Sidebar -->
       <div class="mt-auto flex flex-col gap-1 pt-6 text-[15px]">
-        <button disabled title="Próximamente" class="flex items-center gap-3.5 px-6 py-2.5 text-left text-[#5c6584] cursor-not-allowed min-h-[44px]">
+        <button disabled class="flex items-center gap-3.5 px-6 py-2.5 text-left text-[#5c6584] cursor-not-allowed min-h-[44px]">
           <svg class="w-5 h-5 shrink-0 text-[#5c6584]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9c.26.6.77 1.02 1.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
@@ -375,7 +375,7 @@
           {@render proximoBadge()}
         </button>
 
-        <button disabled title="Próximamente" class="flex items-center gap-3.5 px-6 py-2.5 text-left text-[#5c6584] cursor-not-allowed min-h-[44px]">
+        <button disabled class="flex items-center gap-3.5 px-6 py-2.5 text-left text-[#5c6584] cursor-not-allowed min-h-[44px]">
           <svg class="w-5 h-5 shrink-0 text-[#5c6584]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="9" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M9.5 9a2.5 2.5 0 015 0c0 1.5-2.5 2-2.5 3.5M12 16.5h.01" />
