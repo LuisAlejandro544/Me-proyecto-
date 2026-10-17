@@ -3,6 +3,7 @@
 import { ctx } from './context';
 import { wireCanvasPanZoom } from './ui/viewport';
 import { applyTransform } from './ui/transform';
+import { captureCanvasShot } from './cover';
 import { renderNodes } from './ui/render-nodes';
 import { loadPreset } from './ui/load-preset';
 import { startPlaytest } from './ui/playtest';
@@ -102,6 +103,8 @@ export function initStudio() {
           __editorActive = true;
           saveSlot(i);
           refreshSlotSaveButtons();
+          // Portada real (Roblox-style): captura y re-guarda el slot con la imagen.
+          try { captureCanvasShot(ctx.state.projectName, () => { saveSlot(i); refreshSlotSaveButtons(); }); } catch {}
           showToast(`💾 Guardado en slot ${i + 1} (este dispositivo)`);
         });
       });
@@ -110,12 +113,20 @@ export function initStudio() {
       document.getElementById('btnGoHome')?.addEventListener('click', () => {
         playSynthSfx('click');
         try { saveSessionNow(); } catch {}
+        // Portada real al salir: captura el lienzo tal como quedó y re-guarda la sesión.
+        try { captureCanvasShot(ctx.state.projectName, () => saveSessionNow()); } catch {}
         window.dispatchEvent(new CustomEvent('vn:go-home'));
       });
       // Seguridad: si cierra/recarga dentro del editor, la sesión queda para continuar.
       window.addEventListener('beforeunload', () => {
         if (__editorActive) {
           try { saveSessionNow(); } catch {}
+        }
+      });
+      // Portada al ocultar la app (móvil en segundo plano / minimizar): última vista.
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden' && __editorActive) {
+          try { captureCanvasShot(ctx.state.projectName, () => saveSessionNow()); } catch {}
         }
       });
 

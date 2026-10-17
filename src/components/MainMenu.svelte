@@ -51,6 +51,11 @@
 
   onMount(() => {
     refresh();
+    // La captura real del lienzo aterriza ~100ms después de salir del editor:
+    // releimos covers cuando llega el aviso.
+    const onShot = () => refresh();
+    window.addEventListener('vn:cover-shot', onShot);
+    return () => window.removeEventListener('vn:cover-shot', onShot);
   });
 
   function cleanName(v: string, fallback: string): string {
