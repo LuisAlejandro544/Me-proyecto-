@@ -437,16 +437,14 @@
           </button>
 
           <!-- Avatar de usuario -->
-          <div class="w-11 h-11 rounded-full p-[1.5px] bg-gradient-to-br from-slate-300/60 to-indigo-400/40 shrink-0 overflow-hidden shadow-md" title="Creador">
-            <svg class="w-full h-full rounded-full bg-[#cbd5e1]" viewBox="0 0 40 40">
-              <rect width="40" height="40" fill="#e2e8f0" />
-              <circle cx="20" cy="15" r="7.5" fill="#fbd38d" />
-              <path d="M12 14c0-5 3.5-8.5 8-8.5s8 3.5 8 8.5c0 2-.5 4-1.5 5.5-.3-3-2-5-6.5-5s-6.2 2-6.5 5C12.5 18 12 16 12 14z" fill="#2d3748" />
-              <path d="M8 38c1.5-8 6.5-11 12-11s10.5 3 12 11" fill="#4a5568" />
-              <circle cx="17.5" cy="15.5" r="1" fill="#1a202c" />
-              <circle cx="22.5" cy="15.5" r="1" fill="#1a202c" />
-              <path d="M18.5 18.5q1.5 1.2 3 0" stroke="#e53e3e" stroke-width="1.2" fill="none" stroke-linecap="round" />
-            </svg>
+          <div class="w-11 h-11 rounded-full p-[1.5px] bg-gradient-to-br from-slate-300/60 to-indigo-400/40 shrink-0 shadow-md" title="Creador" aria-label="Perfil de creador">
+            <!-- Icono oficial user-round de Lucide (lucide.dev · ISC) -->
+            <div class="w-full h-full rounded-full bg-[#20263e] flex items-center justify-center">
+              <svg class="w-6 h-6 text-[#cbd5e1]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="8" r="5" />
+                <path d="M20 21a8 8 0 0 0-16 0" />
+              </svg>
+            </div>
           </div>
         </div>
       </header>
